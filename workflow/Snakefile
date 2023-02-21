@@ -1,4 +1,429 @@
-# Main entrypoint of the workflow. 
-# Please follow the best practices: 
-# https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
-# in particular regarding the standardized folder structure mentioned there. 
+# libraries
+
+import os
+from snakemake.utils import min_version
+
+min_version("6.4.1")
+
+SNAKEFILE_DIR=os.path.dirname(__file__)
+
+print(SNAKEFILE_DIR)
+
+include: "rules/align.smk"
+
+# rule all:
+#     input:
+#         expand("modifications/tombo_mod_lsc/{control}_{native}.lsc.tombo.stats",control=config['conditions'][
+#             'control'],native=config['conditions']['native']),
+#         expand("modifications/tombo_mod_msc/{control}_{native}.msc.tombo.stats",control=config['conditions'][
+#             'control'],native=config['conditions']['native']),
+#         expand("modifications/tombo_mod_msc/{control}_{native}.msc.tombo.per_read_stats",control=config['conditions'][
+#             'control'],native=config['conditions']['native']),
+#         expand("modifications/xpore/{control}_{native}/majority_direction_kmer_diffmod.table",control=
+#         config['conditions']['control'],native=config['conditions']['native']),
+#         expand("modifications/nanocompore/{control}_{native}",control=config['conditions']['control'],native=
+#         config['conditions']['native']),
+#         expand("modifications/m6anet/{native}",native=config['conditions']['native'])
+
+
+
+# rule samtools_raw_index:
+#     input:
+#         "results/mapped_reads/{sample}.bam"
+#     output:
+#         "results/mapped_reads/{sample}.bam.bai"
+#     shell:
+#         "samtools index {input}"
+# 
+# 
+# rule samtools_filter_mapped:
+#     input:
+#         bam="results/mapped_reads/{sample}.bam",
+#         bai="results/mapped_reads/{sample}.bam.bai"
+#     output:
+#         "results/filtered_mapped_reads/{sample}.bam"
+#     shell:
+#         "samtools view -Sbh -F0x2324 -q 10 -o {output} {input.bam}"
+# 
+# rule samtools_filtered_index:
+#     input:
+#         "results/filtered_mapped_reads/{sample}.bam"
+#     output:
+#         "results/filtered_mapped_reads/{sample}.bam.bai"
+#     shell:
+#         "samtools index {input}"
+# 
+# rule slow5tools_fast5toslow5:
+#     input:
+#         fast5="data/{sample}/fast5/workspace"
+#     output:
+#         directory("results/slow5/{sample}")
+# 
+#     log:
+#         stdout="logs/fast5toslow5/{sample}.log",
+#         stderr="logs/fast5toslow5/{sample}.err"
+#     threads: 8
+#     shell:
+#         "slow5tools f2s {input.fast5} -d {output} -p {threads} "
+#         "1>{log.stdout} 2>{log.stderr}"
+# 
+# rule slow5tools_slow5toblow5:
+#     input:
+#         slow5="results/slow5/{sample}"
+#     output:
+#         "results/blow5/{sample}.blow5"
+#     log:
+#         stdout="logs/slow5toblow5/{sample}.log",
+#         stderr="logs/slow5toblow5/{sample}.err"
+#     threads: 8
+#     shell:
+#         "slow5tools merge {input.slow5} -o {output} -t{threads} "
+#         "1>{log.stdout} 2>{log.stderr}"
+# 
+# 
+# rule f5c_index:
+#     input:
+#         blow5="results/blow5/{sample}.blow5",
+#         fastq="data/{sample}/fastq/pass.fq.gz",
+#     output:
+#         "results/blow5/{sample}.blow5.idx"
+#     log:
+#         stdout="logs/f5c_index/{sample}.log",
+#         stderr="logs/f5c_index/{sample}.err"
+#     benchmark:
+#         "benchmarks/{sample}.f5cindex.benchmark.txt"
+#     threads: 8
+#     shell:
+#         "f5c index "
+#         "--slow5 {input.blow5} "
+#         "{input.fastq} "
+#         "-t {threads} "
+#         ">{log.stdout} 2>{log.stderr}"
+# 
+# 
+# rule f5c_eventalign_nanocompore:
+#     input:
+#         fastq="data/{sample}/fastq/pass.fq.gz",
+#         bam="results/filtered_mapped_reads/{sample}.bam",
+#         bai="results/filtered_mapped_reads/{sample}.bam.bai",
+#         index="results/blow5/{sample}.blow5.idx",
+#         blow5="results/blow5/{sample}.blow5",
+#         reference=config['reference']
+#     output:
+#         outfile="results/eventalign/{sample}_nanocompore.tsv",
+#         completion="results/eventalign/{sample}_nanocompore.tsv.completed",
+#     log:
+#         stdout="logs/eventalign/{sample}_nanocompore.log",
+#         stderr="logs/eventalign/{sample}_nanocompore.err"
+#     benchmark:
+#         "benchmarks/{sample}.eventalign_nanocompore.benchmark.txt"
+#     threads: 8
+#     shell:
+#         "f5c eventalign -r {input.fastq} "
+#         "--print-read-names "
+#         "-b {input.bam} "
+#         "-g {input.reference} "
+#         "--signal-index "
+#         "--scale-events "
+#         "-t {threads} "
+#         "--slow5 {input.blow5} "
+#         "--min-mapq 0 "
+#         "--min-recalib-events 50 "
+#         "--samples "
+#         "--rna "
+#         "-o {output.outfile} 1>{log.stdout} 2>{log.stderr} && echo `date` > {output.completion} "
+# 
+# 
+# rule f5c_eventalign_xpore:
+#     input:
+#         fastq="data/{sample}/fastq/pass.fq.gz",
+#         bam="results/mapped_reads/{sample}.bam",
+#         bai="results/mapped_reads/{sample}.bam.bai",
+#         index="results/blow5/{sample}.blow5.idx",
+#         blow5="results/blow5/{sample}.blow5",
+#         reference=config['reference']
+#     output:
+#         outfile="results/eventalign/{sample}_xpore.tsv",
+#         completion="results/eventalign/{sample}_xpore.tsv.completed",
+#     log:
+#         stdout="logs/eventalign/{sample}_xpore.log",
+#         stderr="logs/eventalign/{sample}_xpore.err"
+#     benchmark:
+#         "benchmarks/{sample}.eventalign_xpore.benchmark.txt"
+#     threads: 8
+#     shell:
+#         "f5c eventalign -r {input.fastq} "
+#         "-b {input.bam} "
+#         "-g {input.reference} "
+#         "--signal-index "
+#         "--scale-events "
+#         "-t {threads} "
+#         "--slow5 {input.blow5} "
+#         "--min-recalib-events 50 "
+#         "--min-mapq 0 "
+#         "--rna "
+#         "-o {output.outfile} 1>{log.stdout} 2>{log.stderr} && echo `date` > {output.completion}"
+# 
+# 
+# rule xpore_dataprep:
+#     input:
+#         completion="results/eventalign/{sample}_xpore.tsv.completed",
+#         eventalign="results/eventalign/{sample}_xpore.tsv",
+#         reference=config['reference']
+#     output:
+#         directory("results/dataprep/{sample}_xpore_dataprep")
+#     log:
+#         stdout="logs/xpore_dataprep/{sample}.log",
+#         stderr="logs/xpore_dataprep/{sample}.err"
+#     benchmark:
+#         "benchmarks/{sample}.xpore_dataprep.benchmark.txt"
+# 
+#     shell:
+#         "xpore dataprep "
+#         "--eventalign {input.eventalign} "
+#         "--transcript_fasta {input.reference} "
+#         "--out_dir {output} 1>{log.stdout} 2>{log.stderr}"
+# 
+# rule multi_to_single:
+#     input:
+#         "data/{sample}/fast5/workspace"
+#     output:
+#         outdir=directory("results/multi_to_single/{sample}"),
+#         completion="results/multi_to_single/{sample}/m2s_complete.txt"
+#     log:
+#         stdout="logs/multi_to_single/{sample}.log",
+#         stderr="logs/multi_to_single/{sample}.err"
+#     benchmark:
+#         "benchmarks/{sample}.multi_to_single.benchmark.txt"
+# 
+#     threads: 12
+#     shell:
+#         "multi_to_single_fast5 "
+#         "-i {input} "
+#         "-s {output.outdir} "
+#         "-t {threads} 1>{log.stdout} 2>{log.stderr} && echo `date` > {output.completion}"
+# 
+# rule tombo_resquiggle:
+#     input:
+#         fast5="results/multi_to_single/{sample}",
+#         reference=config['reference'],
+#         completion="results/multi_to_single/{sample}/m2s_complete.txt"
+#     output:
+#         completion="results/multi_to_single/{sample}/resquiggle_complete.txt"
+#     log:
+#         stdout="logs/tombo_resquiggle/{sample}.log",
+#         stderr="logs/tombo_resquiggle/{sample}.err"
+#     benchmark:
+#         "benchmarks/{sample}.tombo_resquiggle.benchmark.txt"
+#     threads: 12
+#     shell:
+#         "tombo resquiggle "
+#         "{input.fast5} "
+#         "--skip-index "
+#         "{input.reference} "
+#         "--processes {threads} "
+#         "--overwrite "
+#         "--num-most-common-errors 5 "
+#         "--rna 1>{log.stdout} 2>{log.stderr} && echo `date` > {output.completion} "
+# 
+# 
+# rule tombo_mod_lsc:
+#     input:
+#         completion1=expand("results/multi_to_single/{native}/resquiggle_complete.txt",native=config['conditions'][
+#             'native']),
+#         completion2=expand("results/multi_to_single/{control}/resquiggle_complete.txt",control=config['conditions'][
+#             'control']),
+#         control_dir=expand("results/multi_to_single/{control}",control=config['conditions']['control']),
+#         native_dir=expand("results/multi_to_single/{native}",native=config['conditions']['native'])
+#     output:
+#         "modifications/tombo_mod_lsc/{comp_pair}.lsc.tombo.stats"
+#     params:
+#         output_name="modifications/tombo_mod_lsc/{comp_pair}.lsc"
+#     log:
+#         stdout="logs/tombo_mod_lsc/{comp_pair}.log",
+#         stderr="logs/tombo_mod_lsc/{comp_pair}.err"
+#     benchmark:
+#         "benchmarks/{comp_pair}.tombo_mod_lsc.benchmark.txt"
+#     threads: 12
+#     shell:
+#         "tombo detect_modifications level_sample_compare "
+#         "--fast5-basedirs {input.control_dir} "
+#         "--alternate-fast5-basedirs {input.native_dir} "
+#         "--statistics-file-basename {params.output_name} "
+#         "--store-p-value "
+#         "--processes {threads} "
+#         "--minimum-test-reads 5 1>{log.stdout} 2>{log.stderr}"
+# 
+# 
+# rule tombo_mod_msc:
+#     input:
+#         completion1=expand("results/multi_to_single/{native}/resquiggle_complete.txt",native=config['conditions'][
+#             'native']),
+#         completion2=expand("results/multi_to_single/{control}/resquiggle_complete.txt",control=config['conditions'][
+#             'control']),
+#         control_dir=expand("results/multi_to_single/{control}",control=config['conditions']['control']),
+#         native_dir=expand("results/multi_to_single/{native}",native=config['conditions']['native'])
+#     output:
+#         "modifications/tombo_mod_msc/{comp_pair}.msc.tombo.stats",
+#         "modifications/tombo_mod_msc/{comp_pair}.msc.tombo.per_read_stats"
+#     params:
+#         output_name="modifications/tombo_mod_msc/{comp_pair}.msc"
+#     log:
+#         stdout="logs/tombo_mod_msc/{comp_pair}.log",
+#         stderr="logs/tombo_mod_msc/{comp_pair}.err"
+#     benchmark:
+#         "benchmarks/{comp_pair}.tombo_mod_msc.benchmark.txt"
+#     threads: 12
+#     shell:
+#         "tombo detect_modifications model_sample_compare "
+#         "--fast5-basedirs {input.native_dir} "
+#         "--control-fast5-basedirs {input.control_dir} "
+#         "--minimum-test-reads 5 "
+#         "--per-read-statistics-basename {params.output_name} "
+#         "--processes {threads} "
+#         "--statistics-file-basename {params.output_name} "
+#         "--rna 1>{log.stdout} 2>{log.stderr}"
+# 
+# rule xpore_config:
+#     input:
+#         control_dir=expand("results/dataprep/{control}_xpore_dataprep",control=config['conditions']['control']),
+#         native_dir=expand("results/dataprep/{native}_xpore_dataprep",native=config['conditions']['native'])
+#     output:
+#         conf="modifications/xpore/{comp_pair}.xpore_config.yaml"
+#     params:
+#         "modifications/xpore/{comp_pair}"
+#     run:
+#         import yaml
+#         import os
+# 
+#         xpore_cf = {
+#             'notes': 'xpore analysis',
+#             'out': params[0],
+#             'data': {
+#                 'CASE': {'rep1': input.native_dir[0]},
+#                 'CONTROL': {'rep1': input.control_dir[0]}
+#             }
+# 
+#         }
+#         with open(output.conf,'w') as f:
+#             yaml.dump(xpore_cf,f)
+# 
+# rule xpore_run:
+#     input:
+#         expand("modifications/xpore/{control}_{native}.xpore_config.yaml",control=config['conditions'][
+#             'control'],native=config['conditions']['native'])
+#     output:
+#         "logs/xpore/{cp}.log"
+#     log:
+#         stdout="logs/xpore/{cp}.log",
+#         stderr="logs/xpore/{cp}.err"
+#     benchmark:
+#         "benchmarks/{cp}.xpore.benchmark.txt"
+#     shell:
+#         "xpore diffmod --config {input} 1>{log.stdout} 2>{log.stderr}"
+# 
+# rule xpore_postprocessing:
+#     input:
+#         log=expand("logs/xpore/{control}_{native}.log",control=config['conditions']['control'],native=
+#         config['conditions']['native'])
+# 
+#     output:
+#         "modifications/xpore/{comp_pair}/majority_direction_kmer_diffmod.table"
+#     params:
+#         "modifications/xpore/{comp_pair}"
+#     log:
+#         stdout="logs/xpore_postprocessing/{comp_pair}.log",
+#         stderr="logs/xpore_postprocessing/{comp_pair}.err"
+#     benchmark:
+#         "benchmarks/{comp_pair}.xpore_postprocessing.benchmark.txt"
+#     shell:
+#         "xpore postprocessing --diffmod_dir {params} 1>{log.stdout} 2>{log.stderr}"
+# 
+# 
+# rule nanocompore_collapse:
+#     input:
+#         eventalign="results/eventalign/{comp_pair}_nanocompore.tsv",
+#         completion="results/eventalign/{comp_pair}_nanocompore.tsv.completed"
+#     output:
+#         output="results/nanocompore_eventalign_collapse/{comp_pair}/{comp_pair}_eventalign_collapse.tsv"
+#     params:
+#         prefix="{comp_pair}",
+#         dir="results/nanocompore_eventalign_collapse/{comp_pair}",
+#     log:
+#         stdout="logs/nanocompore_collapse/{comp_pair}.log",
+#         stderr="logs/nanocompore_collapse/{comp_pair}.err"
+#     benchmark:
+#         "benchmarks/{comp_pair}.nanocompore_collapse.benchmark.txt"
+#     threads: 12
+#     shell:
+#         "nanocompore eventalign_collapse "
+#         "-i {input.eventalign} "
+#         "--outpath {params.dir} "
+#         "--outprefix {params.prefix} "
+#         "--overwrite "
+#         "--nthreads {threads} 1>{log.stdout} 2>{log.stderr}"
+# 
+# rule nanocompore:
+#     input:
+#         control_file=expand("results/nanocompore_eventalign_collapse/{control}/{control}_eventalign_collapse.tsv",control=
+#         config['conditions']['control']),
+#         native_file=expand("results/nanocompore_eventalign_collapse/{native}/{native}_eventalign_collapse.tsv",native=
+#         config['conditions']['native']),
+#         reference=config['reference']
+#     output:
+#         dir=directory("modifications/nanocompore/{comp_pair}")
+#     params:
+#         prefix="{comp_pair}"
+#     log:
+#         stdout="logs/nanocompore/{comp_pair}.log",
+#         stderr="logs/nanocompore/{comp_pair}.err"
+#     benchmark:
+#         "benchmarks/{comp_pair}.nanocompore.benchmark.txt"
+#     shell:
+#         "nanocompore sampcomp "
+#         "--file_list1 {input.control_file} "
+#         "--file_list2 {input.native_file} "
+#         "--label1 Control "
+#         "--label2 Native "
+#         "--logit "
+#         "--fasta {input.reference} "
+#         "--outpath {output.dir} "
+#         "--outprefix {params.prefix} "
+#         "--min_ref_length 50 "
+#         "--overwrite 1>{log.stdout} 2>{log.stderr}"
+# 
+# rule dataprep_m6anet:
+#     input:
+#         eventalign=expand("results/eventalign/{name}_xpore.tsv",name=config['conditions']['native']),
+#         completion=expand("results/eventalign/{name}_xpore.tsv.completed",name=config['conditions']['native'])
+#     output:
+#         directory("results/dataprep/{sample}_m6anet_dataprep")
+#     log:
+#         stdout="logs/m6anet_dataprep/{sample}.log",
+#         stderr="logs/m6anet_dataprep/{sample}.err"
+#     benchmark:
+#         "benchmarks/{sample}.m6anet_dataprep.benchmark.txt"
+#     threads: 40
+#     shell:
+#         "m6anet-dataprep "
+#         "--eventalign {input.eventalign} "
+#         "--n_processes {threads} "
+#         "--out_dir {output} 1>{log.stdout} 2>{log.stderr}"
+# 
+# rule m6anet_inference:
+#     input:
+#         "results/dataprep/{sample}_m6anet_dataprep"
+#     output:
+#         directory("modifications/m6anet/{sample}")
+#     log:
+#         stdout="logs/m6anet_inference/{sample}.log",
+#         stderr="logs/m6anet_inference/{sample}.err"
+#     benchmark:
+#         "benchmarks/{sample}.m6anet_inference.benchmark.txt"
+#     threads: 40
+#     shell:
+#         "m6anet-run_inference "
+#         "--input_dir {input} "
+#         "--out_dir {output} "
+#         "--infer_mod_rate "
+#         "--n_processes {threads} 1>{log.stdout} 2>{log.stderr}"
