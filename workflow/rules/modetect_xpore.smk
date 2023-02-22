@@ -27,20 +27,10 @@ rule xpore_config:
         conf="results/xpore/{native}_{control}.xpore_config.yaml"
     params:
         "results/xpore/{native}_{control}"
-
-    run:
-        import yaml
-        xpore_cf = {
-            'notes': 'xpore analysis',
-            'out': params[0],
-            'data': {
-                'CASE': {'rep1': input.native_dir[0]},
-                'CONTROL': {'rep1': input.control_dir[0]}
-            }
-
-        }
-        with open(output.conf,'w') as f:
-            yaml.dump(xpore_cf,f)
+    log:
+        "logs/xpore_config/{native}_{control}.log"
+    script:
+        "../scripts/xpore_config.py"
 
 rule xpore_run:
     input:
