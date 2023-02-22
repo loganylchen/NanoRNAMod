@@ -4,7 +4,7 @@ rule minimap2_align:
         fastq="data/{sample}/fastq/pass.fq.gz"
     output:
         bam="results/alignments/{sample}.bam",
-        bai="results/alignments/{sample}.bam.bai"
+        csi="results/alignments/{sample}.bam.csi"
     log:
         "logs/minimap2_map/{sample}.log"
     benchmark:
