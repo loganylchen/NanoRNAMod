@@ -15,9 +15,7 @@ params:
 threads:
   minimap2: 12
   multi_to_single: 24
-  tombo_lsc: 12
-  tombo_msc: 12
-  tombo_resquiggle: 24
+  tombo: 24
   slow5tools: 8
   f5c: 32
   m6anet: 32
