@@ -1,10 +1,10 @@
 rule samtools_filter_mapped:
     input:
         bam="results/alignments/{sample}.bam",
-        bai="results/alignments/{sample}.bam.bai"
+        csi="results/alignments/{sample}.bam.csi"
     output:
         "results/alignments/{sample}_filtered.bam",
-        "results/alignments/{sample}_filtered.bam.bai"
+        "results/alignments/{sample}_filtered.bam.csi"
     log:
         "logs/readfiltering/{sample}.log"
     conda:

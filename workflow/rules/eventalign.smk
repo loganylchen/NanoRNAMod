@@ -24,7 +24,7 @@ rule f5c_eventalign_nanocompore:
     input:
         fastq="data/{sample}/fastq/pass.fq.gz",
         bam="results/alignments/{sample}_filtered.bam",
-        bai="results/alignments/{sample}_filtered.bam.bai",
+        csi="results/alignments/{sample}_filtered.bam.csi",
         index="results/blow5/{sample}.blow5.idx",
         blow5="results/blow5/{sample}.blow5",
         reference=config['reference']['transcriptome_fasta']
@@ -54,7 +54,7 @@ rule f5c_eventalign_xpore:
     input:
         fastq="data/{sample}/fastq/pass.fq.gz",
         bam="results/alignments/{sample}_filtered.bam",
-        bai="results/alignments/{sample}_filtered.bam.bai",
+        csi="results/alignments/{sample}_filtered.bam.csi",
         index="results/blow5/{sample}.blow5.idx",
         blow5="results/blow5/{sample}.blow5",
         reference=config['reference']['transcriptome_fasta']
