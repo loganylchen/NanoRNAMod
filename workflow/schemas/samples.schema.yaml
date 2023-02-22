@@ -1,0 +1,17 @@
+$schema: "http://json-schema.org/draft-06/schema#"
+
+description: an entry in the sample sheet
+properties:
+  SampleName:
+    type: string
+    description: sample name/identifier
+  Condition:
+    type: string
+    description: sample condition, can only be "Control" or "Native"
+    enum:
+      - Control
+      - Native
+required:
+  - SampleName
+  - Condition
+

@@ -1,0 +1,7 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - xpore =2.1
+  - pip:
+      -m6anet==1.1.1
