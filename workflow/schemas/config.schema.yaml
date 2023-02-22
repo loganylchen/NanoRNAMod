@@ -1,0 +1,101 @@
+$schema: "http://json-schema.org/draft-06/schema#"
+
+description: snakemake configuration file
+type: object
+properties:
+  samples:
+    type: string
+  reference:
+    type: object
+    properties:
+      transcriptome_fasta:
+        type: string
+      genome_fasta:
+        type: string
+      transcriptome_gtf:
+        type: string
+    required:
+      - transcriptome_fasta
+
+  tools:
+    type: object
+    properties:
+      tombo_lsc:
+        type: object
+        properties:
+          activate:
+            type: boolean
+      tombo_msc:
+        type: object
+        properties:
+          activate:
+            type: boolean
+      xpore:
+        type: object
+        properties:
+          activate:
+            type: boolean
+      nanocompore:
+        type: object
+        properties:
+          activate:
+            type: boolean
+      m6anet:
+        type: object
+        properties:
+          activate:
+            type: boolean
+  params:
+    type: object
+    properties:
+      minimap2:
+        type: string
+      samtools_filtering:
+        type: string
+      tombo_lsc:
+        type: string
+      tombo_msc:
+        type: string
+      tombo_resquiggle:
+        type: string
+      f5c_eventalign_nanocompore:
+        type: string
+      f5c_eventalign_xpore:
+        type: string
+      nanocompore:
+        type: string
+
+  threads:
+    type: object
+    properties:
+      minimap2:
+        type: integer
+      multi_to_single:
+        type: integer
+      tombo_lsc:
+        type: integer
+      tombo_msc:
+        type: integer
+      tombo_resquiggle:
+        type: integer
+      slow5tools:
+        type: integer
+      f5c:
+        type: integer
+      m6anet:
+        type: integer
+      nanocompore:
+        type: integer
+required:
+  - samples
+  - params
+  - reference
+  - threads
+  - tools
+
+
+
+
+
+
+
