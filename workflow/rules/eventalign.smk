@@ -5,8 +5,7 @@ rule f5c_index:
     output:
         "results/blow5/{sample}.blow5.idx"
     log:
-        stdout="logs/f5c_index/{sample}.log",
-        stderr="logs/f5c_index/{sample}.err"
+        "logs/f5c_index/{sample}.log"
     benchmark:
         "benchmarks/{sample}.f5cindex.benchmark.txt"
     conda:
