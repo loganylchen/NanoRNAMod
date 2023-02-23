@@ -3,7 +3,7 @@ samples: config/samples.tsv
 
 params:
   minimap2: " -ax map-ont -L --secondary=no -N 1 "
-  samtools_filtering: " -F0x2324 -q 20 --min-qlen 100"
+  samtools_filtering: " -F0x2324 -q 10 --min-qlen 100"
   tombo_lsc: " --store-p-value --minimum-test-reads 5 "
   tombo_msc: " --minimum-test-reads 5 --rna "
   tombo_resquiggle: " --num-most-common-errors 5 --overwrite --rna --skip-index "
@@ -38,7 +38,7 @@ tools:
   nanocompore:
     activate: True
   m6anet:
-    activate: True
+    activate: False
 
 
 
