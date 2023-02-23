@@ -21,8 +21,8 @@ rule m6anet_inference:
     input:
         "results/dataprep/{sample}_m6anet_dataprep"
     output:
-        directory("results/m6anet/{sample}"),
-        "results/m6anet/{sample}/data.result.csv.gz"
+        dir=directory("results/m6anet/{sample}"),
+        result="results/m6anet/{sample}/data.result.csv.gz"
     log:
         "logs/m6anet_inference/{sample}.log"
     benchmark:
@@ -33,6 +33,6 @@ rule m6anet_inference:
     shell:
         "m6anet-run_inference "
         "--input_dir {input} "
-        "--out_dir {output} "
+        "--out_dir {output.dir} "
         "--infer_mod_rate "
         "--n_processes {threads}  2>{log}"
