@@ -1,7 +1,7 @@
 channels:
   - conda-forge
   - bioconda
+  - anaconda
 dependencies:
   - numpy=1.19.0
-  - pip:
-      - ont-tombo==1.5.1
+  - ont-tombo=1.5.1
