@@ -10,7 +10,7 @@ rule dataprep_m6anet:
         "benchmarks/{sample}.m6anet_dataprep.benchmark.txt"
     threads: config['threads']['m6anet']
     conda:
-        "../envs/xpore.yaml"
+        "../envs/m6anet.yaml"
     shell:
         "m6anet-dataprep "
         "--eventalign {input.eventalign} "
@@ -29,7 +29,7 @@ rule m6anet_inference:
         "benchmarks/{sample}.m6anet_inference.benchmark.txt"
     threads: config['threads']['m6anet']
     conda:
-        "../envs/xpore.yaml"
+        "../envs/m6anet.yaml"
     shell:
         "m6anet-run_inference "
         "--input_dir {input} "
