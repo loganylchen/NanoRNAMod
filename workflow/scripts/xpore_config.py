@@ -8,8 +8,8 @@ xpore_cf = {
     'notes': 'xpore analysis',
     'out': snakemake.params[0],
     'data': {
-        'CASE': {'rep1': snakemake.input.native_dir[0]},
-        'CONTROL': {'rep1': snakemake.input.control_dir[0]}
+        'CASE': {'rep1': snakemake.input.native_dir},
+        'CONTROL': {'rep1': snakemake.input.control_dir}
     }
 
 }
