@@ -36,7 +36,6 @@ rule xpore_run:
     input:
         "results/xpore/{native}_{control}.xpore_config.yaml"
     output:
-        res_dir="results/xpore/{native}_{control}",
         difftable="results/xpore/{native}_{control}/diffmod.table"
     log:
         "logs/xpore/{native}_{control}.log"
