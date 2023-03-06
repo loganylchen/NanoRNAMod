@@ -3,3 +3,4 @@ channels:
   - bioconda
 dependencies:
   - f5c =1.1
+  - gzip =1.12

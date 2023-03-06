@@ -24,4 +24,4 @@ rule slow5tools_slow5toblow5:
         "../envs/slow5tools.yaml"
     shell:
         "slow5tools merge {input.slow5} -o {output} -t{threads} "
-        "2>{log}"
+        "2>{log} && rm -rf {input.slow5}"
