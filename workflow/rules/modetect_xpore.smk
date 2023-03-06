@@ -1,7 +1,7 @@
 rule xpore_dataprep:
     input:
         completion="results/eventalign/{sample}_xpore.tsv.completed",
-        eventalign="results/eventalign/{sample}_xpore.tsv",
+        eventalign="results/eventalign/{sample}_xpore.tsv.gz",
         reference=config['reference']['transcriptome_fasta']
     output:
         directory("results/dataprep/{sample}_xpore_dataprep")
@@ -13,10 +13,10 @@ rule xpore_dataprep:
     conda:
         "../envs/xpore.yaml"
     shell:
-        "xpore dataprep "
-        "--eventalign {input.eventalign} "
+        "gzip -dc {input.eventalign} > {input.eventalign}.tmp && xpore dataprep "
+        "--eventalign {input.eventalign}.tmp "
         "--transcript_fasta {input.reference} "
-        "--out_dir {output} 2>{log}"
+        "--out_dir {output} 2>{log} && rm {input.eventalign}.tmp"
 
 
 rule xpore_config:
