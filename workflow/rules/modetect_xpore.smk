@@ -13,10 +13,10 @@ rule xpore_dataprep:
     conda:
         "../envs/xpore.yaml"
     shell:
-        "gzip -dc {input.eventalign} > {input.eventalign}.tmp && xpore dataprep "
+        "gzip -dc {input.eventalign} > {input.eventalign}.xpore.tmp && xpore dataprep "
         "--eventalign {input.eventalign}.tmp "
         "--transcript_fasta {input.reference} "
-        "--out_dir {output} 2>{log} && rm {input.eventalign}.tmp"
+        "--out_dir {output} 2>{log} && rm {input.eventalign}.xpore.tmp"
 
 
 rule xpore_config:
