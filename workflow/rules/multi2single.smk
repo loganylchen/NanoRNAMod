@@ -15,4 +15,4 @@ rule multi_to_single:
         "multi_to_single_fast5 "
         "-i {input} "
         "-s {output.outdir} "
-        "-t {threads} 2>{log} && echo `date` > {output.completion}"
+        "-t {threads} --recursive 2>{log} && echo `date` > {output.completion}"
