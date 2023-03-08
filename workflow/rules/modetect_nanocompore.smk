@@ -1,6 +1,6 @@
 rule nanocompore_collapse:
     input:
-        eventalign="results/eventalign/{sample}_nanocompore.tsv",
+        eventalign="results/eventalign/{sample}_nanocompore.tsv.gz",
         completion="results/eventalign/{sample}_nanocompore.tsv.completed"
     output:
         output="results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv"

@@ -28,7 +28,7 @@ rule f5c_eventalign_nanocompore:
         blow5="results/blow5/{sample}.blow5",
         reference=config['reference']['transcriptome_fasta']
     output:
-        outfile="results/eventalign/{sample}_nanocompore.tsv",
+        outfile="results/eventalign/{sample}_nanocompore.tsv.gz",
         completion="results/eventalign/{sample}_nanocompore.tsv.completed",
     log:
         "logs/eventalign/{sample}_nanocompore.log"
@@ -46,7 +46,7 @@ rule f5c_eventalign_nanocompore:
         "-g {input.reference} "
         "-t {threads} "
         "--slow5 {input.blow5} "
-        "-o {output.outfile} 2>{log} && echo `date` > {output.completion} "
+        "2>{log} | gzip -c > {output.outfile}  && echo `date` > {output.completion} "
 
 
 rule f5c_eventalign_xpore:
@@ -58,7 +58,7 @@ rule f5c_eventalign_xpore:
         blow5="results/blow5/{sample}.blow5",
         reference=config['reference']['transcriptome_fasta']
     output:
-        outfile="results/eventalign/{sample}_xpore.tsv",
+        outfile="results/eventalign/{sample}_xpore.tsv.gz",
         completion="results/eventalign/{sample}_xpore.tsv.completed",
     log:
         "logs/eventalign/{sample}_xpore.log"
@@ -76,4 +76,4 @@ rule f5c_eventalign_xpore:
         "{params.extra} "
         "-t {threads} "
         "--slow5 {input.blow5} "
-        "-o {output.outfile} 2>{log} && echo `date` > {output.completion}"
+        " 2>{log} | gzip -c > {output.outfile} && echo `date` > {output.completion}"
