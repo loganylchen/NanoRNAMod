@@ -12,11 +12,11 @@ rule dataprep_m6anet:
     conda:
         "../envs/m6anet.yaml"
     shell:
-        "gzip -dc {input.eventalign} > {input.eventalign}.tmp &&"
+        "gzip -dc {input.eventalign} > {input.eventalign}.m6anet.tmp &&"
         "m6anet-dataprep "
-        "--eventalign {input.eventalign}.tmp "
+        "--eventalign {input.eventalign}.m6anet.tmp "
         "--n_processes {threads} "
-        "--out_dir {output} 2>{log} && {input.eventalign}.tmp"
+        "--out_dir {output} 2>{log} && rm {input.eventalign}.m6anet.tmp"
 
 rule m6anet_inference:
     input:
