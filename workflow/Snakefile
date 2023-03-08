@@ -37,6 +37,7 @@ include: "rules/modetect_tombo.smk"
 include: "rules/modetect_xpore.smk"
 include: "rules/modetect_m6anet.smk"
 include: "rules/modetect_nanocompore.smk"
+include: "rules/modetect_baleen.smk"
 include: "rules/format.smk"
 ##### target rules #####
 
