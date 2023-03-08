@@ -1,6 +1,6 @@
 rule dataprep_m6anet:
     input:
-        eventalign="results/eventalign/{sample}_xpore.tsv",
+        eventalign="results/eventalign/{sample}_xpore.tsv.gz",
         completion="results/eventalign/{sample}_xpore.tsv.completed"
     output:
         directory("results/dataprep/{sample}_m6anet_dataprep")
@@ -12,10 +12,11 @@ rule dataprep_m6anet:
     conda:
         "../envs/m6anet.yaml"
     shell:
+        "gzip -dc {input.eventalign} > {input.eventalign}.tmp &&"
         "m6anet-dataprep "
-        "--eventalign {input.eventalign} "
+        "--eventalign {input.eventalign}.tmp "
         "--n_processes {threads} "
-        "--out_dir {output} 2>{log}"
+        "--out_dir {output} 2>{log} && {input.eventalign}.tmp"
 
 rule m6anet_inference:
     input:
