@@ -14,7 +14,7 @@ rule xpore_dataprep:
         "../envs/xpore.yaml"
     shell:
         "gzip -dc {input.eventalign} > {input.eventalign}.xpore.tmp && xpore dataprep "
-        "--eventalign {input.eventalign}.tmp "
+        "--eventalign {input.eventalign}.xpore.tmp "
         "--transcript_fasta {input.reference} "
         "--out_dir {output} 2>{log} && rm {input.eventalign}.xpore.tmp"
 
