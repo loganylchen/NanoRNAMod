@@ -47,3 +47,13 @@ rule m6anet_final:
         "logs/m6anet_format/{native}_{control}.log"
     shell:
         "touch {output} 2>{log}"
+
+rule baleen_final:
+    input:
+        "results/baleen/{native}_{control}/baleen_rmd.done"
+    output:
+        "results/modifications/{native}_{control}/baleen.tsv.gz"
+    log:
+        "logs/baleen_format/{native}_{control}.log"
+    shell:
+        "touch {output} 2>{log}"

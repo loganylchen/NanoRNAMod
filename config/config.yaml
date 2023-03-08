@@ -10,6 +10,7 @@ params:
   f5c_eventalign_nanocompore: "--print-read-names --signal-index --scale-events --min-mapq 0 --min-recalib-events 50 --samples --rna "
   f5c_eventalign_xpore: "--signal-index --scale-events --min-recalib-events 50 --min-mapq 0 --rna "
   nanocompore: "--logit --min_ref_length 50 --overwrite "
+  baleen: " --min-mapq 20 --read-number-threshold 20 --padding 3  "
 
 
 threads:
@@ -20,6 +21,7 @@ threads:
   f5c: 32
   m6anet: 32
   nanocompore: 12
+  baleen: 60
 
 
 reference:
@@ -38,6 +40,8 @@ tools:
   nanocompore:
     activate: True
   m6anet:
+    activate: True
+  baleen:
     activate: True
 
 
