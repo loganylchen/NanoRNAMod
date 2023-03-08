@@ -4,8 +4,8 @@ rule baleen_rmd:
         control_bam="results/alignments/{control}_filtered.bam",
         native_fast5_dir="data/{native}/fast5/workspace",
         control_fast5_dir="data/{control}/fast5/workspace",
-        native_sequencing_summary="data/{native}/fast5/sequencing_summary.tsv",
-        control_sequencing_summary="data/{control}/fast5/sequencing_summary.tsv",
+        native_sequencing_summary="data/{native}/fast5/sequencing_summary.txt",
+        control_sequencing_summary="data/{control}/fast5/sequencing_summary.txt",
         reference=config['reference']['transcriptome_fasta']
     output:
         outdir=directory("results/baleen/{native}_{control}"),
