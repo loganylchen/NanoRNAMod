@@ -11,7 +11,7 @@ rule slow5tools_fast5toslow5:
     container:
         "docker://btrspg/slow5tools:dev"
     shell:
-        "slow5tools f2s {input.fast5} -d {output} -p {threads} "
+        "slow5tools f2s {input.fast5} -d {output} -p {threads} --bad5 1 "
         "2>{log}"
 
 rule slow5tools_slow5toblow5:
