@@ -92,11 +92,11 @@ rule f5c_eventalign_baleen:
         outfile="results/eventalign/{sample}_baleen_{w1}_{w2}_{threshold}_{peak}.tsv.bz2",
         completion="results/eventalign/{sample}_baleen_{w1}_{w2}_{threshold}_{peak}.completed",
     log:
-        "logs/eventalign/{sample}_baleen.log"
+        "logs/eventalign/{sample}_{w1}_{w2}_{threshold}_{peak}_baleen.log"
     params:
         extra=config['params']['f5c_eventalign_baleen']
     benchmark:
-        "benchmarks/{sample}.eventalign_baleen.benchmark.txt"
+        "benchmarks/{sample}_{w1}_{w2}_{threshold}_{peak}.eventalign_baleen.benchmark.txt"
     container:
         "docker://btrspg/f5c:dev"
     threads: config['threads']['f5c']
