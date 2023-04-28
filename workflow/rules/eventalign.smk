@@ -107,5 +107,5 @@ rule f5c_eventalign_baleen:
         "-g {input.reference} "
         "-t {threads} "
         "--slow5 {input.blow5} "
-        "--edparam {wildcards.w1},{wildcards.w2},{wildcards.threshold},9.0,{peak} "
+        "--edparam {wildcards.w1},{wildcards.w2},{wildcards.threshold},9.0,{wildcards.peak} "
         "2>{log} | bzip2 -cz > {output.outfile}  && echo `date` > {output.completion} "
