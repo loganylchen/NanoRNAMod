@@ -77,3 +77,35 @@ rule f5c_eventalign_xpore:
         "-t {threads} "
         "--slow5 {input.blow5} "
         " 2>{log} | gzip -c > {output.outfile} && echo `date` > {output.completion}"
+
+
+
+rule f5c_eventalign_baleen:
+    input:
+        fastq="data/{sample}/fastq/pass.fq.gz",
+        bam="results/alignments/{sample}_filtered.bam",
+        csi="results/alignments/{sample}_filtered.bam.csi",
+        index="results/blow5/{sample}.blow5.idx",
+        blow5="results/blow5/{sample}.blow5",
+        reference=config['reference']['transcriptome_fasta']
+    output:
+        outfile="results/eventalign/{sample}_baleen_{w1}_{w2}_{threshold}_{peak}.tsv.bz2",
+        completion="results/eventalign/{sample}_baleen_{w1}_{w2}_{threshold}_{peak}.completed",
+    log:
+        "logs/eventalign/{sample}_baleen.log"
+    params:
+        extra=config['params']['f5c_eventalign_baleen']
+    benchmark:
+        "benchmarks/{sample}.eventalign_baleen.benchmark.txt"
+    container:
+        "docker://btrspg/f5c:dev"
+    threads: config['threads']['f5c']
+    shell:
+        "f5c eventalign -r {input.fastq} "
+        "{params.extra} "
+        "-b {input.bam} "
+        "-g {input.reference} "
+        "-t {threads} "
+        "--slow5 {input.blow5} "
+        "--edparam {wildcards.w1},{wildcards.w2},{wildcards.threshold},9.0,{peak} "
+        "2>{log} | bzip2 -cz > {output.outfile}  && echo `date` > {output.completion} "

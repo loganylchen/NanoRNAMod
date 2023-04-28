@@ -6,6 +6,12 @@ from snakemake.logging import logger
 
 validate(config, schema="../schemas/config.schema.yaml")
 
+window_length1 = [3,4,5,6,7]
+window_length2 = [8,9,10]
+thresholds = [1+i/10 for i in range(4,20)]
+peaks = [i/10 for i in range(1,20)]
+
+
 
 # loading samples
 samples = (
@@ -31,6 +37,7 @@ else:
 def get_final_output():
     tools = [tool for tool in config['tools'] if config['tools'][tool]['activate']]
     final_output = expand("results/modifications/{comp}/{tool}.tsv.gz",comp=comparisons,tool=tools)
+    final_output += expand("results/eventalign/{sample}_baleen_{w1}_{w2}_{threshold}_{peak}.tsv.bz2",sample=samples.index.values,w1=window_length1,w2=window_length2,threshold=thresholds,peak=peaks)
     return final_output
 
 
