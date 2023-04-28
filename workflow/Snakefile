@@ -42,8 +42,12 @@ include: "rules/format.smk"
 ##### target rules #####
 
 
+
+
+
 rule all:
     input:
-        get_final_output()
+        get_final_output(),
+        
         # "results/qc/multiqc_report.html",
         # "results/pca.svg",
