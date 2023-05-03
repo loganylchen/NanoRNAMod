@@ -6,10 +6,10 @@ from snakemake.logging import logger
 
 validate(config, schema="../schemas/config.schema.yaml")
 
-window_length1 = [3,4,5,6,7]
-window_length2 = [1,2,3,4]
-thresholds = [1+i/10 for i in range(4,20)]
-peaks = [i/10 for i in range(1,20)]
+window_length1 = [3,5,7]
+window_length2 = [1,3]
+thresholds = [1+i/10 for i in range(4,10)]
+peaks = [i/10 for i in range(1,12)]
 
 
 
