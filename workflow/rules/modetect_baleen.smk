@@ -38,7 +38,8 @@ rule baleen_dataprep:
         eventalign="results/eventalign/{sample}_nanocompore.tsv.gz",
         completion="results/eventalign/{sample}_nanocompore.tsv.completed"
     output:
-        directory("results/dataprep/{sample}_baleen_dataprep")
+        directory("results/dataprep/{sample}_baleen_dataprep"),
+        "results/dataprep/{sample}_baleen_dataprep/data.index"
     params:
         label="{sample}"
     log:
