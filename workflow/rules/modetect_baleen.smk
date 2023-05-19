@@ -33,4 +33,19 @@ rule baleen_rmd:
         "--threads {threads} "
         "{params.extra} 2> {log} && echo `date` > {output.completion}"
 
+rule baleen_dataprep:
+    input:
+        eventalign="results/eventalign/{sample}_nanocompore.tsv.gz",
+        completion="results/eventalign/{sample}_nanocompore.tsv.completed"
+    output:
+        directory("results/dataprep/{sample}_baleen_dataprep")
+    params:
+        label="{sample}"
+    log:
+        "logs/baleen_dataprep/{native}_{control}.log"
+    script:
+        "../scripts/baleen_dataprep.py"
+
+
+
 
