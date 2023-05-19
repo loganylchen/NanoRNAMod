@@ -42,6 +42,9 @@ rule baleen_dataprep:
         "results/dataprep/{sample}_baleen_dataprep/data.index"
     params:
         label="{sample}"
+    container:
+        "docker://btrspg/baleen:dev"
+    threads: config['threads']['baleen']
     log:
         "logs/baleen_dataprep/{sample}.log"
     script:
