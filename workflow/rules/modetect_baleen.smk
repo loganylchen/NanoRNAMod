@@ -39,7 +39,7 @@ rule baleen_dataprep:
         completion="results/eventalign/{sample}_nanocompore.tsv.completed"
     output:
         directory("results/dataprep/{sample}_baleen_dataprep"),
-        "results/dataprep/{sample}_baleen_dataprep/data.index"
+        "results/dataprep/{sample}_baleen_dataprep/dataprep/{sample}/data.index"
     params:
         label="{sample}"
     container:
