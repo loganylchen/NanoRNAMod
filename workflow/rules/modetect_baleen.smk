@@ -42,7 +42,7 @@ rule baleen_dataprep:
     params:
         label="{sample}"
     log:
-        "logs/baleen_dataprep/{native}_{control}.log"
+        "logs/baleen_dataprep/{sample}.log"
     script:
         "../scripts/baleen_dataprep.py"
 
