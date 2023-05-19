@@ -46,7 +46,8 @@ rule baleen_dataprep:
         "docker://btrspg/baleen:dev"
     threads: config['threads']['baleen']
     log:
-        "logs/baleen_dataprep/{sample}.log"
+        "logs/baleen_dataprep/{sample}.log",
+        "logs/baleen_dataprep/{sample}.error"
     script:
         "../scripts/baleen_dataprep.py"
 
