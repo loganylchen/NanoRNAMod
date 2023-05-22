@@ -52,5 +52,23 @@ rule baleen_dataprep:
         "../scripts/baleen_dataprep.py"
 
 
+rule baleen_test:
+    input:
+        native_dataprep="results/dataprep/{native}_baleen_dataprep/dataprep/{native}/data.index",
+        control_dataprep="results/dataprep/{control}_baleen_dataprep/dataprep/{control}/data.index"
+        
+    output:
+        directory("results/baleen/{native}_{control}"),
+        "results/baleen/{native}_{control}/done.txt"
+    params:
+        transcriptome_gtf=config['reference']['transcriptome_gtf']
+    container:
+        "docker://btrspg/baleen:dev"
+    threads: config['threads']['baleen']
+    log:
+        "logs/baleen/N_{native}_C_{control}.log",
+        "logs/baleen/N_{native}_C_{control}.error"
+    script:
+        "../scripts/baleen_mod.py"
 
 
