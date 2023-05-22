@@ -13,12 +13,12 @@ sys.stdout = open(snakemake.log[0], "w")
 os.makedirs(snakemake.output[0],exist_ok=True)
 
 control_paths = {
-    'data':snakemake.input.control_dataprep.replace('data.index','data.nason')
+    'data':snakemake.input.control_dataprep.replace('data.index','data.nason'),
     'data_index':snakemake.input.control_dataprep
 }
 
 native_paths = {
-    'data':snakemake.input.native_dataprep.replace('data.index','data.nason')
+    'data':snakemake.input.native_dataprep.replace('data.index','data.nason'),
     'data_index':snakemake.input.native_dataprep
 }
 
