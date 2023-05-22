@@ -95,6 +95,7 @@ params_dict = {
 
 for key in params_dict:
     result_dir = os.path.join(snakemake.output[0],key)
+    os.makedirs(result_dir,exist_ok=True)
     molecule_json_file=molecule_modification(control_paths,native_paths,result_dir,params_dict[key],threads=snakemake.threads,verbose=False)
     transcriptome_2_genome(molecule_json_file,gtf_file,result_dir,threads=snakemake.threads,verbose=False)
 
