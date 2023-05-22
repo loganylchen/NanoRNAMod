@@ -24,7 +24,8 @@ native_paths = {
 
 gtf_file=snakemake.params.transcriptome_gtf
 
-
+if gtf_file == '':
+    gtf_file = None
 params_dict = {
     'PCA_P4_HAAR_2': {
         'padding':4,
