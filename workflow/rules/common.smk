@@ -39,6 +39,7 @@ def get_final_output():
     final_output = expand("results/modifications/{comp}/{tool}.tsv.gz",comp=comparisons,tool=tools)
     final_output += expand("results/baleen/{comp}/done.txt",comp=comparisons)
     # final_output += expand("results/eventalign/{sample}_baleen_{w1}_{w2}_{threshold}_{peak}.tsv.bz2",sample=samples.index.values,w1=window_length1,w2=window_length2,threshold=thresholds,peak=peaks)
+    print(final_output)
     return final_output
 
 
