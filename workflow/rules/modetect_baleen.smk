@@ -1,8 +1,10 @@
 rule baleen_reads_sampling:
     input:
         bamfile="results/alignments/{sample}_filtered.bam",
+        baifile="results/alignments/{sample}_filtered.bam.bai",
     output:
         bamfile="results/alignments/{sample}_filtered_sampling.bam",
+        baifile="results/alignments/{sample}_filtered_sampling.bam.bai",
     log:
         "logs/baleen/{sample}_sampling.log"
     benchmark:
