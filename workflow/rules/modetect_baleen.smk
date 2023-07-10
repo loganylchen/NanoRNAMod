@@ -1,3 +1,27 @@
+rule baleen_reads_sampling:
+    input:
+        bamfile="results/alignments/{sample}_filtered.bam",
+    output:
+        bamfile="results/alignments/{sample}_filtered_sampling.bam",
+    log:
+        "logs/baleen/{sample}_sampling.log"
+    benchmark:
+        "benchmarks/{sample}.baleen.sampling.txt",
+    container:
+        "docker://btrspg/baleen:dev",
+    params:
+        extra=config["params"]["baleen_bf"],
+    shell:
+        "baleen-BF "
+        "--bamfile {input.bamfile} "
+        "--output {output.bamfile} "
+        "{params.extra} "
+
+
+
+
+
+
 rule baleen_rmd:
     input:
         native_bam="results/alignments/{native}_filtered.bam",
@@ -33,10 +57,27 @@ rule baleen_rmd:
         "--threads {threads} "
         "{params.extra} 2> {log} && echo `date` > {output.completion}"
 
+rule baleen:
+    input:
+        native_event = "results/eventalign/{native}_baleen.tsv.bz2",
+        control_event= "results/eventalign/{control}_baleen.tsv.bz2",
+    output:
+        outdir=directory("results/baleen/{native}_{control}"),
+        baleen_mod="results/baleen/{native}_{control}/molecule_probas.json"
+    params:
+        extra=config['params']['baleen']
+    container:
+        "docker://btrspg/baleen:dev"
+    threads: config['threads']['baleen']
+    log:
+        "logs/baleen/{native}_{control}.log"
+    shell:
+        "baleen-RMD "
+        ""
 rule baleen_dataprep:
     input:
-        eventalign="results/eventalign/{sample}_nanocompore.tsv.gz",
-        completion="results/eventalign/{sample}_nanocompore.tsv.completed"
+        eventalign="results/eventalign/{sample}_baleen.tsv.bz2",
+        completion="results/eventalign/{sample}_baleen.completed"
     output:
         directory("results/dataprep/{sample}_baleen_dataprep"),
         "results/dataprep/{sample}_baleen_dataprep/dataprep/{sample}/data.index"

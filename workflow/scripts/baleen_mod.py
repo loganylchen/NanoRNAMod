@@ -2,7 +2,7 @@
 
 import sys
 import os
-from baleen.workflows import molecule_modification, transcriptome_2_genome
+from baleen.workflows import molecule_modification_based_on_clustering, transcriptome_2_genome
 
 
 sys.stderr = open(snakemake.log[1], "w")
@@ -26,79 +26,19 @@ gtf_file=snakemake.params.transcriptome_gtf
 
 if gtf_file == '':
     gtf_file = None
-params_dict = {
-    'PCA_P4_HAAR_2': {
-        'padding':4,
-        'wavelet_level':2,
-        'wavelet':'haar',
-        'algo':'PCA',
-        'proba_method':'unify',
-        'normalized':True
-    },
-    'PCA_P4_HAAR_3': {
-        'padding':4,
-        'wavelet_level':3,
-        'wavelet':'haar',
-        'algo':'PCA',
-        'proba_method':'unify',
-        'normalized':True
-    },
-    'PCA_P4_DB2_3': {
-        'padding':4,
-        'wavelet_level':3,
-        'wavelet':'db2',
-        'algo':'PCA',
-        'proba_method':'unify',
-        'normalized':True
-    },
-    'PCA_P4_DB2_2': {
-        'padding':4,
-        'wavelet_level':2,
-        'wavelet':'db2',
-        'algo':'PCA',
-        'proba_method':'unify',
-        'normalized':True
-    },
-    'HBOS_P4_HAAR_2': {
-        'padding':4,
-        'wavelet_level':2,
-        'wavelet':'haar',
-        'algo':'HBOS',
-        'proba_method':'unify',
-        'normalized':True
-    },
-    'HBOS_P4_HAAR_3': {
-        'padding':4,
-        'wavelet_level':3,
-        'wavelet':'haar',
-        'algo':'HBOS',
-        'proba_method':'unify',
-        'normalized':True
-    },
-    'HBOS_P4_DB2_3': {
-        'padding':4,
-        'wavelet_level':3,
-        'wavelet':'db2',
-        'algo':'HBOS',
-        'proba_method':'unify',
-        'normalized':True
-    },
-    'HBOS_P4_DB2_2': {
-        'padding':4,
-        'wavelet_level':2,
-        'wavelet':'db2',
-        'algo':'HBOS',
-        'proba_method':'unify',
-        'normalized':True
-    },
+
+params = {
+    'padding': 2,
+    'proba_method' : 'unify',
+    'normalized' :True,
+    'window_size' : 20,
+    'coverage' : 0.9
 }
 
-
-for key in params_dict:
-    result_dir = os.path.join(snakemake.output[0],key)
-    os.makedirs(result_dir,exist_ok=True)
-    molecule_json_file=molecule_modification(control_paths,native_paths,result_dir,params_dict[key],threads=snakemake.threads,verbose=False)
-    transcriptome_2_genome(molecule_json_file,gtf_file,result_dir,threads=snakemake.threads,verbose=False)
+result_dir = snakemake.output[0]
+os.makedirs(result_dir,exist_ok=True)
+molecule_json_file=molecule_modification_based_on_clustering(control_paths,native_paths,result_dir,params,threads=snakemake.threads,verbose=False)
+transcriptome_2_genome(molecule_json_file,gtf_file,result_dir,threads=snakemake.threads,verbose=False)
 
 with open(os.path.join(snakemake.output[0],'done.txt'),'w') as f:
     f.write('Done!!!\n')
