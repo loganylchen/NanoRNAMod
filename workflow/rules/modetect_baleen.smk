@@ -1,7 +1,7 @@
 rule baleen_reads_sampling:
     input:
         bamfile="results/alignments/{sample}_filtered.bam",
-        baifile="results/alignments/{sample}_filtered.bam.bai",
+        csifile="results/alignments/{sample}_filtered.bam.csi",
     output:
         bamfile="results/alignments/{sample}_filtered_sampling.bam",
         baifile="results/alignments/{sample}_filtered_sampling.bam.bai",
