@@ -28,6 +28,7 @@ report: "report/workflow.rst"
 
 
 include: "rules/common.smk"
+include: "rules/data_prep.smk"
 include: "rules/align.smk"
 include: "rules/readsfiltering.smk"
 include: "rules/multi2single.smk"
