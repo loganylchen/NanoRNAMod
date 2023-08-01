@@ -1,4 +1,4 @@
-rule f5c_index:
+rule f5c_transcriptome_index:
     input:
         blow5="results/blow5/{sample}.blow5",
         fastq="data/{sample}/fastq/pass.fq.gz",
@@ -17,6 +17,29 @@ rule f5c_index:
         "{input.fastq} "
         "-t {threads} "
         "2>{log}"
+
+
+rule f5c_transcriptome_index:
+    input:
+        blow5="results/blow5/{sample}.blow5",
+        fastq="data/{sample}/fastq/pass.fq.gz",
+    output:
+        "results/blow5/{sample}.blow5.idx"
+    log:
+        "logs/f5c_index/{sample}.log"
+    benchmark:
+        "benchmarks/{sample}.f5cindex.benchmark.txt"
+    conda:
+        "../envs/f5c.yaml"
+    threads: config['threads']['f5c']
+    shell:
+        "f5c index "
+        "--slow5 {input.blow5} "
+        "{input.fastq} "
+        "-t {threads} "
+        "2>{log}"
+
+
 
 
 rule f5c_eventalign_nanocompore:

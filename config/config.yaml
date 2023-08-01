@@ -2,7 +2,8 @@
 samples: config/samples.tsv
 
 params:
-  minimap2: " -ax map-ont -L --secondary=no -N 1 "
+  minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 1 "
+  minimap2_genome: " -ax splice -u f -k 14 -G 500000 --secondary=no "
   samtools_filtering: " -F0x2324 -q 20 --min-qlen 100"
   tombo_lsc: " --store-p-value --minimum-test-reads 5 "
   tombo_msc: " --minimum-test-reads 5 --rna "
@@ -23,6 +24,7 @@ threads:
   m6anet: 32
   nanocompore: 12
   baleen: 60
+  nanopolish: 20
 
 
 reference:
