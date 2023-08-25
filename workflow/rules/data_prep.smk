@@ -3,8 +3,10 @@ rule link_fastq:
         fastq="data/{sample}/fastq/pass.fq.gz"
     output:
         fastq="results/fastq/{sample}.fq.gz",
+    params:
+        relative_path="../../data/{sample}/fastq/pass.fq.gz"
     log:
-        "logs/cp/{sample}.log"
+        "logs/link_fastq/{sample}.log"
     shell:
-        "ln -s {input.fastq} {output.fastq}"
-
+        "ln -s {params.relative_path} {output.fastq} && "
+        "echo `date` > {log} "
