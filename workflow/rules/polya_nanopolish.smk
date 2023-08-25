@@ -1,12 +1,14 @@
 rule nanopolish_polya:
     input:
+        blow5_index="results/blow5/{sample}.blow5.idx",
         fastq="results/fastq/{sample}.fq.gz",
+        fastq_index=multiext("results/fastq/{sample}.fq.gz",'.index','.index.fai','.index.gzi','.index.readdb'),
         bam="results/alignments/{sample}.splice.bam",
-        index="results/fastq/{sample}.fq.gz.index"
+        bai="results/alignments/{sample}.splice.bam.bai",
     output:
         polya_tsv="results/polya/{sample}.tsv.gz",
     params:
-        genome=config['reference']['genome_fasta']
+        genome = config['reference']['genome_fasta']
     log:
         "logs/nanopolish_polya/{sample}.log"
     threads: config['threads']['nanopolish']

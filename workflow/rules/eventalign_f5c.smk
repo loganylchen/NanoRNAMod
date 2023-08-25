@@ -1,47 +1,3 @@
-rule f5c_transcriptome_index:
-    input:
-        blow5="results/blow5/{sample}.blow5",
-        fastq="data/{sample}/fastq/pass.fq.gz",
-    output:
-        "results/blow5/{sample}.blow5.idx"
-    log:
-        "logs/f5c_index/{sample}.log"
-    benchmark:
-        "benchmarks/{sample}.f5cindex.benchmark.txt"
-    conda:
-        "../envs/f5c.yaml"
-    threads: config['threads']['f5c']
-    shell:
-        "f5c index "
-        "--slow5 {input.blow5} "
-        "{input.fastq} "
-        "-t {threads} "
-        "2>{log}"
-
-
-rule f5c_transcriptome_index:
-    input:
-        blow5="results/blow5/{sample}.blow5",
-        fastq="data/{sample}/fastq/pass.fq.gz",
-    output:
-        "results/blow5/{sample}.blow5.idx"
-    log:
-        "logs/f5c_index/{sample}.log"
-    benchmark:
-        "benchmarks/{sample}.f5cindex.benchmark.txt"
-    conda:
-        "../envs/f5c.yaml"
-    threads: config['threads']['f5c']
-    shell:
-        "f5c index "
-        "--slow5 {input.blow5} "
-        "{input.fastq} "
-        "-t {threads} "
-        "2>{log}"
-
-
-
-
 rule f5c_eventalign_nanocompore:
     input:
         fastq="data/{sample}/fastq/pass.fq.gz",
@@ -49,14 +5,15 @@ rule f5c_eventalign_nanocompore:
         csi="results/alignments/{sample}_filtered.bam.csi",
         index="results/blow5/{sample}.blow5.idx",
         blow5="results/blow5/{sample}.blow5",
-        reference=config['reference']['transcriptome_fasta']
+
     output:
         outfile="results/eventalign/{sample}_nanocompore.tsv.gz",
         completion="results/eventalign/{sample}_nanocompore.tsv.completed",
     log:
         "logs/eventalign/{sample}_nanocompore.log"
     params:
-        extra=config['params']['f5c_eventalign_nanocompore']
+        extra=config['params']['f5c_eventalign_nanocompore'],
+        reference=config['reference']['transcriptome_fasta']
     benchmark:
         "benchmarks/{sample}.eventalign_nanocompore.benchmark.txt"
     conda:
@@ -79,14 +36,15 @@ rule f5c_eventalign_xpore:
         csi="results/alignments/{sample}_filtered.bam.csi",
         index="results/blow5/{sample}.blow5.idx",
         blow5="results/blow5/{sample}.blow5",
-        reference=config['reference']['transcriptome_fasta']
+
     output:
         outfile="results/eventalign/{sample}_xpore.tsv.gz",
         completion="results/eventalign/{sample}_xpore.tsv.completed",
     log:
         "logs/eventalign/{sample}_xpore.log"
     params:
-        extra=config['params']['f5c_eventalign_xpore']
+        extra=config['params']['f5c_eventalign_xpore'],
+        reference=config['reference']['transcriptome_fasta']
     benchmark:
         "benchmarks/{sample}.eventalign_xpore.benchmark.txt"
     conda:
