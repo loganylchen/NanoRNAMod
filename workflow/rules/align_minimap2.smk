@@ -1,6 +1,5 @@
 rule minimap2_transcriptome_align:
     input:
-
         fastq="results/fastq/{sample}.fq.gz",
     output:
         bam="results/alignments/{sample}.bam",
