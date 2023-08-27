@@ -4,3 +4,4 @@ channels:
   - anaconda
 dependencies:
   - pyfastx==1.1.0
+
