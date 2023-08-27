@@ -16,8 +16,8 @@ rule read_assignment:
         read_assign_pkl="results/assembly/{sample}.lafiteread_assignment.pkl",
         fastq="results/fastq/{sample}.fq.gz"
     output:
-        read_assignment_dir=directory("results/read_assignment/{sample}"),
-        mapping_json="results/read_assignment/{sample}.json"
+        read_assignment_dir=temp(directory("results/read_assignment/{sample}_tmp")),
+        mapping_list="results/read_assignment/{sample}.list",
     params:
         transcriptome_fasta=config['reference']['transcriptome_fasta'],
     log:

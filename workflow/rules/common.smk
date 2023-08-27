@@ -31,6 +31,7 @@ def get_final_output():
     final_output = expand("results/assembly/{sample}.lafite.gtf",sample=list(samples.index))
     final_output += expand("results/polya/{sample}.tsv.gz",sample=list(samples.index))
     final_output += expand("results/alignments/{sample}.bam",sample=list(samples.index))
+    final_output += expand("results/alignments/{sample}.realign.bam",sample=list(samples.index))
     final_output += expand("results/read_assignment/{sample}.json",sample=list(samples.index))
     return final_output
 
