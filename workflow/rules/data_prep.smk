@@ -10,3 +10,22 @@ rule link_fastq:
     shell:
         "ln -s {params.relative_path} {output.fastq} && "
         "echo `date` > {log} "
+
+rule read_assignment:
+    input:
+        read_assign_pkl="results/assembly/{sample}.lafiteread_assignment.pkl",
+        fastq="results/fastq/{sample}.fq.gz"
+    output:
+        read_assignment_dir=directory("results/read_assignment/{sample}"),
+        mapping_json="results/read_assignment/{sample}.json"
+    params:
+        transcriptome_fasta=config['reference']['transcriptome_fasta'],
+    log:
+        "logs/read_assignment/{sample}.log",
+        "logs/read_assignment/{sample}.err",
+    benchmark:
+        "benchmarks/{sample}.python_read_assignment.benchmark.txt"
+    conda:
+        "../envs/pyfastx.yaml"
+    script:
+        "../scripts/read_assignment.py"
