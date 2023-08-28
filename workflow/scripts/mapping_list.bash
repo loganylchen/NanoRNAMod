@@ -5,7 +5,7 @@ date > "${snakemake_log[0]}"
 echo "Aligning sample with minimap2" 2>> "${snakemake_log[0]}"
 date >> "${snakemake_log[0]}"
 
-
+echo 'aaa' >> ${snakemake_log[0]} &&  touch ${snakemake_output[bam_list]} && touch ${snakemake_output[bam]} && touch ${snakemake_output[bai]}
 
 #minimap2 ${snakemake_params[opts]} -t ${snakemake[threads]} "${snakemake_input[reference]}" \
 #    "${snakemake_input[0]}" > "${snakemake_output[0]}" 2>> "${snakemake_log[0]}"
