@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 
-exec 2> "${snakemake_log[0]}"  # send all stderr from this script to the log file
 
 __help="
 This is my first bash script for snakemake
@@ -23,6 +22,10 @@ log: ${snakemake_log[0]}
 
 "
 
+set -x
+set -e
+mkdir -p $(dirname ${snakemake_log[0]})
+exec 2> "${snakemake_log[0]}"  # send all stderr from this script to the log file
 echo __help >> ${snakemake_log[0]}
 
 
