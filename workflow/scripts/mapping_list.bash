@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 
-
+set -x
+set -e
+touch "{snakemake_log[0]}"
 date
 
 echo "god"
 
 date
 
-echo "bed" 1>{snakemake_log[0]}
+echo "bed" 1>"{snakemake_log[0]}"
 #__help="
 #This is my first bash script for snakemake
 #So I want to print some unused sentences to test if the program is running well
