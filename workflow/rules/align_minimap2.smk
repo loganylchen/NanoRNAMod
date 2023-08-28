@@ -43,6 +43,7 @@ rule minimap2_list_align:
         "../scripts/mapping_list.bash"
 
 
+
 rule minimap2_genome_align:
     input:
         fastq="results/fastq/{sample}.fq.gz",
