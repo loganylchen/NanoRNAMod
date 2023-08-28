@@ -25,7 +25,6 @@ rule minimap2_list_align:
     input:
         mapping_list="results/read_assignment/{sample}.list",
         mapping_dir="results/read_assignment/{sample}_tmp",
-        sam_header="results/read_assignment/{sample}.samheader.txt"
     output:
         bam_list="results/read_assignment/{sample}.bamlist",
         bam="results/alignments/{sample}.realign.bam",
