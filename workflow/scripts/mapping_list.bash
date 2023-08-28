@@ -22,12 +22,11 @@ log: ${snakemake_log[0]}
 
 "
 
-set -x
-set -e
-mkdir -p $(dirname ${snakemake_log[0]})
-exec 2> "${snakemake_log[0]}"  # send all stderr from this script to the log file
-echo __help >> ${snakemake_log[0]}
 
+mkdir -p $(dirname ${snakemake_log[0]})
+
+echo __help >> ${snakemake_log[0]}
+echo `date` >> ${snakemake_log[0]}
 
 for line in $(cat ${snakemake_input[mapping_list]})
 do
@@ -35,7 +34,7 @@ do
     fastq=$(echo $line|awk -F "\t" "print $2");
     fasta=$(echo $line|awk -F "\t" "print $3");
     bam=$(echo $line|awk -F "\t" "print $4");
-    echo "Working on $transcript" ;
+    echo "Working on $transcript" >> ${snakemake_log[0]} ;
     minimap2 -t ${snakemake[threads]} ${snakemake_params[extra]} $fasta $fastq | samtools view -Sbh | samtools sort - -o $bam;
     samtools index $bam
 done
@@ -45,7 +44,7 @@ samtools merge -b ${snakemake_output[bam_list]} -h ${snakemake_input[mapping_dir
 samtools index ${snakemake_output[bam_list]}
 rm ${snakemake_input[mapping_dir]}/header.tmp
 
-
+echo `date` >> ${snakemake_log[0]}
 
 
 
