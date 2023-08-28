@@ -8,7 +8,6 @@ sys.stdout = open(snakemake.log[0], "w")
 sys.stderr = sys.stdout
 
 
-os.makedirs(snakemake.output[0],exist_ok=True)
 
 
 
