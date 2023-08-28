@@ -39,8 +39,11 @@ rule minimap2_list_align:
         extra=config["params"]["minimap2_transcriptome"],
         transcriptome_fasta=config['reference']['transcriptome_fasta']
     threads: config['threads']['minimap2']
-    script:
-        "../scripts/mapping_list.bash"
+    shell:
+        "echo 'aaa' > {log} &&"
+        "touch {output.bam_list} && touch {output.bam} && touch {output.bai} "
+    # script:
+    #     "../scripts/mapping_list.bash"
 
 
 
