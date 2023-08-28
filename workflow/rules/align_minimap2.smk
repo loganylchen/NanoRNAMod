@@ -39,8 +39,8 @@ rule minimap2_list_align:
         extra=config["params"]["minimap2_transcriptome"],
         transcriptome_fasta=config['reference']['transcriptome_fasta']
     threads: config['threads']['minimap2']
-    script:
-        "../scripts/mapping_list.py"
+    wrapper:
+        "file:../wrappers/minimap2"
 
 
 
