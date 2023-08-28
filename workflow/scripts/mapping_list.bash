@@ -24,9 +24,11 @@ log: ${snakemake_log[0]}
 
 
 mkdir -p $(dirname ${snakemake_log[0]})
+exec 1>${snakemake_log[0]} 2>&1
+
+echo `date` >> ${snakemake_log[0]}
 
 echo __help >> ${snakemake_log[0]}
-echo `date` >> ${snakemake_log[0]}
 
 for line in $(cat ${snakemake_input[mapping_list]})
 do
