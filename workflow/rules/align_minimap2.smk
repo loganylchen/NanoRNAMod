@@ -40,23 +40,10 @@ rule minimap2_list_align:
         transcriptome_fasta=config['reference']['transcriptome_fasta']
     threads: config['threads']['minimap2']
     shell:
-        """
-for line in $(cat {input.mapping_list})
-do
-    trnascript=$(echo $line|awk -F '\t' 'print $1');
-    fastq=$(echo $line|awk -F '\t' 'print $2');
-    fasta=$(echo $line|awk -F '\t' 'print $3');
-    bam=$(echo $line|awk -F '\t' 'print $4');
-    echo "Working on $transcript" >> {log} ;
-    minimap2 -t {threads} {params.extra} $fasta $fastq | samtools view -Sbh | samtools sort - -o $bam;
-    samtools index $bam
-done
-awk -F "\t" "print $4" {input.mapping_list} > {output.bam_list}
-awk -F "\t" 'print @SQ\tSN:$1\tLN:$2' {params.transcriptome_fasta}.fai > {input.mapping_dir}/header.tmp
-samtools merge -b {output.bam_list} -h {input.mapping_dir}/header.tmp | samtools sort - -o {output.bam} ;
-samtools index ${output.bam}
-rm {input.mapping_dir}/header.tmp
-        """
+        "scripts/mapping_list.bash -m {input.mapping_list} "
+        "-d {input.mapping_dir} -t {threads} -b {output.bam} "
+        "-l {output.bam_list} -p '{params.extra}' -r {params.transcriptome_fasta} 2>{log}"
+
 
 rule minimap2_genome_align:
     input:
