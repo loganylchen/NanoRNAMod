@@ -39,10 +39,8 @@ rule minimap2_list_align:
         extra=config["params"]["minimap2_transcriptome"],
         transcriptome_fasta=config['reference']['transcriptome_fasta']
     threads: config['threads']['minimap2']
-    shell:
-        "scripts/mapping_list.bash -m {input.mapping_list} "
-        "-d {input.mapping_dir} -t {threads} -b {output.bam} "
-        "-l {output.bam_list} -p '{params.extra}' -r {params.transcriptome_fasta} 2>{log}"
+    script:
+        "../scripts/mapping_list.bash"
 
 
 rule minimap2_genome_align:
