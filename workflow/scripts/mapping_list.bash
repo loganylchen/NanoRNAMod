@@ -2,7 +2,7 @@
 
 
 date > "${snakemake_log[0]}"
-echo "Aligning sample ${snakemake_wildcards[sample]} with minimap2" 2>> "${snakemake_log[0]}"
+echo "Aligning sample with minimap2" 2>> "${snakemake_log[0]}"
 date >> "${snakemake_log[0]}"
 
 
