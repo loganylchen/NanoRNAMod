@@ -22,8 +22,10 @@ os.makedirs(read_assignment_dir,exist_ok=True)
 with open(read_assign_pkl,'rb') as f:
     data = pickle.load(f)
 
-with (pyfastx.Fasta(transcriptome_fasta) as fasta_sequences, pyfastx.Fastq(fastq_sequence) as fastq_sequence,
-      open(mapping_list,'w') as mapping_list_f):
+
+fasta_sequences = pyfastx.Fasta(transcriptome_fasta)
+fastq_sequence = pyfastx.Fastq(fastq_sequence)
+with open(mapping_list,'w') as mapping_list_f:
     for transcript in fasta_sequences.keys():
         if transcript in data:
             mapping_list_f.write(f'{transcript}\t{read_assignment_dir}/{transcript}.fq.gz'
@@ -35,6 +37,7 @@ with (pyfastx.Fasta(transcriptome_fasta) as fasta_sequences, pyfastx.Fastq(fastq
                 infasta.write(fasta_sequences[transcript].seq)
                 for read in data[transcript]:
                     infastq.write(f'{fastq_sequence[read].raw}')
+
 
 
 
