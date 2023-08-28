@@ -43,7 +43,7 @@ rule minimap2_list_align:
     #     "echo 'aaa' > {log} &&"
     #     "touch {output.bam_list} && touch {output.bam} && touch {output.bai} "
     script:
-        "../scripts/mapping_list.bash"
+        "../scripts/mapping_list.py"
 
 
 
