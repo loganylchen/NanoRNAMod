@@ -12,7 +12,7 @@ threads=snakemake.threads
 
 extra = snakemake.params.get("extra", "")
 transcriptome_fasta=snakemake.params.transcriptome_fasta
-log = snakemake.log_fmt_shell(stdout=False, stderr=True)
+log = snakemake.log[0]
 
 
 
