@@ -21,9 +21,10 @@ with open(f"{snakemake.params.transcriptome_fasta}.fai", 'r') as fai, open(f"{sn
        header.write(f'@SQ\tSN:{transcript}\tLN:{length}\n')
 
 print('Merging')
-subprocess.Popen(f"samtools merge -b {snakemake.output.bam_list} -h {snakemake.input.mapping_dir}/header.tmp | samtools sort - -o {snakemake.output.bam} ",shell=True,stderr=sys.stdout,stdout=sys.stdout).communicate()
+subprocess.Popen(f"samtools merge -b {snakemake.output.bam_list} -h {snakemake.input.mapping_dir}/header.tmp -o {snakemake.input.mapping_dir}/header.tmp.bam",shell=True,stderr=sys.stdout,stdout=sys.stdout).communicate()
+subprocess.Popen(f" samtools sort {snakemake.input.mapping_dir}/header.tmp.bam -o {snakemake.output.bam} ")
 subprocess.Popen(f"samtools index {snakemake.output.bam}",shell=True,stderr=sys.stdout,stdout=sys.stdout).communicate()
-subprocess.Popen(f"rm {snakemake.input.mapping_dir}/header.tmp",shell=True,stderr=sys.stdout,stdout=sys.stdout).communicate()
+subprocess.Popen(f"rm {snakemake.input.mapping_dir}/header.tmp {snakemake.input.mapping_dir}/header.tmp.bam",shell=True,stderr=sys.stdout,stdout=sys.stdout).communicate()
 
 
 
