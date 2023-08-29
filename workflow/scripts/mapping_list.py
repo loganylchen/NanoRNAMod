@@ -1,4 +1,5 @@
 import sys
+import subprocess
 sys.stdout = open(snakemake.log[0], "w")
 sys.stderr = sys.stdout
 
