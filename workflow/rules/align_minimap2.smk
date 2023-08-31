@@ -26,7 +26,7 @@ rule minimap2_list_align:
         mapping_list="results/read_assignment/{sample}.list",
         mapping_dir="results/read_assignment/{sample}_tmp",
     output:
-        bam_list="results/read_assignment/{sample}.bamlist",
+        bam_list=temp("results/read_assignment/{sample}.bamlist"),
         bam="results/alignments/{sample}.realign.bam",
         bai="results/alignments/{sample}.realign.bam.bai",
     log:
