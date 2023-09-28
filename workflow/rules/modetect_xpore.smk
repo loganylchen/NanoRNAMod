@@ -32,6 +32,13 @@ rule xpore_config:
     script:
         "../scripts/xpore_config.py"
 
+# rule xpore_batch_config:
+#     input:
+#         control_dirs=expand("results/dataprep/{control}_xpore_dataprep",control=controls),
+#         native_dirs=expand("results/dataprep/{native}_xpore_dataprep",native=natives)
+#     output:
+#         conf=e"results/xpore/Batch_{native_list}_{control_list}.xpore_config.yaml"
+
 rule xpore_run:
     input:
         "results/xpore/{native}_{control}.xpore_config.yaml"
