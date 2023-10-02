@@ -12,6 +12,7 @@ params:
   f5c_eventalign_xpore: "--signal-index --scale-events --min-recalib-events 50 --min-mapq 0 --rna "
   nanocompore: "--logit --min_ref_length 50 --overwrite "
   baleen: " --min-mapq 20 --read-number-threshold 20 --padding 3  "
+  lafite: ""
 
 threads:
   minimap2: 12
