@@ -23,6 +23,7 @@ threads:
   m6anet: 32
   nanocompore: 12
   baleen: 12
+  lafite: 20
 
 
 reference:
