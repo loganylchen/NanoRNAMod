@@ -23,6 +23,8 @@ else:
     native_samples = list(samples.loc[samples['Condition']=='Native',:].index)
     control_samples = list(samples.loc[samples['Condition']=='Control',:].index)
     comparisons = [f'{ns}_{cs}' for ns in native_samples for cs in control_samples]
+    control_list= '-'.join(control_samples)
+    native_list = '-'.join(native_samples)
 
 
 def get_final_output():
@@ -34,6 +36,7 @@ def get_final_output():
     final_output += expand("results/alignments/{sample}.bam",sample=list(samples.index))
     final_output += expand("results/alignments/{sample}.realign.bam",sample=list(samples.index))
     final_output += expand("results/read_assignment/{sample}.list",sample=list(samples.index))
+    final_output += f"results/xpore/Batch_{native_list}_{control_list}.xpore_config.yaml"
     return final_output
 
 
