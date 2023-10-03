@@ -6,6 +6,12 @@ from snakemake.logging import logger
 
 validate(config, schema="../schemas/config.schema.yaml")
 
+wildcard_constraints:
+    sample="[\da-zA-Z]+",
+    control="[\da-zA-Z]+",
+    native="[\da-zA-Z]+"
+
+
 
 # loading samples
 samples = (
