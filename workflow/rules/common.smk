@@ -28,7 +28,7 @@ else:
 
 def get_nanocompore_list(sample_list):
     nanocompore_list = [f"results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv" for sample in sample_list]
-    return ' '.join(nanocompore_list)
+    return ','.join(nanocompore_list)
 
 
 
