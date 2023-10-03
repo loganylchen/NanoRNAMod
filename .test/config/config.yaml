@@ -30,7 +30,7 @@ threads:
 
 
 reference:
-  genome_fasta: genome.fa
+  genome_fasta: data/ref.fasta
   transcriptome_fasta: data/ref.fasta
   transcriptome_gtf: transcriptome.gtf
 
