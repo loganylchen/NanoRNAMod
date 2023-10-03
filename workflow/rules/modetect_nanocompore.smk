@@ -49,3 +49,31 @@ rule nanocompore:
         "--outpath {output} "
         "--outprefix {params.prefix} "
         "--overwrite  2>{log}"
+
+rule nanocompore_group:
+    input:
+        control_file=get_nanocompore_list(control_samples),
+        native_file=get_nanocompore_list(native_samples),
+        reference=config['reference']['transcriptome_fasta']
+    output:
+        directory("results/nanocompore/Group_{native_list}_{control_list}")
+    params:
+        prefix="Group_{native_list}_{control_list}",
+        extra=config['params']['nanocompore']
+    log:
+        stdout="logs/nanocompore/Group_{native_list}_{control_list}.log"
+    benchmark:
+        "benchmarks/Group_{native_list}_{control_list}.nanocompore.benchmark.txt"
+    conda:
+        "../envs/nanocompore.yaml"
+    shell:
+        "nanocompore sampcomp "
+        "--file_list1 {input.control_file} "
+        "--file_list2 {input.native_file} "
+        "--label1 Control "
+        "--label2 Native "
+        "{params.extra} "
+        "--fasta {input.reference} "
+        "--outpath {output} "
+        "--outprefix {params.prefix} "
+        "--overwrite  2>{log}"
