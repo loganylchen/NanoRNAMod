@@ -52,16 +52,16 @@ rule nanocompore:
 
 rule nanocompore_group:
     input:
-        control_file=expand("results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv",sample=control_list),
-        native_file=expand("results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv",sample=native_list),
+        control_file=expand("results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv",sample=control_samples),
+        native_file=expand("results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv",sample=native_samples),
         reference=config['reference']['transcriptome_fasta']
     output:
         directory("results/nanocompore/Group_{native_list}_{control_list}")
     params:
         prefix="Group_{native_list}_{control_list}",
         extra=config['params']['nanocompore'],
-        control_files=get_nanocompore_list(control_list),
-        native_files=get_nanocompore_list(native_list),
+        control_files=get_nanocompore_list(control_samples),
+        native_files=get_nanocompore_list(native_samples),
     log:
         stdout="logs/nanocompore/Group_{native_list}_{control_list}.log"
     benchmark:
