@@ -47,6 +47,7 @@ def get_final_output():
     final_output += expand("results/alignments/{sample}.bam",sample=list(samples.index))
     final_output += expand("results/alignments/{sample}.realign.bam",sample=list(samples.index))
     final_output += expand("results/read_assignment/{sample}.list",sample=list(samples.index))
+    final_output += expand("results/eventalign/{sample}_baleen.tsv.gz",sample=list(samples.index))
     final_output += [f"results/xpore/Groups/{native_list}_{control_list}.xpore_config.yaml"]
     final_output += [f"results/xpore/Groups/{native_list}_{control_list}/majority_direction_kmer_diffmod.table",f"results/nanocompore/Group_{native_list}_{control_list}"]
     return final_output
