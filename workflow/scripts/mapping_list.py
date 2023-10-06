@@ -32,6 +32,7 @@ print('Merging')
 
 with open(snakemake.output.bam_list, 'w') as bam_list, open(f'{snakemake.output.bam_list}.2round.tmp', 'w') as round2merge_list:
     for i,bam_sublist_key in enumerate(bam_sublist.keys()):
+        print(f'As too many bams listing here, so we seperate them into different subbam, this is the {i+1} bam')
         with open(f'{snakemake.output.bam_list}.tmp', 'w') as tmp_bam_list:
             tmp_bam_list.write('\n'.join(bam_sublist[bam_sublist_key]))
             bam_list.write('\n'.join(bam_sublist[bam_sublist_key]))
