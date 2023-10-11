@@ -66,7 +66,7 @@ rule f5c_eventalign_baleen:
     input:
         fastq="results/fastq/{sample}.fq.gz",
         fastq_index=multiext("results/fastq/{sample}.fq.gz",'.index','.index.fai','.index.gzi','.index.readdb'),
-        bam="results/alignments/{sample}.realign.bam.bam",
+        bam="results/alignments/{sample}.realign.bam",
         bai="results/alignments/{sample}_filtered.bam.bai",
         index="results/blow5/{sample}.blow5.idx",
         blow5="results/blow5/{sample}.blow5",
