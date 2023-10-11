@@ -20,10 +20,6 @@ rule baleen_reads_sampling:
         "{params.extra} "
 
 
-
-
-
-
 rule baleen_rmd:
     input:
         native_bam="results/alignments/{native}_filtered.bam",
