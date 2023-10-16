@@ -19,6 +19,31 @@ rule baleen_reads_sampling:
         "--output {output.bamfile} "
         "{params.extra} "
 
+rule baleen_run:
+    input:
+        native_bam="results/alignments/{native}.realign.bam",
+        native_bai="results/alignments/{native}.realign.bam.bai",
+        native_eventalign="results/eventalign/{native}_baleen.tsv.bz2",
+        control_eventalign="results/eventalign/{control}_baleen.tsv.bz2",
+    output:
+        outdir=directory("results/baleen/{native}_{control}"),
+        results="results/baleen/{native}_{control}/modification/result_genome.tsv"
+    params:
+        reference = config['reference']['transcriptome_fasta'],
+        gtf = config['reference']['transcriptome_gtf'],
+        extra = config['params']['baleen']
+    container:
+        "docker://btrspg/baleen:dev"
+    threads: config['threads']['baleen']
+    log:
+        "logs/baleen/{native}_{control}.log"
+    shell:
+        "Baleen.py --control-eventalign {input.control_eventalign} "
+        "--native-eventalign {input.native_eventalign} "
+        "--native-bam {input.native_bam} "
+        "--gtf {params.gtf} "
+        "--ref-fasta {params.reference} "
+        "--threads {threads} --output-dir {output} > {log}"
 
 rule baleen_rmd:
     input:
