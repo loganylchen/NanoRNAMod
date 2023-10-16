@@ -12,7 +12,7 @@ params:
   f5c_eventalign_baleen: "--print-read-names --signal-index --scale-events --min-mapq 0 --min-recalib-events 50 --samples --rna "
   f5c_eventalign_xpore: "--signal-index --scale-events --min-recalib-events 50 --min-mapq 0 --rna "
   nanocompore: "--logit --min_ref_length 50 --overwrite --min_coverage 5 "
-  baleen: "  --min-mapq 20 --read-number-threshold 20 --padding 3   "
+  baleen: "  --normalized --sample 100    "
   baleen_bf: ""
   lafite: ""
 
