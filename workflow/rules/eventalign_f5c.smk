@@ -71,7 +71,7 @@ rule f5c_eventalign_baleen:
         index="results/blow5/{sample}.blow5.idx",
         blow5="results/blow5/{sample}.blow5",
     output:
-        outfile="results/eventalign/{sample}_baleen.tsv.gz",
+        outfile="results/eventalign/{sample}_baleen.tsv.bz2",
         completion="results/eventalign/{sample}_baleen.tsv.completed",
     log:
         "logs/eventalign/{sample}_baleen.log"
