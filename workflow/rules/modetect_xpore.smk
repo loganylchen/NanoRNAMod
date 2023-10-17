@@ -39,7 +39,7 @@ rule xpore_group_config:
     output:
         conf="results/xpore/Groups/{native_list}_{control_list}.xpore_config.yaml"
     params:
-        "results/xpore/Groups_{native_list}_{control_list}"
+        "results/xpore/Groups/{native_list}_{control_list}"
     log:
         "logs/xpore_config/Groups_{native_list}_{control_list}.log"
     script:
