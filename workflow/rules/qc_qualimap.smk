@@ -14,9 +14,10 @@ rule qualimap_rnaseq:
     conda:
         "../envs/qualimap.yaml"
     shell:
-        "qualimap rnaseq -b {input.bam} "
+        "qualimap rnaseq -bam {input.bam} "
         "-gtf {params.reference_gtf} "
         "-outdir {output.output_dir} "
-        "-outfile {params.output_file} > {log}"
+        "-outfile {params.output_file} "
+        "-outformat PDF:HTML > {log}"
 
 
