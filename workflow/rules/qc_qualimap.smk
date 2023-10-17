@@ -2,9 +2,9 @@ rule qualimap_rnaseq:
     input:
         bam="results/alignments/{sample}.splice.bam",
     output:
-        output_dir = directory("results/qc/{sample}"),
         report = "results/qc/{sample}/{sample}_rnaseq.pdf"
     params:
+        output_dir = directory("results/qc/{sample}"),
         reference_gtf=config['reference']['transcriptome_gtf'],
         output_file="{sample}_rnaseq.pdf"
     benchmark:
@@ -16,7 +16,7 @@ rule qualimap_rnaseq:
     shell:
         "qualimap rnaseq -bam {input.bam} "
         "-gtf {params.reference_gtf} "
-        "-outdir {output.output_dir} "
+        "-outdir {params.output_dir} "
         "-outfile {params.output_file} "
         "-outformat PDF:HTML > {log}"
 
