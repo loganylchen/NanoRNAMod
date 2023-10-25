@@ -17,7 +17,7 @@ rule qualimap_rnaseq:
         "../envs/qualimap.yaml"
     resources:
         mem='50G',
-        javaopt="-Djava.io.tmpdir=results/tmp/"
+        javaopt="-Djava.awt.headless=true -Djava.io.tmpdir=results/tmp/"
     shell:
         "export JAVA_OPTS='{resources.javaopt}' && "
         "qualimap rnaseq -bam {input.bam} "
