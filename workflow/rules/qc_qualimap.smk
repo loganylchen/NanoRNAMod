@@ -1,3 +1,5 @@
+import snakemake.resources
+
 rule qualimap_rnaseq:
     input:
         bam="results/alignments/{sample}.splice.bam",
@@ -13,11 +15,15 @@ rule qualimap_rnaseq:
         "logs/qc/{sample}_qualimap.log"
     conda:
         "../envs/qualimap.yaml"
+    resources:
+        mem='50G',
+        javaopt="-Djava.io.tmpdir=results/qc/{sample}"
     shell:
+        "export JAVA_OPTS='{resources.javaopt}' && "
         "qualimap rnaseq -bam {input.bam} "
         "-gtf {params.reference_gtf} "
         "-outdir {params.output_dir} "
         "-outfile {params.output_file} "
-        "-outformat PDF:HTML > {log}"
+        "-outformat PDF:HTML --java-mem-size={resources.mem}> {log}"
 
 
