@@ -43,7 +43,7 @@ rule baleen_run:
         "--native-bam {input.native_bam} "
         "--gtf {params.gtf} "
         "--ref-fasta {params.reference} "
-        "--threads {threads} --output-dir {output} > {log}"
+        "--threads {threads} --output-dir {output.outdir} > {log}"
 
 rule baleen_rmd:
     input:
