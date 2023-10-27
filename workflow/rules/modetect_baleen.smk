@@ -42,7 +42,7 @@ rule baleen_run:
         "--native-eventalign {input.native_eventalign} "
         "--native-bam {input.native_bam} "
         "--gtf {params.gtf} "
-        "--ref-fasta {params.reference} "
+        "--ref-fasta {params.reference} {params.extra} "
         "--threads {threads} --output-dir {output.outdir} > {log}"
 
 rule baleen_rmd:
