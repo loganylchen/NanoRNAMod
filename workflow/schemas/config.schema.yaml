@@ -86,12 +86,17 @@ properties:
         type: integer
       nanocompore:
         type: integer
+
+realign:
+  type: boolean
+
 required:
   - samples
   - params
   - reference
   - threads
   - tools
+  - realign
 
 
 

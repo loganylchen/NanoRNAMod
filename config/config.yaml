@@ -36,6 +36,8 @@ reference:
   transcriptome_gtf: transcriptome.gtf
 
 
+realign: True
+
 tools:
   tombo_lsc:
     activate: True
