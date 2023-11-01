@@ -2,6 +2,4 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - pip
-  - pip:
-      - m6anet==1.1.1
+  - m6anet =1.1.1
