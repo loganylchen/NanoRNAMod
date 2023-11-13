@@ -4,7 +4,7 @@ rule samtools_filter_mapped:
         csi="results/alignments/{sample}.bam.csi"
     output:
         bam="results/alignments/{sample}_filtered.bam",
-        bai="results/alignments/{sample}_filtered.bam.csi"
+        bai="results/alignments/{sample}_filtered.bam.bai"
     log:
         "logs/readfiltering/{sample}.log"
     conda:
@@ -12,4 +12,5 @@ rule samtools_filter_mapped:
     params:
         extra=config['params']['samtools_filtering']
     shell:
-        "samtools view -Sbh {params.extra} --write-index -o {output.bam} {input.bam} 2>{log}"
+        "samtools view -Sbh {params.extra} --write-index -o {output.bam} {input.bam} 2>{log} && "
+        "samtools index {output.bam} "
