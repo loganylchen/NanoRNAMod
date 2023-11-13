@@ -4,7 +4,8 @@ rule samtools_filter_mapped:
         csi="results/alignments/{sample}.bam.csi"
     output:
         bam="results/alignments/{sample}_filtered.bam",
-        bai="results/alignments/{sample}_filtered.bam.bai"
+        bai="results/alignments/{sample}_filtered.bam.bai",
+        csi="results/alignments/{sample}_filtered.bam.csi",
     log:
         "logs/readfiltering/{sample}.log"
     conda:
