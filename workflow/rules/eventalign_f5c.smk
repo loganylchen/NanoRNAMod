@@ -3,7 +3,7 @@ rule f5c_eventalign_nanocompore:
         fastq="results/fastq/{sample}.fq.gz",
         fastq_index=multiext("results/fastq/{sample}.fq.gz",'.index','.index.fai','.index.gzi','.index.readdb'),
         bam="results/alignments/{sample}_filtered.bam",
-        csi="results/alignments/{sample}_filtered.bam.csi",
+        bai="results/alignments/{sample}_filtered.bam.bai",
         index="results/blow5/{sample}.blow5.idx",
         blow5="results/blow5/{sample}.blow5",
 
@@ -35,7 +35,7 @@ rule f5c_eventalign_xpore:
         fastq="results/fastq/{sample}.fq.gz",
         fastq_index=multiext("results/fastq/{sample}.fq.gz",'.index','.index.fai','.index.gzi','.index.readdb'),
         bam="results/alignments/{sample}_filtered.bam",
-        csi="results/alignments/{sample}_filtered.bam.csi",
+        bai="results/alignments/{sample}_filtered.bam.bai",
         index="results/blow5/{sample}.blow5.idx",
         blow5="results/blow5/{sample}.blow5",
 
