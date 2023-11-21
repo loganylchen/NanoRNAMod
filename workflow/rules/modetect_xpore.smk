@@ -2,20 +2,22 @@ rule xpore_dataprep:
     input:
         completion="results/eventalign/{sample}_xpore.tsv.completed",
         eventalign="results/eventalign/{sample}_xpore.tsv.gz",
-        reference=config['reference']['transcriptome_fasta']
+        reference=config['reference']['transcriptome_fasta'],
     output:
         directory("results/dataprep/{sample}_xpore_dataprep")
     log:
         "logs/xpore_dataprep/{sample}.log"
     benchmark:
         "benchmarks/{sample}.xpore_dataprep.benchmark.txt"
-
+    params:
+        extra=f"--gtf_or_gff {config['reference']['transcriptome_gtf']}" if config['params']['xpore_dataprep'] == 'genome' else ""
     conda:
         "../envs/xpore.yaml"
     shell:
         "gzip -dc {input.eventalign} > {input.eventalign}.xpore.tmp && xpore dataprep "
         "--eventalign {input.eventalign}.xpore.tmp "
         "--transcript_fasta {input.reference} "
+        "{params.extra} "
         "--out_dir {output} 2>{log} && rm {input.eventalign}.xpore.tmp"
 
 
