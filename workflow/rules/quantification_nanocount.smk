@@ -2,7 +2,7 @@ rule quant_nanocount:
     input:
         bam="results/alignments/{sample}.bam",
     output:
-        count="results/quantification/{sample}.tx_counts.tsv"
+        count_tsv="results/quantification/{sample}.tx_counts.tsv"
     benchmark:
         "benchmarks/{sample}.quantification_nanocount.benchmark.txt"
     log:
