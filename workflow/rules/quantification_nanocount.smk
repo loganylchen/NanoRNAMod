@@ -12,6 +12,6 @@ rule quant_nanocount:
     shell:
         "NanoCount -i {input.bam}  "
         "--extra_tx_info "
-        "-o {output.count} > {log}"
+        "-o {output.count_tsv} > {log}"
 
 
