@@ -1,4 +1,4 @@
-rule quantification_nanocount:
+rule quant_nanocount:
     input:
         bam="results/alignments/{sample}.bam",
     output:
