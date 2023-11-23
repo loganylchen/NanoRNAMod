@@ -23,7 +23,7 @@ rule m6anet_inference:
         "results/dataprep/{sample}_m6anet_dataprep"
     output:
         dir=directory("results/m6anet/{sample}"),
-        result="results/m6anet/{sample}/data.result.csv.gz"
+        result="results/m6anet/{sample}/data.site_proba.csv"
     log:
         "logs/m6anet_inference/{sample}.log"
     benchmark:
