@@ -40,7 +40,7 @@ rule nanocompore_final:
 
 rule m6anet_final:
     input:
-        "results/m6anet/{native}/data.result.csv.gz"
+        "results/m6anet/{native}/data.site_proba.csv"
     output:
         "results/modifications/{native}_{control}/m6anet.tsv.gz"
     log:
