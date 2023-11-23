@@ -13,9 +13,9 @@ rule dataprep_m6anet:
         "../envs/m6anet.yaml"
     shell:
         "gzip -dc {input.eventalign} > {input.eventalign}.m6anet.tmp &&"
-        "m6anet-dataprep "
+        "m6anet dataprep "
         "--eventalign {input.eventalign}.m6anet.tmp "
-        "--n_processes {threads} "
+        "--n_processes {threads} --compress "
         "--out_dir {output} 2>{log} && rm {input.eventalign}.m6anet.tmp"
 
 rule m6anet_inference:
@@ -32,8 +32,7 @@ rule m6anet_inference:
     conda:
         "../envs/m6anet.yaml"
     shell:
-        "m6anet-run_inference "
+        "m6anet inference "
         "--input_dir {input} "
         "--out_dir {output.dir} "
-        "--infer_mod_rate "
         "--n_processes {threads}  2>{log}"
