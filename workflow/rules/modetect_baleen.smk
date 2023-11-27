@@ -21,8 +21,8 @@ rule baleen_reads_sampling:
 
 rule baleen_run:
     input:
-        native_bam="results/alignments/{native}.realign.bam",
-        native_bai="results/alignments/{native}.realign.bam.bai",
+        native_bam="results/alignments/{native}.realign.bam" if config['realign'] else "results/alignments/{native}_filtered.bam",
+        native_bai="results/alignments/{native}.realign.bam.bai" if config['realign'] else "results/alignments/{native}_filtered.bam.bai",
         native_eventalign="results/eventalign/{native}_baleen.tsv.bz2",
         control_eventalign="results/eventalign/{control}_baleen.tsv.bz2",
     output:
@@ -103,9 +103,7 @@ rule baleen_dataprep:
         completion="results/eventalign/{sample}_baleen.completed"
     output:
         directory("results/dataprep/{sample}_baleen_dataprep"),
-        "results/dataprep/{sample}_baleen_dataprep/dataprep/{sample}/data.index"
-    params:
-        label="{sample}"
+        "results/dataprep/{sample}_baleen_dataprep/data.nason"
     container:
         "docker://btrspg/baleen:dev"
     threads: config['threads']['baleen']
@@ -114,6 +112,9 @@ rule baleen_dataprep:
         "logs/baleen_dataprep/{sample}.error"
     script:
         "../scripts/baleen_dataprep.py"
+
+
+
 
 
 rule baleen_test:
