@@ -80,27 +80,11 @@ rule baleen_rmd:
         "--threads {threads} "
         "{params.extra} 2> {log} && echo `date` > {output.completion}"
 
-rule baleen:
-    input:
-        native_event = "results/eventalign/{native}_baleen.tsv.bz2",
-        control_event= "results/eventalign/{control}_baleen.tsv.bz2",
-    output:
-        outdir=directory("results/baleen/{native}_{control}"),
-        baleen_mod="results/baleen/{native}_{control}/molecule_probas.json"
-    params:
-        extra=config['params']['baleen']
-    container:
-        "docker://btrspg/baleen:dev"
-    threads: config['threads']['baleen']
-    log:
-        "logs/baleen/{native}_{control}.log"
-    shell:
-        "baleen-RMD "
-        ""
+
 rule baleen_dataprep:
     input:
         eventalign="results/eventalign/{sample}_baleen.tsv.bz2",
-        completion="results/eventalign/{sample}_baleen.completed"
+        completion="results/eventalign/{sample}_baleen.tsv.completed"
     output:
         directory("results/dataprep/{sample}_baleen_dataprep"),
         "results/dataprep/{sample}_baleen_dataprep/data.nason"
