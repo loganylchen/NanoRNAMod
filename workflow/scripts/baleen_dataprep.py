@@ -1,18 +1,24 @@
 
-import yaml
 import sys
 import os
-from baleen.workflows import data_prep
 
+from baleen.utils.squiggle.nanopolish import eventalign_index
 
 sys.stderr = open(snakemake.log[1], "w")
 sys.stdout = open(snakemake.log[0], "w")
 
+eventalign_file = snakemake.input.eventalign
+outdir=snakemake.output[0]
 
 
-os.makedirs(snakemake.output[0],exist_ok=True)
-print(snakemake.input.eventalign,snakemake.output[0], snakemake.params.label,snakemake.threads)
-data_prep(snakemake.input.eventalign,snakemake.output[0], snakemake.params.label,threads=snakemake.threads,verbose=False)
+compress_types = ['bz2','gz']
+file_type = os.path.basename(eventalign_file).split('.')[-1]
+if file_type not in compress_types:
+    file_type = None
+
+os.makedirs(outdir,exist_ok=True)
+
+print(eventalign_index(eventalign_file,outdir,chunksize=100000,compress=file_type,threads=snakemake.threads))
 
 
 
