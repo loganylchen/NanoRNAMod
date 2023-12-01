@@ -85,8 +85,8 @@ rule baleen_dataprep:
     input:
         eventalign="results/eventalign/{sample}_baleen.tsv.bz2",
         completion="results/eventalign/{sample}_baleen.tsv.completed",
-        gtf="config['reference']['transcriptome_gtf']",
-        reference="config['reference']['transcriptome_fasta']"
+        gtf=config['reference']['transcriptome_gtf'],
+        reference=config['reference']['transcriptome_fasta']
     output:
         outdir=directory("results/dataprep/{sample}_baleen_dataprep"),
         data="results/dataprep/{sample}_baleen_dataprep/data.nason"
