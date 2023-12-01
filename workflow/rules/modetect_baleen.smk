@@ -84,18 +84,25 @@ rule baleen_rmd:
 rule baleen_dataprep:
     input:
         eventalign="results/eventalign/{sample}_baleen.tsv.bz2",
-        completion="results/eventalign/{sample}_baleen.tsv.completed"
+        completion="results/eventalign/{sample}_baleen.tsv.completed",
+        gtf="config['reference']['transcriptome_gtf']",
+        reference="config['reference']['transcriptome_fasta']"
     output:
-        directory("results/dataprep/{sample}_baleen_dataprep"),
-        "results/dataprep/{sample}_baleen_dataprep/data.nason"
+        outdir=directory("results/dataprep/{sample}_baleen_dataprep"),
+        data="results/dataprep/{sample}_baleen_dataprep/data.nason"
     container:
         "docker://btrspg/baleen:dev"
     threads: config['threads']['baleen']
     log:
-        "logs/baleen_dataprep/{sample}.log",
-        "logs/baleen_dataprep/{sample}.error"
-    script:
-        "../scripts/baleen_dataprep.py"
+        out="logs/baleen_dataprep/{sample}.log",
+        err="logs/baleen_dataprep/{sample}.error"
+    shell:
+        "Baleen.py dataprep "
+        "--eventalign-file {input.eventalign} "
+        "--gtf {input.gtf} "
+        "--ref-fasta {input.reference} "
+        "--output-dir {output.outdir} "
+        "--threads {threads} 1>{log.out} 2>{log.err} "
 
 
 
