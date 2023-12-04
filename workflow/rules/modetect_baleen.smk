@@ -88,9 +88,12 @@ rule baleen_dataprep:
         gtf=config['reference']['transcriptome_gtf'],
         reference=config['reference']['transcriptome_fasta']
     output:
-        outdir=directory("results/dataprep/{sample}_baleen_dataprep"),
-        data="results/dataprep/{sample}_baleen_dataprep/data.nason"
+        data="results/dataprep/{sample}_baleen_dataprep/data.nason",
+        data_index="results/dataprep/{sample}_baleen_dataprep/data.index",
+        data_md5="results/dataprep/{sample}_baleen_dataprep/data.nason.md5",
+        data_index_md5="results/dataprep/{sample}_baleen_dataprep/data.index.md5",
     params:
+        outdir = directory("results/dataprep/{sample}_baleen_dataprep"),
         extra=config['params']['baleen_dataprep']
     container:
         "docker://btrspg/baleen:dev"
@@ -103,7 +106,7 @@ rule baleen_dataprep:
         "--eventalign-file {input.eventalign} "
         "--gtf {input.gtf} "
         "--ref-fasta {input.reference} "
-        "--output-dir {output.outdir} {params.extra} "
+        "--output-dir {params.outdir} {params.extra} "
         "--threads {threads} 1>{log.out} 2>{log.err} "
 
 
