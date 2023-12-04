@@ -101,7 +101,7 @@ rule baleen_dataprep:
         "--eventalign-file {input.eventalign} "
         "--gtf {input.gtf} "
         "--ref-fasta {input.reference} "
-        "--output-dir {output.outdir} "
+        "--output-dir {output.outdir} --verbose "
         "--threads {threads} 1>{log.out} 2>{log.err} "
 
 
