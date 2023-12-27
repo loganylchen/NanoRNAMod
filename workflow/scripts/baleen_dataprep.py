@@ -1,28 +1,18 @@
-
 import sys
 import os
 
-from baleen.utils.squiggle.nanopolish import eventalign_index
+from baleen.fio.eventalign import Eventalign
 
-sys.stderr = open(snakemake.log[1], "w")
-sys.stdout = open(snakemake.log[0], "w")
+sys.stderr = open(snakemake.log.err, "w")
+sys.stdout = open(snakemake.log.out, "w")
 
 eventalign_file = snakemake.input.eventalign
-outdir=snakemake.output[0]
+outdir = os.path.dirname(snakemake.output.data)
+label = snakemake.params.label
 
+threads = snakemake.threads
 
-compress_types = ['bz2','gz']
-file_type = os.path.basename(eventalign_file).split('.')[-1]
-if file_type not in compress_types:
-    file_type = None
-
-os.makedirs(outdir,exist_ok=True)
-
-print(eventalign_index(eventalign_file,outdir,chunksize=100000,compress=file_type,threads=snakemake.threads))
-
-
-
-
-
-
-
+eventalign = Eventalign(eventalign_file, threads=threads)
+eventalign.print_info()
+eventalign.index(outdir)
+eventalign.print_info()
