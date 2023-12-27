@@ -85,29 +85,20 @@ rule baleen_dataprep:
     input:
         eventalign="results/eventalign/{sample}_baleen.tsv.bz2",
         completion="results/eventalign/{sample}_baleen.tsv.completed",
-        gtf=config['reference']['transcriptome_gtf'],
-        reference=config['reference']['transcriptome_fasta']
     output:
-        data="results/dataprep/{sample}_baleen_dataprep/data.nason",
-        data_index="results/dataprep/{sample}_baleen_dataprep/data.index",
-        data_md5="results/dataprep/{sample}_baleen_dataprep/data.nason.md5",
-        data_index_md5="results/dataprep/{sample}_baleen_dataprep/data.index.md5",
+        data="results/dataprep/{sample}_baleen_dataprep/eventalign.index",
     params:
-        outdir = directory("results/dataprep/{sample}_baleen_dataprep"),
-        extra=config['params']['baleen_dataprep']
+        label="{sample}",
     container:
         "docker://btrspg/baleen:dev"
     threads: config['threads']['baleen']
     log:
         out="logs/baleen_dataprep/{sample}.log",
         err="logs/baleen_dataprep/{sample}.error"
-    shell:
-        "Baleen.py dataprep "
-        "--eventalign-file {input.eventalign} "
-        "--gtf {input.gtf} "
-        "--ref-fasta {input.reference} "
-        "--output-dir {params.outdir} {params.extra} "
-        "--threads {threads} 1>{log.out} 2>{log.err} "
+    script:
+        "../scripts/baleen_dataprep.py"
+
+
 
 
 
