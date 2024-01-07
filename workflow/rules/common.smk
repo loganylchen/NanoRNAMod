@@ -52,7 +52,10 @@ def get_final_output():
     # final_output += expand("results/qc/{sample}/{sample}_rnaseq.pdf",sample=list(samples.index))
     # final_output += expand("results/quantification/{sample}.tx_counts.tsv",sample=list(samples.index))
     # final_output += [f"results/xpore/Groups/{native_list}_{control_list}.xpore_config.yaml"]
-    # final_output += [f"results/xpore/Groups/{native_list}_{control_list}/majority_direction_kmer_diffmod.table",f"results/nanocompore/Group_{native_list}_{control_list}"]
+    if ['nanocompore'] in tools:
+        final_output += [f"results/nanocompore/Group_{native_list}_{control_list}"]
+    if ['xpore'] in tools:
+        final_output += [f"results/xpore/Groups/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
     return final_output
 
 
