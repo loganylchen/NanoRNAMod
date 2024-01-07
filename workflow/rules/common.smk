@@ -42,7 +42,7 @@ def get_final_output():
     tools = [tool for tool in config['tools'] if config['tools'][tool]['activate']]
     final_output = []
     final_output += expand("results/dataprep/{sample}_baleen_dataprep/eventalign.index",sample=list(samples.index))
-    # final_output += expand("results/modifications/{comp}/{tool}.tsv.gz",comp=comparisons,tool=tools)
+    final_output += expand("results/modifications/{comp}/{tool}.tsv.gz",comp=comparisons,tool=tools)
     # final_output += expand("results/assembly/{sample}.lafite.gtf",sample=list(samples.index))
     # final_output += expand("results/polya/{sample}.tsv.gz",sample=list(samples.index))
     # final_output += expand("results/alignments/{sample}.bam",sample=list(samples.index))
@@ -51,11 +51,12 @@ def get_final_output():
     # final_output += expand("results/eventalign/{sample}_baleen.tsv.bz2",sample=list(samples.index))
     # final_output += expand("results/qc/{sample}/{sample}_rnaseq.pdf",sample=list(samples.index))
     # final_output += expand("results/quantification/{sample}.tx_counts.tsv",sample=list(samples.index))
-    # final_output += [f"results/xpore/Groups/{native_list}_{control_list}.xpore_config.yaml"]
+    #
     if ['nanocompore'] in tools:
         final_output += [f"results/nanocompore/Group_{native_list}_{control_list}"]
     if ['xpore'] in tools:
         final_output += [f"results/xpore/Groups/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
+        final_output += [f"results/xpore/Groups/{native_list}_{control_list}.xpore_config.yaml"]
     return final_output
 
 
