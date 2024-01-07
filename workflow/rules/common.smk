@@ -51,8 +51,8 @@ def get_final_output():
     # final_output += expand("results/eventalign/{sample}_baleen.tsv.bz2",sample=list(samples.index))
     # final_output += expand("results/qc/{sample}/{sample}_rnaseq.pdf",sample=list(samples.index))
     # final_output += expand("results/quantification/{sample}.tx_counts.tsv",sample=list(samples.index))
-    final_output += [f"results/xpore/Groups/{native_list}_{control_list}.xpore_config.yaml"]
-    final_output += [f"results/xpore/Groups/{native_list}_{control_list}/majority_direction_kmer_diffmod.table",f"results/nanocompore/Group_{native_list}_{control_list}"]
+    # final_output += [f"results/xpore/Groups/{native_list}_{control_list}.xpore_config.yaml"]
+    # final_output += [f"results/xpore/Groups/{native_list}_{control_list}/majority_direction_kmer_diffmod.table",f"results/nanocompore/Group_{native_list}_{control_list}"]
     return final_output
 
 
