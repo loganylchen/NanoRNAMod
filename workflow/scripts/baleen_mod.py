@@ -2,45 +2,61 @@
 
 import sys
 import os
-from baleen.workflows import molecule_modification_based_on_clustering, transcriptome_2_genome
+
+from baleen.fio.eventalign import Eventalign
+from baleen.utils.bed import readBED
+from baleen.algo.mod import modcall_transcript_joblib
+
+sys.stderr = open(snakemake.log.err, "w")
+sys.stdout = open(snakemake.log.out, "w")
+
+threads=snakemake.threads
 
 
-sys.stderr = open(snakemake.log[1], "w")
-sys.stdout = open(snakemake.log[0], "w")
 
 
+native_eventalign_file= snakemake.input.native_eventalign
+native_eventalign_index_file = snakemake.input.native_eventalign_index
+control_eventalign_file= snakemake.input.control_eventalign
+control_eventalign_index_file = snakemake.input.control_eventalign_index
 
-os.makedirs(snakemake.output[0],exist_ok=True)
+native_eventalign_index_dir=os.path.dirname(native_eventalign_index_file)
+control_eventalign_index_dir=os.path.dirname(control_eventalign_index_file)
 
-control_paths = {
-    'data':snakemake.input.control_dataprep.replace('data.index','data.nason'),
-    'data_index':snakemake.input.control_dataprep
-}
+bedfile=snakemake.params.bedfile
+outdir = os.path.dirname(snakemake.output.result)
 
-native_paths = {
-    'data':snakemake.input.native_dataprep.replace('data.index','data.nason'),
-    'data_index':snakemake.input.native_dataprep
-}
 
-gtf_file=snakemake.params.transcriptome_gtf
+sample=100
+params=dict(
+    padding=1,
+    proba_method='unify',
+    coverage=0.95,
+    min_depth=30,
+    dtw_normalization='luscinia',
+    dedi_method='tsne',
+    dedi_component_n=2,
+    gmm_component_n=1,
+    cut_end=5
+)
 
-if gtf_file == '':
-    gtf_file = None
 
-params = {
-    'padding': 2,
-    'proba_method' : 'unify',
-    'normalized' :True,
-    'window_size' : 20,
-    'coverage' : 0.9
-}
+if os.path.exists(bedfile):
+    target_regions = readBED(bedfile)
+else:
+    target_regions = dict()
 
-result_dir = snakemake.output[0]
-os.makedirs(result_dir,exist_ok=True)
-molecule_json_file=molecule_modification_based_on_clustering(control_paths,native_paths,result_dir,params,threads=snakemake.threads,verbose=False)
-transcriptome_2_genome(molecule_json_file,gtf_file,result_dir,threads=snakemake.threads,verbose=False)
+native_eventalign = Eventalign(native_eventalign_file,threads=threads,force_no_check=True)
+control_eventalign = Eventalign(control_eventalign_file,threads=threads,force_no_check=True)
 
-with open(os.path.join(snakemake.output[0],'done.txt'),'w') as f:
+native_eventalign.index(native_eventalign_index_dir)
+control_eventalign.index(control_eventalign_index_dir)
+
+
+modcall_transcript_joblib(native_eventalign,control_eventalign, target_regions,threads,sample,params,outdir)
+
+
+with open(snakemake.output.result,'w') as f:
     f.write('Done!!!\n')
 
 

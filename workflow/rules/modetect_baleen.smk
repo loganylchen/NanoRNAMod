@@ -106,20 +106,20 @@ rule baleen_dataprep:
 
 rule baleen_test:
     input:
-        native_dataprep="results/dataprep/{native}_baleen_dataprep/dataprep/{native}/data.index",
-        control_dataprep="results/dataprep/{control}_baleen_dataprep/dataprep/{control}/data.index"
-        
+        native_eventalign="results/eventalign/{native}_baleen.tsv.bz2",
+        native_eventalign_index="results/dataprep/{native}_baleen_dataprep/eventalign.index",
+        control_eventalign="results/eventalign/{control}_baleen.tsv.bz2",
+        control_eventalign_index="results/dataprep/{control}_baleen_dataprep/eventalign.index",
     output:
-        directory("results/baleen/{native}_{control}"),
-        "results/baleen/{native}_{control}/done.txt"
+        result='results/baleen/{native}_{control}/done.txt'
     params:
-        transcriptome_gtf=config['reference']['transcriptome_gtf']
+        bedfile=config['target_region']
     container:
         "docker://btrspg/baleen:dev"
     threads: config['threads']['baleen']
     log:
-        "logs/baleen/N_{native}_C_{control}.log",
-        "logs/baleen/N_{native}_C_{control}.error"
+        out="logs/baleen/N_{native}_C_{control}.log",
+        err="logs/baleen/N_{native}_C_{control}.error"
     script:
         "../scripts/baleen_mod.py"
 
