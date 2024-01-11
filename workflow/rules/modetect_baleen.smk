@@ -100,10 +100,6 @@ rule baleen_dataprep:
 
 
 
-
-
-
-
 rule baleen_test:
     input:
         native_eventalign="results/eventalign/{native}_baleen.tsv.bz2",
