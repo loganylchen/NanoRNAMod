@@ -15,6 +15,7 @@ params:
   baleen: "  --min-mapq 20 --read-number-threshold 20 --padding 3   "
   baleen_bf: ""
   lafite: ""
+  xpore: "genome"
 
 
 threads:
