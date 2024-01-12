@@ -31,7 +31,7 @@ rule xpore_dataprep_genome:
     output:
         directory("results/dataprep/{sample}_xpore_dataprep_gnome")
     log:
-        "logs/xpore_dataprep/{sample}_genome.log"
+        "logs/xpore_dataprep_genome/{sample}.log"
     benchmark:
         "benchmarks/{sample}.xpore_dataprep_genome.benchmark.txt"
     params:
@@ -71,7 +71,7 @@ rule xpore_config_genome:
     params:
         "results/xpore/{native}_{control}_genome"
     log:
-        "logs/xpore_config/{native}_{control}_genome.log"
+        "logs/xpore_config_genome/{native}_{control}.log"
     script:
         "../scripts/xpore_config.py"
 
@@ -97,7 +97,7 @@ rule xpore_group_config_genome:
     params:
         "results/xpore/Groups/{native_list}_{control_list}_genome"
     log:
-        "logs/xpore_config/Groups_{native_list}_{control_list}_genome.log"
+        "logs/xpore_config_genome/Groups_{native_list}_{control_list}.log"
     script:
         "../scripts/batch_xpore_config.py"
 
@@ -122,7 +122,7 @@ rule xpore_group_run_genome:
     output:
         difftable="results/xpore/Groups/{native_list}_{control_list}_genome/diffmod.table"
     log:
-        "logs/xpore/Groups_{native_list}_{control_list}_genome.log"
+        "logs/xpore_genome/Groups_{native_list}_{control_list}.log"
     benchmark:
         "benchmarks/Groups_{native_list}_{control_list}.xpore_genome.benchmark.txt"
     conda:
@@ -150,7 +150,7 @@ rule xpore_run_genome:
     output:
         difftable="results/xpore/{native}_{control}_genome/diffmod.table"
     log:
-        "logs/xpore/{native}_{control}_genome.log"
+        "logs/xpore_genome/{native}_{control}.log"
     benchmark:
         "benchmarks/{native}_{control}.xpore_genome.benchmark.txt"
     conda:
@@ -182,7 +182,7 @@ rule xpore_postprocessing_genome:
     params:
         "results/xpore/{native}_{control}_genome"
     log:
-        "logs/xpore_postprocessing/{native}_{control}_genome.log"
+        "logs/xpore_postprocessing_genome/{native}_{control}.log"
     benchmark:
         "benchmarks/{native}_{control}.xpore_postprocessing_genome.benchmark.txt"
     conda:
@@ -215,7 +215,7 @@ rule xpore_group_postprocessing_genome:
     params:
         "results/xpore/Groups/{native_list}_{control_list}_genome"
     log:
-        "logs/xpore_postprocessing/Groups_{native_list}_{control_list}_genome.log"
+        "logs/xpore_postprocessing_genome/Groups_{native_list}_{control_list}.log"
     benchmark:
         "benchmarks/Groups_{native_list}_{control_list}.xpore_postprocessing_genome.benchmark.txt"
     conda:
