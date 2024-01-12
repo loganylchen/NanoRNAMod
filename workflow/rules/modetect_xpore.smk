@@ -29,7 +29,7 @@ rule xpore_dataprep_genome:
         transcriptome=config['reference']['transcriptome_fasta'],
         gtf=config['reference']['transcriptome_gtf']
     output:
-        directory("results/dataprep/{sample}_xpore_dataprep_gnome")
+        directory("results/dataprep/{sample}_xpore_dataprep_genome")
     log:
         "logs/xpore_dataprep_genome/{sample}.log"
     benchmark:
