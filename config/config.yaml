@@ -16,6 +16,7 @@ params:
   baleen: "  --normalized --sample 100    "
   baleen_bf: ""
   lafite: ""
+  xpore: "genome"
 
 
 threads:

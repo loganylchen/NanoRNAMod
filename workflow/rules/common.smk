@@ -57,7 +57,7 @@ def get_final_output():
         final_output += [f"results/nanocompore/Group_{native_list}_{control_list}"]
         final_output += expand("results/modifications/{comp}/nanocompore.tsv.gz",comp=comparisons)
     if 'xpore' in tools:
-        if 'genome' in config['param']['xpore']:
+        if 'genome' in config['params']['xpore']:
             final_output += expand("results/xpore/{sample}_genome/majority_direction_kmer_diffmod.table",sample=list(samples.index))
             final_output += [f"results/xpore/Groups/{native_list}_{control_list}_genome/majority_direction_kmer_diffmod.table"]
         final_output += [f"results/xpore/Groups/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
