@@ -120,7 +120,7 @@ rule xpore_group_run_genome:
     input:
         "results/xpore/Groups_genome/{native_list}_{control_list}.xpore_config_genome.yaml"
     output:
-        difftable="results/xpore/Groups_genome/{native_list}_{control_list}_genome/diffmod.table"
+        difftable="results/xpore/Groups_genome/{native_list}_{control_list}/diffmod.table"
     log:
         "logs/xpore_genome/Groups_{native_list}_{control_list}.log"
     benchmark:
