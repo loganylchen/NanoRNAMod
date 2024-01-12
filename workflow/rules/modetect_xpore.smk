@@ -69,7 +69,7 @@ rule xpore_config_genome:
     output:
         conf="results/xpore/{native}_{control}.xpore_config_genome.yaml"
     params:
-        "results/xpore/{native}_{control}_genome"
+        "results/xpore/genome/{native}_{control}"
     log:
         "logs/xpore_config_genome/{native}_{control}.log"
     script:
@@ -93,9 +93,9 @@ rule xpore_group_config_genome:
         control_dirs=expand("results/dataprep/{control}_xpore_dataprep_genome",control=control_samples),
         native_dirs=expand("results/dataprep/{native}_xpore_dataprep_genome",native=native_samples)
     output:
-        conf="results/xpore/Groups/{native_list}_{control_list}.xpore_config_genome.yaml"
+        conf="results/xpore/Groups_genome/{native_list}_{control_list}.xpore_config_genome.yaml"
     params:
-        "results/xpore/Groups/{native_list}_{control_list}_genome"
+        "results/xpore/Groups_genome/{native_list}_{control_list}"
     log:
         "logs/xpore_config_genome/Groups_{native_list}_{control_list}.log"
     script:
@@ -118,9 +118,9 @@ rule xpore_group_run:
 
 rule xpore_group_run_genome:
     input:
-        "results/xpore/Groups/{native_list}_{control_list}.xpore_config_genome.yaml"
+        "results/xpore/Groups_genome/{native_list}_{control_list}.xpore_config_genome.yaml"
     output:
-        difftable="results/xpore/Groups/{native_list}_{control_list}_genome/diffmod.table"
+        difftable="results/xpore/Groups_genome/{native_list}_{control_list}_genome/diffmod.table"
     log:
         "logs/xpore_genome/Groups_{native_list}_{control_list}.log"
     benchmark:
@@ -148,7 +148,7 @@ rule xpore_run_genome:
     input:
         "results/xpore/{native}_{control}.xpore_config_genome.yaml"
     output:
-        difftable="results/xpore/{native}_{control}_genome/diffmod.table"
+        difftable="results/xpore/genome/{native}_{control}/diffmod.table"
     log:
         "logs/xpore_genome/{native}_{control}.log"
     benchmark:
@@ -176,11 +176,11 @@ rule xpore_postprocessing:
 
 rule xpore_postprocessing_genome:
     input:
-        "results/xpore/{native}_{control}_genome/diffmod.table"
+        "results/xpore/genome/{native}_{control}/diffmod.table"
     output:
-        "results/xpore/{native}_{control}_genome/majority_direction_kmer_diffmod.table"
+        "results/xpore/genome/{native}_{control}/majority_direction_kmer_diffmod.table"
     params:
-        "results/xpore/{native}_{control}_genome"
+        "results/xpore/genome/{native}_{control}"
     log:
         "logs/xpore_postprocessing_genome/{native}_{control}.log"
     benchmark:
@@ -209,11 +209,11 @@ rule xpore_group_postprocessing:
 
 rule xpore_group_postprocessing_genome:
     input:
-        "results/xpore/Groups/{native_list}_{control_list}_genome/diffmod.table"
+        "results/xpore/Groups_genome/{native_list}_{control_list}/diffmod.table"
     output:
-        "results/xpore/Groups/{native_list}_{control_list}_genome/majority_direction_kmer_diffmod.table"
+        "results/xpore/Groups_genome/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"
     params:
-        "results/xpore/Groups/{native_list}_{control_list}_genome"
+        "results/xpore/Groups_genome/{native_list}_{control_list}"
     log:
         "logs/xpore_postprocessing_genome/Groups_{native_list}_{control_list}.log"
     benchmark:
