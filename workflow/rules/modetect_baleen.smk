@@ -91,6 +91,8 @@ rule baleen_dataprep:
         label="{sample}",
     container:
         "docker://btrspg/baleen:dev"
+    benchmark:
+        "benchmarks/{sample}.baleen_dataprep.txt",
     threads: config['threads']['baleen']
     log:
         out="logs/baleen_dataprep/{sample}.log",
@@ -112,6 +114,8 @@ rule baleen_test:
         bedfile=config['target_region']
     container:
         "docker://btrspg/baleen:dev"
+    benchmark:
+        "benchmarks/{native}_{control}.baleen_test.txt",
     threads: config['threads']['baleen']
     log:
         out="logs/baleen/N_{native}_C_{control}.log",
