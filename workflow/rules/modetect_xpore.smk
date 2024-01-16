@@ -1,7 +1,22 @@
-rule xpore_dataprep:
+rule uncompress_eventalign:
     input:
         completion="results/eventalign/{sample}_xpore.tsv.completed",
         eventalign="results/eventalign/{sample}_xpore.tsv.gz",
+    output:
+        uc_eventalign = temp("results/eventalign/{sample}_xpore.tsv.gz.tmp"),
+        uc_completion = temp("results/eventalign/{sample}_xpore.tsv.completed.tmp")
+    log:
+        "logs/uncompress_eventalign/{sample}.log"
+    benchmark:
+        "benchmarks/{sample}.uncompress_eventalign.benchmark.txt"
+    threads: 1
+    shell:
+        "gzip -dc {input.eventalign} > {output} && touch {output.uc_completion} 2>{log}"
+
+rule xpore_dataprep:
+    input:
+        completion="results/eventalign/{sample}_xpore.tsv.completed.tmp",
+        eventalign="results/eventalign/{sample}_xpore.tsv.gz.tmp",
         reference=config['reference']['transcriptome_fasta'],
     output:
         directory("results/dataprep/{sample}_xpore_dataprep")
@@ -15,18 +30,18 @@ rule xpore_dataprep:
     conda:
         "../envs/xpore.yaml"
     shell:
-        "gzip -dc {input.eventalign} > {input.eventalign}.xpore.tmp && xpore dataprep "
+        "xpore dataprep "
         "--eventalign {input.eventalign}.xpore.tmp "
         "--transcript_fasta {input.reference} --n_processes {threads} "
         "{params.extra} "
-        "--out_dir {output} 2>{log} && rm {input.eventalign}.xpore.tmp"
+        "--out_dir {output} 2>{log} "
 
 
 
 rule xpore_dataprep_genome:
     input:
-        completion="results/eventalign/{sample}_xpore.tsv.completed",
-        eventalign="results/eventalign/{sample}_xpore.tsv.gz",
+        completion="results/eventalign/{sample}_xpore.tsv.completed.tmp",
+        eventalign="results/eventalign/{sample}_xpore.tsv.gz.tmp",
         transcriptome=config['reference']['transcriptome_fasta'],
         gtf=config['reference']['transcriptome_gtf']
     output:
@@ -41,13 +56,13 @@ rule xpore_dataprep_genome:
     conda:
         "../envs/xpore.yaml"
     shell:
-        "gzip -dc {input.eventalign} > {input.eventalign}.xpore.tmp && xpore dataprep "
+        "xpore dataprep "
         "--eventalign {input.eventalign}.xpore.tmp "
         "--transcript_fasta {input.transcriptome} --n_processes {threads} "
         "--gtf_or_gff {input.gtf} "
         "--genome "
         "{params.extra} "
-        "--out_dir {output} 2>{log} && rm {input.eventalign}.xpore.tmp"
+        "--out_dir {output} 2>{log} "
 
 
 
