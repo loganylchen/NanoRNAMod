@@ -11,7 +11,7 @@ rule uncompress_eventalign:
         "benchmarks/{sample}.uncompress_eventalign.benchmark.txt"
     threads: 1
     shell:
-        "gzip -dc {input.eventalign} > {output} && touch {output.uc_completion} 2>{log}"
+        "gzip -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
 
 rule xpore_dataprep:
     input:
