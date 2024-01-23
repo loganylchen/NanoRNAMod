@@ -1,7 +1,24 @@
+rule uncompress_eventalign_m6anet:
+    input:
+        completion="results/eventalign/{sample}_xpore.tsv.completed",
+        eventalign="results/eventalign/{sample}_xpore.tsv.gz",
+    output:
+        uc_eventalign = temp("results/eventalign/{sample}_xpore.tsv.gz.m6anet_tmp"),
+        uc_completion = temp("results/eventalign/{sample}_xpore.tsv.completed.m6anet_tmp")
+    log:
+        "logs/uncompress_eventalign_m6anet/{sample}.log"
+    benchmark:
+        "benchmarks/{sample}.uncompress_eventalign_m6anet.benchmark.txt"
+    threads: 1
+    shell:
+        "gzip -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
+
+
+
 rule dataprep_m6anet:
     input:
-        eventalign="results/eventalign/{sample}_xpore.tsv.gz",
-        completion="results/eventalign/{sample}_xpore.tsv.completed"
+        eventalign="results/eventalign/{sample}_xpore.tsv.gz.m6anet_tmp",
+        completion="results/eventalign/{sample}_xpore.tsv.completed.m6anet_tmp"
     output:
         directory("results/dataprep/{sample}_m6anet_dataprep")
     log:
@@ -12,11 +29,11 @@ rule dataprep_m6anet:
     conda:
         "../envs/m6anet.yaml"
     shell:
-        "gzip -dc {input.eventalign} > {input.eventalign}.m6anet.tmp &&"
+        ""
         "m6anet dataprep "
-        "--eventalign {input.eventalign}.m6anet.tmp "
+        "--eventalign {input.eventalign} "
         "--n_processes {threads} --compress "
-        "--out_dir {output} 2>{log} && rm {input.eventalign}.m6anet.tmp"
+        "--out_dir {output} 2>{log} "
 
 rule m6anet_inference:
     input:

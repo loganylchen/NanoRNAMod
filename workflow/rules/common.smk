@@ -62,8 +62,8 @@ def get_final_output():
             final_output += [f"results/xpore/Groups_genome/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
         final_output += [f"results/xpore/Groups/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
         final_output += expand("results/xpore/{comp}/majority_direction_kmer_diffmod.table",comp=comparisons)
-
-    print(final_output)
+    if 'm6anet' in tools:
+        final_output += expand("results/m6anet/{sample}/data.site_proba.csv",sample=list(samples.index))
     return final_output
 
 
