@@ -31,7 +31,7 @@ rule xpore_dataprep:
         "../envs/xpore.yaml"
     shell:
         "xpore dataprep "
-        "--eventalign {input.eventalign}.xpore.tmp "
+        "--eventalign {input.eventalign} "
         "--transcript_fasta {input.reference} --n_processes {threads} "
         "{params.extra} "
         "--out_dir {output} 2>{log} "
@@ -57,7 +57,7 @@ rule xpore_dataprep_genome:
         "../envs/xpore.yaml"
     shell:
         "xpore dataprep "
-        "--eventalign {input.eventalign}.xpore.tmp "
+        "--eventalign {input.eventalign} "
         "--transcript_fasta {input.transcriptome} --n_processes {threads} "
         "--gtf_or_gff {input.gtf} "
         "--genome "
