@@ -45,6 +45,7 @@ include: "rules/modetect_baleen.smk"
 include: "rules/format.smk"
 include: "rules/qc_qualimap.smk"
 include: "rules/quantification_nanocount.smk"
+include: "rules/modetect_psinanopore.smk"
 ##### target rules #####
 
 

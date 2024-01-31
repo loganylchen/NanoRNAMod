@@ -64,6 +64,8 @@ def get_final_output():
         final_output += expand("results/xpore/{comp}/majority_direction_kmer_diffmod.table",comp=comparisons)
     if 'm6anet' in tools:
         final_output += expand("results/m6anet/{sample}/data.site_proba.csv",sample=list(samples.index))
+    if 'psinanopore' in tools:
+        final_output += expand("results/psinanopore/{comp}.psi_candidates.csv",comp=comparisons)
     return final_output
 
 
