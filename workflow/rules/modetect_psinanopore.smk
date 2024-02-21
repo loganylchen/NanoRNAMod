@@ -19,4 +19,4 @@ rule psinanocompore_psi:
         "-g {input.control_bam} "
         "-k /opt/psinanopore/data/kmer_summary.csv "
         "-r {params.reference} "
-        "-m  -o ~/Desktop/psi_candidates.csv"
+        "-m {params.pvalue}  -o ~/Desktop/psi_candidates.csv"
