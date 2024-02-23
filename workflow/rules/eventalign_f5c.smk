@@ -8,8 +8,8 @@ rule f5c_eventalign_nanocompore:
         blow5="results/blow5/{sample}.blow5",
 
     output:
-        outfile="results/eventalign/{sample}_nanocompore.tsv.gz",
-        completion="results/eventalign/{sample}_nanocompore.tsv.completed",
+        outfile=temp("results/eventalign/{sample}_nanocompore.tsv.gz"),
+        completion=temp("results/eventalign/{sample}_nanocompore.tsv.completed"),
     log:
         "logs/eventalign/{sample}_nanocompore.log"
     params:
@@ -40,8 +40,8 @@ rule f5c_eventalign_xpore:
         blow5="results/blow5/{sample}.blow5",
 
     output:
-        outfile="results/eventalign/{sample}_xpore.tsv.gz",
-        completion="results/eventalign/{sample}_xpore.tsv.completed",
+        outfile=temp("results/eventalign/{sample}_xpore.tsv.gz"),
+        completion=temp("results/eventalign/{sample}_xpore.tsv.completed"),
     log:
         "logs/eventalign/{sample}_xpore.log"
     params:
