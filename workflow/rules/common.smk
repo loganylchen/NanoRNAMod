@@ -41,7 +41,8 @@ def get_nanocompore_list(sample_list):
 def get_final_output():
     tools = [tool for tool in config['tools'] if config['tools'][tool]['activate']]
     final_output = []
-    final_output += expand("results/dataprep/{sample}_baleen_dataprep/eventalign.index",sample=list(samples.index))
+    if 'baleen' in tools:
+        final_output += expand("results/dataprep/{sample}_baleen_dataprep/eventalign.index",sample=list(samples.index))
     # final_output += expand('results/baleen/{native}_{control}/done.txt',native=native_samples,control=control_samples)
     # final_output += expand("results/modifications/{comp}/{tool}.tsv.gz",comp=comparisons,tool=tools)
     # final_output += expand("results/assembly/{sample}.lafite.gtf",sample=list(samples.index))
