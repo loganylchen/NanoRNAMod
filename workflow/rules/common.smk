@@ -54,13 +54,16 @@ def get_final_output():
     # final_output += expand("results/quantification/{sample}.tx_counts.tsv",sample=list(samples.index))
     #
     if 'nanocompore' in tools:
-        final_output += [f"results/nanocompore/Group_{native_list}_{control_list}"]
+        if config['group']:
+            final_output += [f"results/nanocompore/Group_{native_list}_{control_list}"]
         final_output += expand("results/modifications/{comp}/nanocompore.tsv.gz",comp=comparisons)
     if 'xpore' in tools:
         if 'genome' in config['params']['xpore']:
             final_output += expand("results/xpore/genome/{comp}/majority_direction_kmer_diffmod.table",comp=comparisons)
-            final_output += [f"results/xpore/Groups_genome/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
-        final_output += [f"results/xpore/Groups/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
+            if config['group']:
+                final_output += [f"results/xpore/Groups_genome/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
+        if config['group']:
+            final_output += [f"results/xpore/Groups/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
         final_output += expand("results/xpore/{comp}/majority_direction_kmer_diffmod.table",comp=comparisons)
     if 'm6anet' in tools:
         final_output += expand("results/m6anet/{sample}/data.site_proba.csv",sample=list(samples.index))

@@ -40,6 +40,7 @@ reference:
 
 
 realign: True
+group: False
 
 tools:
   tombo_lsc:
