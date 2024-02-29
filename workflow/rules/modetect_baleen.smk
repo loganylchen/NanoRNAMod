@@ -6,6 +6,7 @@ rule baleen_dataprep:
         data="results/dataprep/{sample}_baleen_dataprep/eventalign.index",
     params:
         label="{sample}",
+        use_mem=config['baleen']['use_mem'],
     container:
         "docker://btrspg/baleen:dev"
     benchmark:

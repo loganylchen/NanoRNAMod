@@ -41,6 +41,8 @@ reference:
 
 realign: True
 group: False
+baleen:
+  use_mem: True
 
 tools:
   tombo_lsc:
