@@ -14,5 +14,5 @@ threads = snakemake.threads
 
 eventalign = Eventalign(eventalign_file, threads=threads)
 eventalign.print_info()
-eventalign.index(outdir)
+eventalign.index(outdir,chunksize=100000)
 eventalign.print_info()
