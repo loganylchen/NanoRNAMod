@@ -35,6 +35,10 @@ bedfile = snakemake.params.bedfile
 outdir = snakemake.output.outdir
 re_index = False
 
+
+if not snakemake.params.use_mem:
+    os.environ['JOBLIB_TEMP_FOLDER'] = f'{outdir}/tmp'
+
 if (bedfile is not None) and (os.path.exists(bedfile)):
     target_regions = readBED(bedfile)
 else:

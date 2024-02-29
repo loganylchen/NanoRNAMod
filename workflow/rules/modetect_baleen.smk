@@ -30,7 +30,8 @@ rule baleen_test:
         outdir=directory('results/baleen/{native}_{control}/'),
         result='results/baleen/{native}_{control}/transcripts.csv'
     params:
-        bedfile=config['target_region']
+        bedfile=config['target_region'],
+        use_mem=config['baleen']['use_mem'],
     container:
         "docker://btrspg/baleen:dev"
     benchmark:
