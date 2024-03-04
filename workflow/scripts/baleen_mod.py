@@ -30,7 +30,7 @@ params = {
 }
 
 
-sample = 100
+sample = 900
 bedfile = snakemake.params.bedfile
 outdir = snakemake.output.outdir
 re_index = False
