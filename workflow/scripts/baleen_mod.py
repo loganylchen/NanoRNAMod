@@ -5,7 +5,7 @@ import os
 
 
 from baleen.algo.mod import modcall_molecule_joblib,modcall_transcript_joblib
-from baleen.fio.eventalign import Eventalign
+from baleen.fio.eventalign import EventalignIndex
 from baleen.utils.bed import readBED
 
 
@@ -44,20 +44,13 @@ if (bedfile is not None) and (os.path.exists(bedfile)):
 else:
     target_regions = None
 
-native_eventalign = Eventalign(snakemake.input.native_eventalign, threads=threads)
-native_eventalign.print_info()
-native_eventalign.index(os.path.dirname(snakemake.input.native_eventalign_index), reindex=re_index)
-native_eventalign.print_info()
+
+native_eventalign_index = EventalignIndex(nakemake.input.native_eventalign_index)
+control_eventalign_index = EventalignIndex(snakemake.input.control_eventalign_index)
 
 
 
-control_eventalign = Eventalign(snakemake.input.control_eventalign, threads=threads)
-control_eventalign.print_info()
-control_eventalign.index(os.path.dirname(snakemake.input.control_eventalign_index), reindex=re_index)
-control_eventalign.print_info()
-
-
-modcall_molecule_joblib(native_eventalign, control_eventalign, target_regions, threads, sample, params, f'{outdir}/modcall_sm')
+modcall_molecule_joblib(native_eventalign_index,control_eventalign_index, target_regions,threads,sample,params,f'{outdir}/modcall_sm')
 modcall_transcript_joblib(f'{outdir}/modcall_sm', outdir, threads)
 
 
