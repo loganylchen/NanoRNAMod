@@ -45,7 +45,7 @@ else:
     target_regions = None
 
 
-native_eventalign_index = EventalignIndex(nakemake.input.native_eventalign_index)
+native_eventalign_index = EventalignIndex(snakemake.input.native_eventalign_index)
 control_eventalign_index = EventalignIndex(snakemake.input.control_eventalign_index)
 
 
