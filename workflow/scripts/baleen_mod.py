@@ -45,8 +45,8 @@ else:
     target_regions = None
 
 
-native_eventalign_index = EventalignIndex(snakemake.input.native_eventalign_index)
-control_eventalign_index = EventalignIndex(snakemake.input.control_eventalign_index)
+native_eventalign_index = EventalignIndex(os.path.dirname(snakemake.input.native_eventalign_index))
+control_eventalign_index = EventalignIndex(os.path.dirname(snakemake.input.control_eventalign_index))
 
 
 
