@@ -27,7 +27,8 @@ params = {
     'dedi_component_n': 2,
     'gmm_component_n': 2,
     'decide_method': 'gmm',
-    'cut_end': 5
+    'cut_end': 5,
+    'segment_depth': 15
 }
 
 
