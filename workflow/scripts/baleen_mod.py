@@ -51,7 +51,7 @@ control_eventalign_index = EventalignIndex(os.path.dirname(snakemake.input.contr
 
 
 modcall_molecule_joblib(native_eventalign_index,control_eventalign_index, target_regions,threads,sample,params,f'{outdir}/modcall_sm')
-modcall_transcript_joblib(f'{outdir}/modcall_sm', outdir, threads)
+modcall_transcript_joblib(f'{outdir}/modcall_sm', outdir, threads,params['determine_proba'])
 
 
 
