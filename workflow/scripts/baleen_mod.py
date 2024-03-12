@@ -17,15 +17,15 @@ threads=snakemake.threads
 
 
 params = {
-    'padding': snakemake.params.padding,
+    'padding': int(snakemake.params.padding),
     'proba_method': 'unify',
-    'coverage': snakemake.params.coverage,
+    'coverage': float(snakemake.params.coverage),
     'min_depth': 15,
     'determine_proba': 0.9,
     'dtw_normalization': None,
     'dedi_method': 'umap',
     'dedi_component_n': 2,
-    'gmm_component_n': snakemake.params.gmm_component_n,
+    'gmm_component_n': int(snakemake.params.gmm_component_n),
     'decide_method': 'gmm',
     'cut_end': 5,
     'segment_depth': 15
