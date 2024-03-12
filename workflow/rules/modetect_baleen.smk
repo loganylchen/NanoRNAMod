@@ -32,6 +32,9 @@ rule baleen_test:
     params:
         bedfile=config['target_region'],
         use_mem=config['baleen']['use_mem'],
+        padding=config['baleen']['padding'],
+        coverage=config['baleen']['coverage'],
+        gmm_component_n=config['baleen']['gmm_component_n'],
     container:
         "docker://btrspg/baleen:dev"
     benchmark:
