@@ -43,6 +43,9 @@ realign: True
 group: False
 baleen:
   use_mem: True
+  padding: 1,
+  coverage: 0.8,
+  gmm_component_n: 1,
 
 tools:
   tombo_lsc:

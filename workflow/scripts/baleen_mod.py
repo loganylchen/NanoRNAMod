@@ -17,15 +17,15 @@ threads=snakemake.threads
 
 
 params = {
-    'padding': 1,
+    'padding': int(snakemake.params.padding),
     'proba_method': 'unify',
-    'coverage': 0.8,
+    'coverage': float(snakemake.params.coverage),
     'min_depth': 15,
     'determine_proba': 0.9,
     'dtw_normalization': None,
     'dedi_method': 'umap',
     'dedi_component_n': 2,
-    'gmm_component_n': 2,
+    'gmm_component_n': int(snakemake.params.gmm_component_n),
     'decide_method': 'gmm',
     'cut_end': 5,
     'segment_depth': 15
@@ -53,7 +53,7 @@ control_eventalign_index = EventalignIndex(os.path.dirname(snakemake.input.contr
 
 
 modcall_molecule_joblib(native_eventalign_index,control_eventalign_index, target_regions,threads,sample,params,f'{outdir}/modcall_sm')
-modcall_transcript_joblib(f'{outdir}/modcall_sm', outdir, threads)
+modcall_transcript_joblib(f'{outdir}/modcall_sm', outdir, threads,params['determine_proba'])
 
 
 
