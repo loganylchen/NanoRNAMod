@@ -80,8 +80,10 @@ rule f5c_eventalign_baleen:
         reference=config['reference']['transcriptome_fasta']
     benchmark:
         "benchmarks/{sample}.eventalign_baleen.benchmark.txt"
-    conda:
-        "../envs/f5c.yaml"
+    # conda:
+    #     "../envs/f5c.yaml"
+    container:
+        "docker://btrspg/f5c:dev"
     threads: config['threads']['f5c']
     shell:
         "f5c eventalign -r {input.fastq} "
