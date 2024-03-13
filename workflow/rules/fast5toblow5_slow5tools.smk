@@ -26,10 +26,10 @@ rule slow5tools_s2b:
     log:
         "logs/slow5tools_slow5toblow5/{sample}.log"
     threads: config['threads']['slow5tools']
-    conda:
-        "../envs/slow5tools.yaml"
-    # container:
-    #     "docker://btrspg/slow5tools:dev"
+    # conda:
+        # "../envs/slow5tools.yaml"
+    container:
+        "docker://btrspg/slow5tools:dev"
     shell:
         "slow5tools merge {input.slow5} -o {output} -t {threads} "
         "2>{log} "
