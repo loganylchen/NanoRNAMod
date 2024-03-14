@@ -32,7 +32,7 @@ params = {
     'sample': int(snakemake.params.sample),
 }
 
-
+sample = params['sample']
 
 bedfile = snakemake.params.bedfile
 outdir = snakemake.output.outdir
