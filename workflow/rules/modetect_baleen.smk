@@ -35,6 +35,8 @@ rule baleen_test:
         padding=config['baleen']['padding'],
         coverage=config['baleen']['coverage'],
         gmm_component_n=config['baleen']['gmm_component_n'],
+        dtw_normalization=config['baleen']['dtw_normalization'],
+        sample=config['baleen']['sample'],
     container:
         "docker://btrspg/baleen:dev"
     benchmark:
