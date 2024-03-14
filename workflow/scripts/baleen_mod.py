@@ -2,7 +2,7 @@
 
 import sys
 import os
-
+import json
 
 from baleen.algo.mod import modcall_molecule_joblib,modcall_transcript_joblib
 from baleen.fio.eventalign import EventalignIndex
@@ -37,7 +37,8 @@ params = {
 bedfile = snakemake.params.bedfile
 outdir = snakemake.output.outdir
 
-
+with open(f'{outdir}/modcall_params.json', 'w') as f:
+    json.dump(params, f)
 
 if not snakemake.params.use_mem:
     os.environ['JOBLIB_TEMP_FOLDER'] = f'{outdir}/tmp'
