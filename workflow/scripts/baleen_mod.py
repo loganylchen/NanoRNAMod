@@ -21,21 +21,22 @@ params = {
     'proba_method': 'unify',
     'coverage': float(snakemake.params.coverage),
     'min_depth': 15,
-    'determine_proba': 0.9,
-    'dtw_normalization': None,
+    'proba_threshold': 0.9,
+    'dtw_normalization': None if snakemake.params.dtw_normalization == 'None' else snakemake.params.dtw_normalization,
     'dedi_method': 'umap',
     'dedi_component_n': 2,
     'gmm_component_n': int(snakemake.params.gmm_component_n),
     'decide_method': 'gmm',
     'cut_end': 5,
-    'segment_depth': 15
+    'segment_depth': 15,
+    'sample': int(snakemake.params.sample),
 }
 
 
-sample = 900
+
 bedfile = snakemake.params.bedfile
 outdir = snakemake.output.outdir
-re_index = False
+
 
 
 if not snakemake.params.use_mem:
@@ -53,7 +54,7 @@ control_eventalign_index = EventalignIndex(os.path.dirname(snakemake.input.contr
 
 
 modcall_molecule_joblib(native_eventalign_index,control_eventalign_index, target_regions,threads,sample,params,f'{outdir}/modcall_sm')
-modcall_transcript_joblib(f'{outdir}/modcall_sm', outdir, threads,params['determine_proba'])
+modcall_transcript_joblib(f'{outdir}/modcall_sm', outdir, threads,params['proba_threshold'])
 
 
 
