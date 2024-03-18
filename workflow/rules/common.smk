@@ -42,8 +42,7 @@ def get_nanocompore_list(sample_list):
 def get_final_output():
     tools = [tool for tool in config['tools'] if config['tools'][tool]['activate']]
     final_output = []
-    if 'baleen' in tools:
-        final_output += expand('results/baleen/{comp}/transcripts.csv',comp=comparisons)
+
     # final_output += expand('results/baleen/{native}_{control}/done.txt',native=native_samples,control=control_samples)
     # final_output += expand("results/modifications/{comp}/{tool}.tsv.gz",comp=comparisons,tool=tools)
     # final_output += expand("results/assembly/{sample}.lafite.gtf",sample=list(samples.index))
@@ -74,23 +73,25 @@ def get_final_output():
         if 'baleen' in tools:
             final_output += expand('results/baleen/{comp}-{sample_size}/transcripts.csv',comp=comparisons,sample_size=config[
             'sample_size'])
-
-    if 'nanocompore' in tools:
-        if config['group']:
-            final_output += [f"results/nanocompore/Group_{native_list}_{control_list}"]
-        final_output += expand("results/modifications/{comp}/nanocompore.tsv.gz",comp=comparisons)
-    if 'xpore' in tools:
-        if 'genome' in config['params']['xpore']:
-            final_output += expand("results/xpore/genome/{comp}/majority_direction_kmer_diffmod.table",comp=comparisons)
+    else:
+        if 'baleen' in tools:
+            final_output += expand('results/baleen/{comp}/transcripts.csv',comp=comparisons)
+        if 'nanocompore' in tools:
             if config['group']:
-                final_output += [f"results/xpore/Groups_genome/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
-        if config['group']:
-            final_output += [f"results/xpore/Groups/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
-        final_output += expand("results/xpore/{comp}/majority_direction_kmer_diffmod.table",comp=comparisons)
-    if 'm6anet' in tools:
-        final_output += expand("results/m6anet/{sample}/data.site_proba.csv",sample=list(samples.index))
-    if 'psinanopore' in tools:
-        final_output += expand("results/psinanopore/{comp}.psi_candidates.csv",comp=comparisons)
+                final_output += [f"results/nanocompore/Group_{native_list}_{control_list}"]
+            final_output += expand("results/modifications/{comp}/nanocompore.tsv.gz",comp=comparisons)
+        if 'xpore' in tools:
+            if 'genome' in config['params']['xpore']:
+                final_output += expand("results/xpore/genome/{comp}/majority_direction_kmer_diffmod.table",comp=comparisons)
+                if config['group']:
+                    final_output += [f"results/xpore/Groups_genome/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
+            if config['group']:
+                final_output += [f"results/xpore/Groups/{native_list}_{control_list}/majority_direction_kmer_diffmod.table"]
+            final_output += expand("results/xpore/{comp}/majority_direction_kmer_diffmod.table",comp=comparisons)
+        if 'm6anet' in tools:
+            final_output += expand("results/m6anet/{sample}/data.site_proba.csv",sample=list(samples.index))
+        if 'psinanopore' in tools:
+            final_output += expand("results/psinanopore/{comp}.psi_candidates.csv",comp=comparisons)
     return final_output
 
 
