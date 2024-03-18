@@ -47,6 +47,8 @@ def samtools_view(input_bam, read_name_file, output_bam):
 
 with multiprocessing.Pool(threads) as pool:
     pool.starmap(samtools_view, param)
+    pool.close()
+    pool.join()
 
 print('Done!')
 
