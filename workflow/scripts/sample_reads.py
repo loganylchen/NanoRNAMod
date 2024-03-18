@@ -5,13 +5,14 @@ import gzip
 import multiprocessing
 import subprocess
 import random
+from collections import defaultdict
 
 sys.stdout = open(snakemake.log[0], "w")
 
 threads = snakemake.threads
 sample_sizes = [int(i) for i in snakemake.params.sample_size]
 
-sample_read_names = dict()
+sample_read_names = defaultdict(list)
 
 with pysam.AlignmentFile(snakemake.input.bam, "rb") as bam:
     for contig in bam.references:
@@ -22,9 +23,9 @@ with pysam.AlignmentFile(snakemake.input.bam, "rb") as bam:
         read_names = sorted(list(set(read_names)))
         for sample_size in sample_sizes:
             if len(read_names) > sample_size:
-                sample_read_names[sample_size] = random.sample(read_names, sample_size)
+                sample_read_names[sample_size] += random.sample(read_names, sample_size)
             else:
-                sample_read_names[sample_size] = read_names
+                sample_read_names[sample_size] += read_names
 
 param = list()
 for read_name_sampled,output_bam in zip(snakemake.output.read_names,snakemake.output.bams):
