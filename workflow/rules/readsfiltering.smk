@@ -28,7 +28,7 @@ rule sample_reads:
         "logs/samplereads/{sample}.log"
     conda:
         "../envs/pysam.yaml"
-    threads: config['sample_reads']['threads']
+    threads: config['threads']['sample_reads']
     params:
         sample_size=config['sample_size']
     script:
