@@ -31,6 +31,7 @@ threads:
   nanopolish: 20
   lafite: 20
   xpore: 40
+  sample_reads: 4
 
 
 reference:
@@ -49,11 +50,19 @@ baleen:
   dtw_normalization: shape
   sample: 500
 
+sample: False
+sample_size:
+  - 100
+  - 200
+  - 500
+  - 1000
+
+
 tools:
   tombo_lsc:
-    activate: True
+    activate: False
   tombo_msc:
-    activate: True
+    activate: False
   xpore:
     activate: True
   nanocompore:
