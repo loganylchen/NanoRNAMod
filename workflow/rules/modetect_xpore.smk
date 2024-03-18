@@ -13,6 +13,22 @@ rule uncompress_eventalign:
     shell:
         "gzip -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
 
+
+rule uncompress_eventalign_sampled:
+    input:
+        completion="results/eventalign/{sample}_xpore_{sample_size}.tsv.completed",
+        eventalign="results/eventalign/{sample}_xpore_{sample_size}.tsv.gz",
+    output:
+        uc_eventalign = temp("results/eventalign/{sample}_xpore_{sample_size}.tsv.gz.tmp"),
+        uc_completion = temp("results/eventalign/{sample}_xpore_{sample_size}.tsv.completed.tmp")
+    log:
+        "logs/uncompress_eventalign_{sample_size}/{sample}.log"
+    benchmark:
+        "benchmarks/{sample}.uncompress_eventalign_{sample_size}.benchmark.txt"
+    threads: 1
+    shell:
+        "gzip -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
+
 rule xpore_dataprep:
     input:
         completion="results/eventalign/{sample}_xpore.tsv.completed.tmp",
@@ -36,6 +52,29 @@ rule xpore_dataprep:
         "{params.extra} "
         "--out_dir {output} 2>{log} "
 
+
+rule xpore_dataprep_sampled:
+    input:
+        completion="results/eventalign/{sample}_xpore_{sample_size}.tsv.completed.tmp",
+        eventalign="results/eventalign/{sample}_xpore_{sample_size}.tsv.gz.tmp",
+        reference=config['reference']['transcriptome_fasta'],
+    output:
+        directory("results/dataprep/{sample}_xpore_dataprep_{sample_size}")
+    log:
+        "logs/xpore_dataprep_{sample_size}/{sample}.log"
+    benchmark:
+        "benchmarks/{sample}.xpore_dataprep_{sample_size}.benchmark.txt"
+    threads: config['threads']['xpore']
+    params:
+        extra=''
+    conda:
+        "../envs/xpore.yaml"
+    shell:
+        "xpore dataprep "
+        "--eventalign {input.eventalign} "
+        "--transcript_fasta {input.reference} --n_processes {threads} "
+        "{params.extra} "
+        "--out_dir {output} 2>{log} "
 
 
 rule xpore_dataprep_genome:
@@ -77,6 +116,21 @@ rule xpore_config:
         "results/xpore/{native}_{control}"
     log:
         "logs/xpore_config/{native}_{control}.log"
+    script:
+        "../scripts/xpore_config.py"
+
+
+rule xpore_config_sampled:
+    input:
+        control_dir="results/dataprep/{control}_xpore_dataprep_{sample_size}",
+        native_dir="results/dataprep/{native}_xpore_dataprep_{sample_size}"
+    output:
+        conf="results/xpore/{native}_{control}-{sample_size}.xpore_config.yaml"
+    threads: 1
+    params:
+        "results/xpore/{native}_{control}-{sample_size}"
+    log:
+        "logs/xpore_config/{native}_{control}_{sample_size}.log"
     script:
         "../scripts/xpore_config.py"
 
@@ -138,6 +192,8 @@ rule xpore_group_run:
         "xpore diffmod --config {input} --n_processes {threads} 2>{log}"
 
 
+
+
 rule xpore_group_run_genome:
     input:
         "results/xpore/Groups_genome/{native_list}_{control_list}.xpore_config_genome.yaml"
@@ -163,6 +219,21 @@ rule xpore_run:
         "logs/xpore/{native}_{control}.log"
     benchmark:
         "benchmarks/{native}_{control}.xpore.benchmark.txt"
+    conda:
+        "../envs/xpore.yaml"
+    shell:
+        "xpore diffmod --config {input} --n_processes {threads} 2>{log}"
+
+rule xpore_run_sampled:
+    input:
+        "results/xpore/{native}_{control}-{sample_size}.xpore_config.yaml"
+    output:
+        difftable="results/xpore/{native}_{control}-{sample_size}/diffmod.table"
+    threads: config['threads']['xpore']
+    log:
+        "logs/xpore/{native}_{control}_{sample_size}.log"
+    benchmark:
+        "benchmarks/{native}_{control}_{sample_size}.xpore.benchmark.txt"
     conda:
         "../envs/xpore.yaml"
     shell:
@@ -196,6 +267,24 @@ rule xpore_postprocessing:
         "logs/xpore_postprocessing/{native}_{control}.log"
     benchmark:
         "benchmarks/{native}_{control}.xpore_postprocessing.benchmark.txt"
+    conda:
+        "../envs/xpore.yaml"
+    shell:
+        "xpore postprocessing --diffmod_dir {params}  2>{log}"
+
+rule xpore_postprocessing_sampled:
+    input:
+        "results/xpore/{native}_{control}-{sample_size}/diffmod.table"
+    output:
+        "results/xpore/{native}_{control}-{sample_size}/majority_direction_kmer_diffmod.table"
+    threads: config['threads']['xpore']
+    params:
+        "results/xpore/{native}_{control}_{sample_size}"
+    threads: 1
+    log:
+        "logs/xpore_postprocessing/{native}_{control}_{sample_size}.log"
+    benchmark:
+        "benchmarks/{native}_{control}_{sample_size}.xpore_postprocessing.benchmark.txt"
     conda:
         "../envs/xpore.yaml"
     shell:

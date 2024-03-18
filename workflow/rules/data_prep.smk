@@ -29,3 +29,5 @@ rule read_assignment:
         "../envs/pyfastx.yaml"
     script:
         "../scripts/read_assignment.py"
+
+

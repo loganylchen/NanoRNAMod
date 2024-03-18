@@ -9,7 +9,8 @@ validate(config, schema="../schemas/config.schema.yaml")
 wildcard_constraints:
     sample="[\da-zA-Z\.]+",
     control="[\da-zA-Z\.]+",
-    native="[\da-zA-Z\.]+"
+    native="[\da-zA-Z\.]+",
+    sample_size="[\d]+"
 
 
 
@@ -54,6 +55,25 @@ def get_final_output():
     # final_output += expand("results/qc/{sample}/{sample}_rnaseq.pdf",sample=list(samples.index))
     # final_output += expand("results/quantification/{sample}.tx_counts.tsv",sample=list(samples.index))
     #
+    if config['sample']:
+        final_output += expand("results/alignments/{sample}_filtered_{sample_size}.bam",sample=list(samples.index) ,sample_size=config[
+            'sample_size']),
+        if 'nanocompore' in tools:
+            final_output += expand("results/nanocompore/{comp}-{sample_size}/nanocompore.tsv.gz",comp=comparisons,sample_size=config[
+            'sample_size'])
+        if 'xpore' in tools:
+            final_output += expand("results/xpore/{comp}-{sample_size}/majority_direction_kmer_diffmod.table",comp=comparisons,sample_size=config[
+            'sample_size'])
+        if 'm6anet' in tools:
+            final_output += expand("results/m6anet/{sample}-{sample_size}/data.site_proba.csv",sample=list(samples.index),sample_size=config[
+            'sample_size'])
+        if 'psinanopore' in tools:
+            final_output += expand("results/psinanopore/{comp}-{sample_size}.psi_candidates.csv",comp=comparisons,sample_size=config[
+            'sample_size'])
+        if 'baleen' in tools:
+            final_output += expand('results/baleen/{comp}-{sample_size}/transcripts.csv',comp=comparisons,sample_size=config[
+            'sample_size'])
+
     if 'nanocompore' in tools:
         if config['group']:
             final_output += [f"results/nanocompore/Group_{native_list}_{control_list}"]

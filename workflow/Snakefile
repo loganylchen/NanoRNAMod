@@ -10,6 +10,7 @@ wildcard_constraints:
     sample="[a-zA-Z\d\.]+",
     native="[a-zA-Z\d\.]+",
     control="[a-zA-Z\d\.]+",
+    sample_size="[\d]+"
 
 
 
