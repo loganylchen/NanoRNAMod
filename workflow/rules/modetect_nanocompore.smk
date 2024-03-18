@@ -80,7 +80,8 @@ rule nanocompore_sampled:
         native_file="results/nanocompore_eventalign_collapse/{native}_{sample_size}/{native}_{sample_size}_eventalign_collapse.tsv",
         reference=config['reference']['transcriptome_fasta']
     output:
-        directory("results/nanocompore/{native}_{control}-{sample_size}")
+        directory("results/nanocompore/{native}_{control}-{sample_size}"),
+        "results/nanocompore/{native}_{control}-{sample_size}/{native}_{control}_{sample_size}nanocompore_results.tsv"
     params:
         prefix="{native}_{control}_{sample_size}",
         extra=config['params']['nanocompore']
