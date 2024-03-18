@@ -59,7 +59,8 @@ def get_final_output():
         final_output += expand("results/alignments/{sample}_filtered_{sample_size}.bam",sample=list(samples.index) ,sample_size=config[
             'sample_size']),
         if 'nanocompore' in tools:
-            final_output += expand("results/nanocompore/{comp}-{sample_size}/nanocompore.tsv.gz",comp=comparisons,sample_size=config[
+            final_output += expand("results/nanocompore/{comp}-{sample_size}/{comp}_{sample_size}nanocompore_results.tsv",comp=comparisons,
+                sample_size=config[
             'sample_size'])
         if 'xpore' in tools:
             final_output += expand("results/xpore/{comp}-{sample_size}/majority_direction_kmer_diffmod.table",comp=comparisons,sample_size=config[
