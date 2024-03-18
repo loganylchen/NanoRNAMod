@@ -56,54 +56,6 @@ print('Done!')
 
 
 
-# read_names=expand("results/alignments/{sample}_filtered_{sample_size}.txt", region=config['sample_size']),
-# rule sample_reads:
-#     input:
-#         bam="results/alignments/{sample}_filtered.bam",
-#         bai="results/alignments/{sample}_filtered.bam.bai",
-#     output:
-#         bams=expand("results/alignments/{sample}_filtered_{sample_size}.bam", region=config['sample_size']),
-#         bais=expand("results/alignments/{sample}_filtered_{sample_size}.bam.bai", region=config['sample_size']),
-#     log:
-#         "logs/samplereads/{sample}.log"
-#     conda:
-#         "../envs/pysam.yaml"
-#     threads: config['sample_reads']['threads']
-#     params:
-#         sample_size=config['sample_size']
-#     script:
-#         "../scripts/sample_reads.py"
-
-
-
-transcriptome_fasta=snakemake.params.transcriptome_fasta
-fastq_sequence=snakemake.input.fastq
-read_assign_pkl=snakemake.input.read_assign_pkl
-read_assignment_dir=snakemake.output.read_assignment_dir
-mapping_list = snakemake.output.mapping_list
-
-os.makedirs(read_assignment_dir,exist_ok=True)
-
-
-
-with open(read_assign_pkl,'rb') as f:
-    data = pickle.load(f)
-
-
-fasta_sequences = pyfastx.Fasta(transcriptome_fasta)
-fastq_sequence = pyfastx.Fastq(fastq_sequence)
-with open(mapping_list,'w') as mapping_list_f:
-    for transcript in fasta_sequences.keys():
-        if transcript in data:
-            mapping_list_f.write(f'{transcript}\t{read_assignment_dir}/{transcript}.fq.gz'
-                                 f'\t{read_assignment_dir}/{transcript}.fasta'
-                                 f'\t{read_assignment_dir}/{transcript}.bam\n')
-            with gzip.open(f'{read_assignment_dir}/{transcript}.fq.gz', 'wt') as infastq, open(
-                    f'{read_assignment_dir}/{transcript}.fasta', 'w') as infasta:
-                infasta.write(f'>{transcript}\n')
-                infasta.write(fasta_sequences[transcript].seq)
-                for read in data[transcript]:
-                    infastq.write(f'{fastq_sequence[read].raw}')
 
 
 
