@@ -47,6 +47,7 @@ include: "rules/format.smk"
 include: "rules/qc_qualimap.smk"
 include: "rules/quantification_nanocount.smk"
 include: "rules/modetect_psinanopore.smk"
+include: "rules/modetect_differr.smk"
 
 ##### target rules #####
 

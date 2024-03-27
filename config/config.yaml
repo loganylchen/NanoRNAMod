@@ -17,6 +17,7 @@ params:
   baleen_bf: ""
   lafite: ""
   xpore: "genome"
+  differr: " -f 2  --median-expr-threshold 0  --min-expr-threshold 0 "
 
 
 threads:
@@ -33,6 +34,7 @@ threads:
   xpore: 40
   psinanopore: 1
   sample_reads: 4
+  differr: 16
 
 
 reference:
@@ -41,22 +43,22 @@ reference:
   transcriptome_gtf: transcriptome.gtf
 
 
-realign: True
+realign: False
 group: False
 baleen:
   use_mem: True
-  padding: 0
+  padding: 1
   coverage: 0.8
   gmm_component_n: 2
   dtw_normalization: shape
-  sample: 500
+  sample: 1000
 
 sample: False
 sample_size:
   - 100
   - 200
   - 500
-  - 1000
+test_times: 50
 
 
 tools:
@@ -71,6 +73,8 @@ tools:
   m6anet:
     activate: True
   baleen:
+    activate: True
+  differr:
     activate: True
 
 
