@@ -73,6 +73,9 @@ def get_final_output():
         if 'baleen' in tools:
             final_output += expand('results/baleen/{comp}-{sample_size}/transcripts.csv',comp=comparisons,sample_size=config[
             'sample_size'])
+        if 'differr' in tools:
+            final_output += expand("results/differr/{comp}-{sample_size}/{comp}.differr.bed",comp=comparisons,sample_size=config[
+            'sample_size'])
     else:
         if 'baleen' in tools:
             final_output += expand('results/baleen/{comp}/transcripts.csv',comp=comparisons)
@@ -92,6 +95,8 @@ def get_final_output():
             final_output += expand("results/m6anet/{sample}/data.site_proba.csv",sample=list(samples.index))
         if 'psinanopore' in tools:
             final_output += expand("results/psinanopore/{comp}.psi_candidates.csv",comp=comparisons)
+        if 'differr' in tools:
+            final_output += expand('results/differr/{comp}/{comp}.differr.bed',comp=comparisons)
     return final_output
 
 
