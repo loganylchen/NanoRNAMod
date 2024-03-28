@@ -30,7 +30,7 @@ rule sample_reads:
         "../envs/pysam.yaml"
     threads: config['threads']['sample_reads']
     params:
-        sample_size=config['sample_size']
-        iter_number=inter_number
+        sample_size=config['sample_size'],
+        iter_number=iter_number
     script:
         "../scripts/sample_reads.py"
