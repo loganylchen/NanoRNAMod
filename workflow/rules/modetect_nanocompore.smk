@@ -24,17 +24,17 @@ rule nanocompore_collapse:
 
 rule nanocompore_collapse_sampled:
     input:
-        eventalign="results/eventalign/{sample}_nanocompore_{sample_size}.tsv.gz",
-        completion="results/eventalign/{sample}_nanocompore_{sample_size}.tsv.completed"
+        eventalign="results/eventalign/{sample}_nanocompore_{sample_size}_{n}.tsv.gz",
+        completion="results/eventalign/{sample}_nanocompore_{sample_size}_{n}.tsv.completed"
     output:
-        output="results/nanocompore_eventalign_collapse/{sample}_{sample_size}/{sample}_{sample_size}_eventalign_collapse.tsv"
+        output="results/nanocompore_eventalign_collapse/{sample}_{sample_size}_{n}/{sample}_{sample_size}_{n}_eventalign_collapse.tsv"
     params:
-        prefix="{sample}_{sample_size}",
-        dir="results/nanocompore_eventalign_collapse/{sample}_{sample_size}",
+        prefix="{sample}_{sample_size}_{n}",
+        dir="results/nanocompore_eventalign_collapse/{sample}_{sample_size}_{n}",
     log:
-        "logs/nanocompore_collapse/{sample}_{sample_size}.log"
+        "logs/nanocompore_collapse/{sample}_{sample_size}_{n}.log"
     benchmark:
-        "benchmarks/{sample}.nanocompore_collapse_{sample_size}.benchmark.txt"
+        "benchmarks/{sample}.nanocompore_collapse_{sample_size}_{n}.benchmark.txt"
     conda:
         "../envs/nanocompore.yaml"
     threads: config['threads']['nanocompore']
@@ -76,19 +76,19 @@ rule nanocompore:
 
 rule nanocompore_sampled:
     input:
-        control_file="results/nanocompore_eventalign_collapse/{control}_{sample_size}/{control}_{sample_size}_eventalign_collapse.tsv",
-        native_file="results/nanocompore_eventalign_collapse/{native}_{sample_size}/{native}_{sample_size}_eventalign_collapse.tsv",
+        control_file="results/nanocompore_eventalign_collapse/{control}_{sample_size}_{n}/{control}_{sample_size}_{n}_eventalign_collapse.tsv",
+        native_file="results/nanocompore_eventalign_collapse/{native}_{sample_size}_{n}/{native}_{sample_size}_{n}_eventalign_collapse.tsv",
         reference=config['reference']['transcriptome_fasta']
     output:
-        dir=directory("results/nanocompore/{native}_{control}-{sample_size}"),
-        output_file="results/nanocompore/{native}_{control}-{sample_size}/{native}_{control}_{sample_size}nanocompore_results.tsv"
+        dir=directory("results/nanocompore/{native}_{control}-{sample_size}-{n}"),
+        output_file="results/nanocompore/{native}_{control}-{sample_size}-{n}/nanocompore_results.tsv"
     params:
         prefix="{native}_{control}_{sample_size}",
         extra=config['params']['nanocompore']
     log:
-        stdout="logs/nanocompore/{native}_{control}_{sample_size}.log"
+        stdout="logs/nanocompore/{native}_{control}_{sample_size}_{n}.log"
     benchmark:
-        "benchmarks/{native}_{control}.nanocompore_{sample_size}.benchmark.txt"
+        "benchmarks/{native}_{control}.nanocompore_{sample_size}_{n}.benchmark.txt"
     conda:
         "../envs/nanocompore.yaml"
     shell:
@@ -100,7 +100,7 @@ rule nanocompore_sampled:
         "{params.extra} "
         "--fasta {input.reference} "
         "--outpath {output.dir} "
-        "--outprefix {params.prefix} "
+        "--outprefix '' "
         "--overwrite  2>{log}"
 
 rule nanocompore_group:
