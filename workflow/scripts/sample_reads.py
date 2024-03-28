@@ -11,8 +11,9 @@ sys.stdout = open(snakemake.log[0], "w")
 
 threads = snakemake.threads
 sample_sizes = [int(i) for i in snakemake.params.sample_size]
+iter_number = snakemake.params.iter_number
 
-sample_read_names = defaultdict(list)
+sample_read_names = defaultdict(dict)
 
 with pysam.AlignmentFile(snakemake.input.bam, "rb") as bam:
     for contig in bam.references:
@@ -21,17 +22,21 @@ with pysam.AlignmentFile(snakemake.input.bam, "rb") as bam:
         for pc in bam.pileup(contig, int(contig_len/2)-2, int(contig_len/2)+2):
             read_names += pc.get_query_names()
         read_names = sorted(list(set(read_names)))
+
         for sample_size in sample_sizes:
-            if len(read_names) > sample_size:
-                sample_read_names[sample_size] += random.sample(read_names, sample_size)
-            else:
-                sample_read_names[sample_size] += read_names
+            for n in iter_number:
+                sample_read_names[sample_size].setdefault(n, [])
+                if len(read_names) > sample_size:
+                    sample_read_names[sample_size][n] += random.sample(read_names, sample_size)
+                else:
+                    sample_read_names[sample_size][n] += read_names
 
 param = list()
 for read_name_sampled,output_bam in zip(snakemake.output.read_names,snakemake.output.bams):
-    sample_size = int(os.path.basename(read_name_sampled).split('_')[-1].split('.')[0])
+    n = int(os.path.basename(read_name_sampled).split('_')[-1].split('.')[0])
+    sample_size = int(os.path.basename(read_name_sampled).split('_')[-2])
     with open(read_name_sampled, "w") as f:
-        for read_name in set(sample_read_names[sample_size]):
+        for read_name in set(sample_read_names[sample_size][n]):
             f.write(f"{read_name}\n")
     param.append([snakemake.input.bam, read_name_sampled, output_bam])
 

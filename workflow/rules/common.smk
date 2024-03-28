@@ -10,7 +10,8 @@ wildcard_constraints:
     sample="[\da-zA-Z\.]+",
     control="[\da-zA-Z\.]+",
     native="[\da-zA-Z\.]+",
-    sample_size="[\d]+"
+    sample_size="[\d]+",
+    n="[\d]+"
 
 
 
@@ -37,44 +38,31 @@ def get_nanocompore_list(sample_list):
     nanocompore_list = [f"results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv" for sample in sample_list]
     return ','.join(nanocompore_list)
 
-
+iter_number = range(int(config['test_times']))
 
 def get_final_output():
     tools = [tool for tool in config['tools'] if config['tools'][tool]['activate']]
     final_output = []
-
-    # final_output += expand('results/baleen/{native}_{control}/done.txt',native=native_samples,control=control_samples)
-    # final_output += expand("results/modifications/{comp}/{tool}.tsv.gz",comp=comparisons,tool=tools)
-    # final_output += expand("results/assembly/{sample}.lafite.gtf",sample=list(samples.index))
-    # final_output += expand("results/polya/{sample}.tsv.gz",sample=list(samples.index))
-    # final_output += expand("results/alignments/{sample}.bam",sample=list(samples.index))
-    # final_output += expand("results/alignments/{sample}.realign.bam",sample=list(samples.index))
-    # final_output += expand("results/read_assignment/{sample}.list",sample=list(samples.index))
-    # final_output += expand("results/eventalign/{sample}_baleen.tsv.bz2",sample=list(samples.index))
-    # final_output += expand("results/qc/{sample}/{sample}_rnaseq.pdf",sample=list(samples.index))
-    # final_output += expand("results/quantification/{sample}.tx_counts.tsv",sample=list(samples.index))
-    #
     if config['sample']:
-        final_output += expand("results/alignments/{sample}_filtered_{sample_size}.bam",sample=list(samples.index) ,sample_size=config[
-            'sample_size']),
+        final_output += expand("results/alignments/{sample}_filtered_{sample_size}_{n}.bam",sample=list(samples.index) ,sample_size=config[
+            'sample_size'], n=iter_number)
         if 'nanocompore' in tools:
-            final_output += expand("results/nanocompore/{comp}-{sample_size}/{comp}_{sample_size}nanocompore_results.tsv",comp=comparisons,
-                sample_size=config[
-            'sample_size'])
+            final_output += expand("results/nanocompore/{comp}-{sample_size}-{n}/nanocompore_results.tsv",comp=comparisons,
+                sample_size=config['sample_size'],n=iter_number)
         if 'xpore' in tools:
-            final_output += expand("results/xpore/{comp}-{sample_size}/majority_direction_kmer_diffmod.table",comp=comparisons,sample_size=config[
-            'sample_size'])
+            final_output += expand("results/xpore/{comp}-{sample_size}-{n}/majority_direction_kmer_diffmod.table",comp=comparisons,sample_size=config[
+            'sample_size'],n=iter_number)
         if 'm6anet' in tools:
-            final_output += expand("results/m6anet/{sample}-{sample_size}/data.site_proba.csv",sample=list(samples.index),sample_size=config[
+            final_output += expand("results/m6anet/{sample}-{sample_size}-{n}/data.site_proba.csv",sample=list(samples.index),sample_size=config[
             'sample_size'])
         if 'psinanopore' in tools:
             final_output += expand("results/psinanopore/{comp}-{sample_size}.psi_candidates.csv",comp=comparisons,sample_size=config[
             'sample_size'])
         if 'baleen' in tools:
-            final_output += expand('results/baleen/{comp}-{sample_size}/transcripts.csv',comp=comparisons,sample_size=config[
+            final_output += expand('results/baleen/{comp}-{sample_size}-{n}/transcripts.csv',comp=comparisons,sample_size=config[
             'sample_size'])
         if 'differr' in tools:
-            final_output += expand("results/differr/{comp}-{sample_size}/{comp}.differr.bed",comp=comparisons,sample_size=config[
+            final_output += expand("results/differr/{comp}-{sample_size}-{n}/differr.bed",comp=comparisons,sample_size=config[
             'sample_size'])
     else:
         if 'baleen' in tools:
