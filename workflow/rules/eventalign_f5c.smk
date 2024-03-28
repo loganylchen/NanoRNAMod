@@ -33,21 +33,21 @@ rule f5c_eventalign_nanocompore_sampled:
     input:
         fastq="results/fastq/{sample}.fq.gz",
         fastq_index=multiext("results/fastq/{sample}.fq.gz",'.index','.index.fai','.index.gzi','.index.readdb'),
-        bam="results/alignments/{sample}_filtered_{sample_size}.bam",
-        bai="results/alignments/{sample}_filtered_{sample_size}.bam.bai",
+        bam="results/alignments/{sample}_filtered_{sample_size}_{n}.bam",
+        bai="results/alignments/{sample}_filtered_{sample_size}_{n}.bam.bai",
         index="results/blow5/{sample}.blow5.idx",
         blow5="results/blow5/{sample}.blow5",
 
     output:
-        outfile=temp("results/eventalign/{sample}_nanocompore_{sample_size}.tsv.gz"),
-        completion=temp("results/eventalign/{sample}_nanocompore_{sample_size}.tsv.completed"),
+        outfile=temp("results/eventalign/{sample}_nanocompore_{sample_size}_{n}.tsv.gz"),
+        completion=temp("results/eventalign/{sample}_nanocompore_{sample_size}_{n}.tsv.completed"),
     log:
-        "logs/eventalign/{sample}_nanocompore_{sample_size}.log"
+        "logs/eventalign/{sample}_nanocompore_{sample_size}_{n}.log"
     params:
         extra=config['params']['f5c_eventalign_nanocompore'],
         reference=config['reference']['transcriptome_fasta']
     benchmark:
-        "benchmarks/{sample}.eventalign_nanocompore_{sample_size}.benchmark.txt"
+        "benchmarks/{sample}.eventalign_nanocompore_{sample_size}_{n}.benchmark.txt"
     conda:
         "../envs/f5c.yaml"
     threads: config['threads']['f5c']
@@ -96,21 +96,21 @@ rule f5c_eventalign_xpore_sampled:
     input:
         fastq="results/fastq/{sample}.fq.gz",
         fastq_index=multiext("results/fastq/{sample}.fq.gz",'.index','.index.fai','.index.gzi','.index.readdb'),
-        bam="results/alignments/{sample}_filtered_{sample_size}.bam",
-        bai="results/alignments/{sample}_filtered_{sample_size}.bam.bai",
+        bam="results/alignments/{sample}_filtered_{sample_size}_{n}.bam",
+        bai="results/alignments/{sample}_filtered_{sample_size}_{n}.bam.bai",
         index="results/blow5/{sample}.blow5.idx",
         blow5="results/blow5/{sample}.blow5",
 
     output:
-        outfile=temp("results/eventalign/{sample}_xpore_{sample_size}.tsv.gz"),
-        completion=temp("results/eventalign/{sample}_xpore_{sample_size}.tsv.completed"),
+        outfile=temp("results/eventalign/{sample}_xpore_{sample_size}_{n}.tsv.gz"),
+        completion=temp("results/eventalign/{sample}_xpore_{sample_size}_{n}.tsv.completed"),
     log:
-        "logs/eventalign/{sample}_xpore_{sample_size}.log"
+        "logs/eventalign/{sample}_xpore_{sample_size}_{n}.log"
     params:
         extra=config['params']['f5c_eventalign_xpore'],
         reference=config['reference']['transcriptome_fasta']
     benchmark:
-        "benchmarks/{sample}.eventalign_xpore_{sample_size}.benchmark.txt"
+        "benchmarks/{sample}.eventalign_xpore_{sample_size}_{n}.benchmark.txt"
     conda:
         "../envs/f5c.yaml"
     threads: config['threads']['f5c']
@@ -162,20 +162,20 @@ rule f5c_eventalign_baleen_sampled:
     input:
         fastq="results/fastq/{sample}.fq.gz",
         fastq_index=multiext("results/fastq/{sample}.fq.gz",'.index','.index.fai','.index.gzi','.index.readdb'),
-        bam="results/alignments/{sample}.realign.bam" if config['realign'] else "results/alignments/{sample}_filtered_{sample_size}.bam",
-        bai="results/alignments/{sample}.realign.bam.bai" if config['realign'] else "results/alignments/{sample}_filtered_{sample_size}.bam.bai",
+        bam="results/alignments/{sample}.realign.bam" if config['realign'] else "results/alignments/{sample}_filtered_{sample_size}_{n}.bam",
+        bai="results/alignments/{sample}.realign.bam.bai" if config['realign'] else "results/alignments/{sample}_filtered_{sample_size}_{n}.bam.bai",
         index="results/blow5/{sample}.blow5.idx",
         blow5="results/blow5/{sample}.blow5",
     output:
-        outfile="results/eventalign/{sample}_baleen_{sample_size}.tsv.bz2",
-        completion="results/eventalign/{sample}_baleen_{sample_size}.tsv.completed",
+        outfile="results/eventalign/{sample}_baleen_{sample_size}_{n}.tsv.bz2",
+        completion="results/eventalign/{sample}_baleen_{sample_size}_{n}.tsv.completed",
     log:
-        "logs/eventalign/{sample}_baleen_{sample_size}.log"
+        "logs/eventalign/{sample}_baleen_{sample_size}_{n}.log"
     params:
         extra=config['params']['f5c_eventalign_baleen'],
         reference=config['reference']['transcriptome_fasta']
     benchmark:
-        "benchmarks/{sample}.eventalign_baleen_{sample_size}.benchmark.txt"
+        "benchmarks/{sample}.eventalign_baleen_{sample_size}_{n}.benchmark.txt"
     # conda:
     #     "../envs/f5c.yaml"
     container:

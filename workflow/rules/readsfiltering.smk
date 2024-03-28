@@ -21,9 +21,9 @@ rule sample_reads:
         bam="results/alignments/{sample}_filtered.bam",
         bai="results/alignments/{sample}_filtered.bam.bai",
     output:
-        bams=["results/alignments/{sample}_filtered_"+f"{sample_size}.bam" for sample_size in config['sample_size']],
-        bais=["results/alignments/{sample}_filtered_"+f"{sample_size}.bam.bai" for sample_size in config['sample_size']],
-        read_names = ["results/alignments/{sample}_filtered_"+f"{sample_size}.txt" for sample_size in config['sample_size']],
+        bams=["results/alignments/{sample}_filtered_"+f"{sample_size}_{n}.bam" for sample_size in config['sample_size'] for n in iter_number],
+        bais=["results/alignments/{sample}_filtered_"+f"{sample_size}_{n}.bam.bai" for sample_size in config['sample_size'] for n in iter_number],
+        read_names = ["results/alignments/{sample}_filtered_"+f"{sample_size}_{n}.txt" for sample_size in config['sample_size'] for n in iter_number],
     log:
         "logs/samplereads/{sample}.log"
     conda:
@@ -31,5 +31,6 @@ rule sample_reads:
     threads: config['threads']['sample_reads']
     params:
         sample_size=config['sample_size']
+        iter_number=inter_number
     script:
         "../scripts/sample_reads.py"

@@ -16,15 +16,15 @@ rule uncompress_eventalign:
 
 rule uncompress_eventalign_sampled:
     input:
-        completion="results/eventalign/{sample}_xpore_{sample_size}.tsv.completed",
-        eventalign="results/eventalign/{sample}_xpore_{sample_size}.tsv.gz",
+        completion="results/eventalign/{sample}_xpore_{sample_size}_{n}.tsv.completed",
+        eventalign="results/eventalign/{sample}_xpore_{sample_size}_{n}.tsv.gz",
     output:
-        uc_eventalign = temp("results/eventalign/{sample}_xpore_{sample_size}.tsv.gz.tmp"),
-        uc_completion = temp("results/eventalign/{sample}_xpore_{sample_size}.tsv.completed.tmp")
+        uc_eventalign = temp("results/eventalign/{sample}_xpore_{sample_size}_{n}.tsv.gz.tmp"),
+        uc_completion = temp("results/eventalign/{sample}_xpore_{sample_size}_{n}.tsv.completed.tmp")
     log:
-        "logs/uncompress_eventalign_{sample_size}/{sample}.log"
+        "logs/uncompress_eventalign_{sample_size}_{n}/{sample}.log"
     benchmark:
-        "benchmarks/{sample}.uncompress_eventalign_{sample_size}.benchmark.txt"
+        "benchmarks/{sample}.uncompress_eventalign_{sample_size}_{n}.benchmark.txt"
     threads: 1
     shell:
         "gzip -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
@@ -55,15 +55,15 @@ rule xpore_dataprep:
 
 rule xpore_dataprep_sampled:
     input:
-        completion="results/eventalign/{sample}_xpore_{sample_size}.tsv.completed.tmp",
-        eventalign="results/eventalign/{sample}_xpore_{sample_size}.tsv.gz.tmp",
+        completion="results/eventalign/{sample}_xpore_{sample_size}_{n}.tsv.completed.tmp",
+        eventalign="results/eventalign/{sample}_xpore_{sample_size}_{n}.tsv.gz.tmp",
         reference=config['reference']['transcriptome_fasta'],
     output:
-        directory("results/dataprep/{sample}_xpore_dataprep_{sample_size}")
+        directory("results/dataprep/{sample}_xpore_dataprep_{sample_size}_{n}")
     log:
-        "logs/xpore_dataprep_{sample_size}/{sample}.log"
+        "logs/xpore_dataprep_{sample_size}_{n}/{sample}.log"
     benchmark:
-        "benchmarks/{sample}.xpore_dataprep_{sample_size}.benchmark.txt"
+        "benchmarks/{sample}.xpore_dataprep_{sample_size}_{n}.benchmark.txt"
     threads: config['threads']['xpore']
     params:
         extra=''
@@ -122,15 +122,15 @@ rule xpore_config:
 
 rule xpore_config_sampled:
     input:
-        control_dir="results/dataprep/{control}_xpore_dataprep_{sample_size}",
-        native_dir="results/dataprep/{native}_xpore_dataprep_{sample_size}"
+        control_dir="results/dataprep/{control}_xpore_dataprep_{sample_size}_{n}",
+        native_dir="results/dataprep/{native}_xpore_dataprep_{sample_size}_{n}"
     output:
-        conf="results/xpore/{native}_{control}-{sample_size}.xpore_config.yaml"
+        conf="results/xpore/{native}_{control}-{sample_size}-{n}.xpore_config.yaml"
     threads: 1
     params:
-        "results/xpore/{native}_{control}-{sample_size}"
+        "results/xpore/{native}_{control}-{sample_size}-{n}"
     log:
-        "logs/xpore_config/{native}_{control}_{sample_size}.log"
+        "logs/xpore_config/{native}_{control}_{sample_size}_{n}.log"
     script:
         "../scripts/xpore_config.py"
 
@@ -226,14 +226,14 @@ rule xpore_run:
 
 rule xpore_run_sampled:
     input:
-        "results/xpore/{native}_{control}-{sample_size}.xpore_config.yaml"
+        "results/xpore/{native}_{control}-{sample_size}-{n}.xpore_config.yaml"
     output:
-        difftable="results/xpore/{native}_{control}-{sample_size}/diffmod.table"
+        difftable="results/xpore/{native}_{control}-{sample_size}-{n}/diffmod.table"
     threads: config['threads']['xpore']
     log:
-        "logs/xpore/{native}_{control}_{sample_size}.log"
+        "logs/xpore/{native}_{control}_{sample_size}_{n}.log"
     benchmark:
-        "benchmarks/{native}_{control}_{sample_size}.xpore.benchmark.txt"
+        "benchmarks/{native}_{control}_{sample_size}_{n}.xpore.benchmark.txt"
     conda:
         "../envs/xpore.yaml"
     shell:
@@ -274,17 +274,17 @@ rule xpore_postprocessing:
 
 rule xpore_postprocessing_sampled:
     input:
-        "results/xpore/{native}_{control}-{sample_size}/diffmod.table"
+        "results/xpore/{native}_{control}-{sample_size}-{n}/diffmod.table"
     output:
-        "results/xpore/{native}_{control}-{sample_size}/majority_direction_kmer_diffmod.table"
+        "results/xpore/{native}_{control}-{sample_size}-{n}/majority_direction_kmer_diffmod.table"
     threads: config['threads']['xpore']
     params:
         "results/xpore/{native}_{control}-{sample_size}"
     threads: 1
     log:
-        "logs/xpore_postprocessing/{native}_{control}_{sample_size}.log"
+        "logs/xpore_postprocessing/{native}_{control}_{sample_size}_{n}.log"
     benchmark:
-        "benchmarks/{native}_{control}_{sample_size}.xpore_postprocessing.benchmark.txt"
+        "benchmarks/{native}_{control}_{sample_size}_{n}.xpore_postprocessing.benchmark.txt"
     conda:
         "../envs/xpore.yaml"
     shell:
