@@ -279,7 +279,7 @@ rule xpore_postprocessing_sampled:
         "results/xpore/{native}_{control}-{sample_size}-{n}/majority_direction_kmer_diffmod.table"
     threads: config['threads']['xpore']
     params:
-        "results/xpore/{native}_{control}-{sample_size}"
+        "results/xpore/{native}_{control}-{sample_size}-{n}"
     threads: 1
     log:
         "logs/xpore_postprocessing/{native}_{control}_{sample_size}_{n}.log"
