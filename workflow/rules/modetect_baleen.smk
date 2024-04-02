@@ -21,21 +21,21 @@ rule baleen_dataprep:
 
 rule baleen_dataprep_sampled:
     input:
-        eventalign="results/eventalign/{sample}_baleen_{sample_size}.tsv.bz2",
-        completion="results/eventalign/{sample}_baleen_{sample_size}.tsv.completed",
+        eventalign="results/eventalign/{sample}_baleen_{sample_size}_{n}.tsv.bz2",
+        completion="results/eventalign/{sample}_baleen_{sample_size}_{n}.tsv.completed",
     output:
-        data="results/dataprep/{sample}_baleen_dataprep_{sample_size}/eventalign.index",
+        data="results/dataprep/{sample}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
     params:
         label="{sample}",
         use_mem=config['baleen']['use_mem'],
     container:
         "docker://btrspg/baleen:dev"
     benchmark:
-        "benchmarks/{sample}.baleen_dataprep_{sample_size}.txt",
+        "benchmarks/{sample}.baleen_dataprep_{sample_size}_{n}.txt",
     threads: config['threads']['baleen']
     log:
-        out="logs/baleen_dataprep/{sample}_{sample_size}.log",
-        err="logs/baleen_dataprep/{sample}_{sample_size}.error"
+        out="logs/baleen_dataprep/{sample}_{sample_size}_{n}.log",
+        err="logs/baleen_dataprep/{sample}_{sample_size}_{n}.error"
     script:
         "../scripts/baleen_dataprep.py"
 
@@ -71,13 +71,13 @@ rule baleen_test:
 
 rule baleen_test_sampled:
     input:
-        native_eventalign="results/eventalign/{native}_baleen_{sample_size}.tsv.bz2",
-        native_eventalign_index="results/dataprep/{native}_baleen_dataprep_{sample_size}/eventalign.index",
-        control_eventalign="results/eventalign/{control}_baleen_{sample_size}.tsv.bz2",
-        control_eventalign_index="results/dataprep/{control}_baleen_dataprep_{sample_size}/eventalign.index",
+        native_eventalign="results/eventalign/{native}_baleen_{sample_size}_{n}.tsv.bz2",
+        native_eventalign_index="results/dataprep/{native}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
+        control_eventalign="results/eventalign/{control}_baleen_{sample_size}_{n}.tsv.bz2",
+        control_eventalign_index="results/dataprep/{control}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
     output:
-        outdir=directory('results/baleen/{native}_{control}-{sample_size}/'),
-        result='results/baleen/{native}_{control}-{sample_size}/transcripts.csv'
+        outdir=directory('results/baleen/{native}_{control}-{sample_size}-{n}/'),
+        result='results/baleen/{native}_{control}-{sample_size}-{n}/transcripts.csv'
     params:
         bedfile=config['target_region'],
         use_mem=config['baleen']['use_mem'],
@@ -89,10 +89,10 @@ rule baleen_test_sampled:
     container:
         "docker://btrspg/baleen:dev"
     benchmark:
-        "benchmarks/{native}_{control}_{sample_size}.baleen_test.txt",
+        "benchmarks/{native}_{control}_{sample_size}_{n}.baleen_test.txt",
     threads: config['threads']['baleen']
     log:
-        out="logs/baleen/N_{native}_C_{control}_{sample_size}.log",
-        err="logs/baleen/N_{native}_C_{control}_{sample_size}.error"
+        out="logs/baleen/N_{native}_C_{control}_{sample_size}_{n}.log",
+        err="logs/baleen/N_{native}_C_{control}_{sample_size}_{n}.error"
     script:
         "../scripts/baleen_mod.py"
