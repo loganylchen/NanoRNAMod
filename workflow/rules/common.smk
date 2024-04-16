@@ -43,7 +43,7 @@ iter_number = range(int(config['test_times']))
 def get_final_output():
     tools = [tool for tool in config['tools'] if config['tools'][tool]['activate']]
     final_output = []
-    final_output += expand("results/alignments/{sample}.splice.bam",sample=list(samples.index))
+    final_output += expand("results/qc/{sample}/{sample}_rnaseq.pdf",sample=list(samples.index))
     if config['sample']:
         final_output += expand("results/alignments/{sample}_filtered_{sample_size}_{n}.bam",sample=list(samples.index) ,sample_size=config[
             'sample_size'], n=iter_number)
