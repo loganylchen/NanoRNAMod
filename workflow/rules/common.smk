@@ -65,7 +65,7 @@ def get_final_output():
             'sample_size'],n=iter_number)
         if 'differr' in tools:
             final_output += expand("results/differr/{comp}-{sample_size}-{n}/differr.bed",comp=comparisons,sample_size=config[
-            'sample_size'])
+            'sample_size'],n=iter_number)
     else:
         if 'baleen' in tools:
             final_output += expand('results/baleen/{comp}/transcripts.csv',comp=comparisons)
