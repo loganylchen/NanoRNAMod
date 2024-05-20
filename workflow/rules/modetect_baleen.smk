@@ -4,6 +4,7 @@ rule baleen_dataprep:
         completion="results/eventalign/{sample}_full.tsv.completed",
     output:
         data="results/dataprep/{sample}_baleen_dataprep/eventalign.index",
+        dir="results/dataprep/{sample}_baleen_dataprep",
     params:
         label="{sample}",
         use_mem=config['baleen']['use_mem'],
@@ -15,8 +16,11 @@ rule baleen_dataprep:
     log:
         out="logs/baleen_dataprep/{sample}.log",
         err="logs/baleen_dataprep/{sample}.error"
-    script:
-        "../scripts/baleen_dataprep.py"
+    shell:
+        "Baleen.py dataprep "
+        "--eventalign {input.eventalign} "
+        "--output-dir {output.dir} "
+        "--threads {threads} 1> {log.out} 2> {log.err}"
 
 
 rule baleen_dataprep_sampled:
@@ -25,6 +29,7 @@ rule baleen_dataprep_sampled:
         completion="results/eventalign/{sample}_full_{sample_size}_{n}.tsv.completed",
     output:
         data="results/dataprep/{sample}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
+        dir="results/dataprep/{sample}_baleen_dataprep_{sample_size}_{n}",
     params:
         label="{sample}",
         use_mem=config['baleen']['use_mem'],
@@ -36,26 +41,25 @@ rule baleen_dataprep_sampled:
     log:
         out="logs/baleen_dataprep/{sample}_{sample_size}_{n}.log",
         err="logs/baleen_dataprep/{sample}_{sample_size}_{n}.error"
-    script:
-        "../scripts/baleen_dataprep.py"
+    shell:
+        "Baleen.py dataprep "
+        "--eventalign {input.eventalign} "
+        "--output-dir {output.dir} "
+        "--threads {threads} 1> {log.out} 2> {log.err}"
 
 
 rule baleen_test:
     input:
-        native_eventalign="results/eventalign/{native}_full.tsv.bz2",
+        native_dataprep="results/dataprep/{native}_baleen_dataprep/",
         native_eventalign_index="results/dataprep/{native}_baleen_dataprep/eventalign.index",
-        control_eventalign="results/eventalign/{control}_full.tsv.bz2",
+        control_dataprep="results/dataprep/{control}_baleen_dataprep/",
         control_eventalign_index="results/dataprep/{control}_baleen_dataprep/eventalign.index",
     output:
+        dir=directory("results/baleen/{native}_{control}/"),
         result='results/baleen/{native}_{control}/transcripts.csv'
     params:
         bedfile=config['target_region'],
-        use_mem=config['baleen']['use_mem'],
-        padding=config['baleen']['padding'],
-        coverage=config['baleen']['coverage'],
-        gmm_component_n=config['baleen']['gmm_component_n'],
-        dtw_normalization=config['baleen']['dtw_normalization'],
-        sample=config['baleen']['sample'],
+        params=config['params']['baleen_modcall']
     container:
         "docker://btrspg/baleen:dev"
     benchmark:
@@ -64,17 +68,22 @@ rule baleen_test:
     log:
         out="logs/baleen/N_{native}_C_{control}.log",
         err="logs/baleen/N_{native}_C_{control}.error"
-    script:
-        "../scripts/baleen_mod.py"
+    shell:
+        "Baleen.py modcall "
+        "--native-dataprep {input.native_dataprep} "
+        "--control-dataprep {input.control_dataprep} "
+        "{params.params} "
+        "--output-dir {output.dir} 1 > {log.out} 2 > {log.err}"
 
 
 rule baleen_test_sampled:
     input:
-        native_eventalign="results/eventalign/{native}_full_{sample_size}_{n}.tsv.bz2",
+        native_eventalign="results/dataprep/{native}_baleen_dataprep_{sample_size}_{n}",
         native_eventalign_index="results/dataprep/{native}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
-        control_eventalign="results/eventalign/{control}_full_{sample_size}_{n}.tsv.bz2",
+        control_eventalign="results/dataprep/{control}_baleen_dataprep_{sample_size}_{n}",
         control_eventalign_index="results/dataprep/{control}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
     output:
+        dir = directory("results/baleen/{native}_{control}-{sample_size}-{n}/"),
         result='results/baleen/{native}_{control}-{sample_size}-{n}/transcripts.csv'
     params:
         bedfile=config['target_region'],
@@ -92,5 +101,9 @@ rule baleen_test_sampled:
     log:
         out="logs/baleen/N_{native}_C_{control}_{sample_size}_{n}.log",
         err="logs/baleen/N_{native}_C_{control}_{sample_size}_{n}.error"
-    script:
-        "../scripts/baleen_mod.py"
+    shell:
+        "Baleen.py modcall "
+        "--native-dataprep {input.native_dataprep} "
+        "--control-dataprep {input.control_dataprep} "
+        "{params.params} "
+        "--output-dir {output.dir} 1 > {log.out} 2 > {log.err} "
