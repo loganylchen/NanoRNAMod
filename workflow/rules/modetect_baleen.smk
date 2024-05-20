@@ -78,9 +78,9 @@ rule baleen_test:
 
 rule baleen_test_sampled:
     input:
-        native_eventalign="results/dataprep/{native}_baleen_dataprep_{sample_size}_{n}",
+        native_dataprep="results/dataprep/{native}_baleen_dataprep_{sample_size}_{n}",
         native_eventalign_index="results/dataprep/{native}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
-        control_eventalign="results/dataprep/{control}_baleen_dataprep_{sample_size}_{n}",
+        control_dataprep="results/dataprep/{control}_baleen_dataprep_{sample_size}_{n}",
         control_eventalign_index="results/dataprep/{control}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
     output:
         result='results/baleen/{native}_{control}-{sample_size}-{n}/transcripts.csv'
