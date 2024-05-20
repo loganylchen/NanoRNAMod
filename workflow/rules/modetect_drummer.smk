@@ -70,7 +70,7 @@ rule drummer_sampled:
         control_bai="results/alignments/{control}_filtered_{sample_size}_{n}.bam.bai",
         native_bam="results/alignments/{native}_filtered_{sample_size}_{n}.bam",
         native_bai="results/alignments/{native}_filtered_{sample_size}_{n}.bam.bai",
-        region=temp("results/drummer/{native}_{control}-{sample_size}-{n}_regions.bed"),
+        region="results/drummer/{native}_{control}-{sample_size}-{n}_regions.bed",
         reference=config['reference']['transcriptome_fasta']
     output:
         directory("results/drummer/{native}_{control}-{sample_size}-{n}/")
