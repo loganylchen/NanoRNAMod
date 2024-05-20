@@ -75,7 +75,6 @@ rule baleen_test_sampled:
         control_eventalign="results/eventalign/{control}_full_{sample_size}_{n}.tsv.bz2",
         control_eventalign_index="results/dataprep/{control}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
     output:
-
         result='results/baleen/{native}_{control}-{sample_size}-{n}/transcripts.csv'
     params:
         bedfile=config['target_region'],
