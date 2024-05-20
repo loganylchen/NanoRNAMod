@@ -16,8 +16,8 @@ rule uncompress_eventalign_full:
 
 rule uncompress_eventalign_full_sampled:
     input:
-        completion="results/eventalign/{sample}_full)_{sample_size}_{n}.tsv.completed",
-        eventalign="results/eventalign/{sample}_full{sample_size}_{n}.tsv.bz2",
+        completion="results/eventalign/{sample}_full_{sample_size}_{n}.tsv.completed",
+        eventalign="results/eventalign/{sample}_full_{sample_size}_{n}.tsv.bz2",
     output:
         uc_eventalign = temp("results/eventalign/{sample}_full_{sample_size}_{n}.tsv.bz2.tmp"),
         uc_completion = temp("results/eventalign/{sample}_full_{sample_size}_{n}.tsv.completed.tmp")
