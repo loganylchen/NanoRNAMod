@@ -6,7 +6,7 @@ rule differr:
         native_bai="results/alignments/{native}_filtered.bam.bai",
         reference=config['reference']['transcriptome_fasta']
     output:
-        "results/differr/{native}_{control}/{native}_{control}.differr.bed"
+        "results/differr/{native}_{control}/differr.bed"
     params:
         prefix="{native}_{control}",
         extra=config['params']['differr']

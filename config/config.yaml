@@ -75,7 +75,8 @@ tools:
     activate: True
   differr:
     activate: True
-
+  drummer:
+    activate: True
 
 target_region: ''
 

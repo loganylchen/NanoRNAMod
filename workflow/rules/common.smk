@@ -50,6 +50,9 @@ def get_final_output():
         if 'differr' in tools:
             final_output += expand("results/differr/{comp}-{sample_size}-{n}/differr_results.tsv",comp=comparisons,sample_size=config[
             'sample_size'],n=iter_number)
+        if 'drummer' in tools:
+            final_output += expand("results/drummer/{comp}-{sample_size}-{n}/",comp=comparisons,sample_size=config[
+            'sample_size'],n=iter_number)
     else:
         if 'baleen' in tools:
             final_output += expand('results/baleen/{comp}/baleen_results.tsv',comp=comparisons)
@@ -59,6 +62,8 @@ def get_final_output():
             final_output += expand("results/xpore/{comp}/xpore_results.tsv",comp=comparisons)
         if 'differr' in tools:
             final_output += expand('results/differr/{comp}/differr_results.tsv',comp=comparisons)
+        if 'drummer' in tools:
+            final_output += expand("results/drummer/{comp}/",comp=comparisons)
     return final_output
 
 
