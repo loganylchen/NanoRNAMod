@@ -47,9 +47,9 @@ rule drummer:
     output:
         directory("results/drummer/{native}_{control}/")
     log:
-        stdout="logs/differr/{native}_{control}.log"
+        stdout="logs/drummer/{native}_{control}.log"
     benchmark:
-        "benchmarks/{native}_{control}.differr.benchmark.txt"
+        "benchmarks/{native}_{control}.drummer.benchmark.txt"
     container:
         "docker://btrspg/drummer:latest"
     shell:
@@ -75,9 +75,9 @@ rule drummer_sampled:
     output:
         directory("results/drummer/{native}_{control}-{sample_size}-{n}/")
     log:
-        stdout="logs/differr/{native}_{control}-{sample_size}-{n}.log"
+        stdout="logs/drummer/{native}_{control}-{sample_size}-{n}.log"
     benchmark:
-        "benchmarks/{native}_{control}-{sample_size}-{n}.differr.benchmark.txt"
+        "benchmarks/{native}_{control}-{sample_size}-{n}.drummer.benchmark.txt"
     container:
         "docker://btrspg/drummer:latest"
     shell:
