@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 
 def format_xpore(input_file,output_file):
-    df = pd.read_csv(input_file,sep='\t').sort_values(['id','position'])
+    df = pd.read_csv(input_file).sort_values(['id','position'])
     df.to_csv(output_file,sep='\t',index=False)
 
 def format_baleen(input_file,output_file):
