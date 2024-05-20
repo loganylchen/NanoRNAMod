@@ -4,7 +4,7 @@ rule baleen_dataprep:
         completion="results/eventalign/{sample}_full.tsv.completed",
     output:
         data="results/dataprep/{sample}_baleen_dataprep/eventalign.index",
-        dir="results/dataprep/{sample}_baleen_dataprep",
+        dir=directory("results/dataprep/{sample}_baleen_dataprep"),
     params:
         label="{sample}",
         use_mem=config['baleen']['use_mem'],
@@ -29,7 +29,7 @@ rule baleen_dataprep_sampled:
         completion="results/eventalign/{sample}_full_{sample_size}_{n}.tsv.completed",
     output:
         data="results/dataprep/{sample}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
-        dir="results/dataprep/{sample}_baleen_dataprep_{sample_size}_{n}",
+        dir=directory("results/dataprep/{sample}_baleen_dataprep_{sample_size}_{n}"),
     params:
         label="{sample}",
         use_mem=config['baleen']['use_mem'],
