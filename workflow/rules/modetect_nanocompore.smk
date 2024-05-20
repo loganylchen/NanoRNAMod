@@ -27,7 +27,7 @@ rule uncompress_eventalign_full_sampled:
         "benchmarks/{sample}.full)uncompress_eventalign_{sample_size}_{n}.benchmark.txt"
     threads: 1
     shell:
-        "gzip -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
+        "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
 
 
 

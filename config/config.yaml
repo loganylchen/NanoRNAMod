@@ -2,37 +2,26 @@
 samples: config/samples.tsv
 
 params:
-  minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 1 "
-  minimap2_genome: " -ax splice -u f -k 14 -G 500000 --secondary=no "
+  minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 10 -p 0 "
   samtools_filtering: " -F0x2324 -q 10 --min-qlen 80 "
-  tombo_lsc: " --store-p-value --minimum-test-reads 2 "
-  tombo_msc: " --minimum-test-reads 2 --rna "
-  tombo_resquiggle: " --num-most-common-errors 5 --overwrite --rna --skip-index "
   f5c_eventalign_full: "--print-read-names --signal-index --scale-events --min-mapq 0 --min-recalib-events 50 --samples --rna "
   f5c_eventalign_simple: "--signal-index --scale-events --min-recalib-events 50 --min-mapq 0 --rna "
   xpore_dataprep: "genome"
   nanocompore: "--logit --min_ref_length 50 --overwrite --min_coverage 5 "
   baleen: "  --normalized --sample 100    "
-  baleen_bf: ""
-  lafite: ""
-  xpore: "genome"
+  xpore: ""
   differr: " -f 1  --median-expr-threshold 1  --min-expr-threshold 1 "
   eligos2: "--max_depth 5000000 --min_depth 5 --esb 0 --oddR 1 --pval 1 "
 
 
 threads:
   minimap2: 12
-  multi_to_single: 24
-  tombo: 12
   slow5tools: 8
   f5c: 32
-  m6anet: 32
   nanocompore: 12
   baleen: 60
   nanopolish: 20
-  lafite: 20
   xpore: 40
-  psinanopore: 1
   sample_reads: 4
   differr: 16
   eligos: 12
