@@ -6,28 +6,28 @@ rule eligos2:
         native_bai="results/alignments/{native}_filtered.bam.bai",
         reference=config['reference']['transcriptome_fasta']
     output:
-        "results/differr/{native}_{control}/differr.bed"
+        "results/eligos2/{native}_{control}"
     params:
         prefix="{native}_{control}",
         extra=config['params']['eligo2']
     threads: config['threads']['eligo2']
     log:
-        stdout="logs/differr/{native}_{control}.log"
-    threads: config['threads']['differr']
+        stdout="logs/eligos2/{native}_{control}.log"
+
     benchmark:
-        "benchmarks/{native}_{control}.differr.benchmark.txt"
+        "benchmarks/{native}_{control}.eligos2.benchmark.txt"
     container:
-        "docker://btrspg/differr:latest"
+        "docker://btrspg/eligos2:latest"
     shell:
         "eligos2 pair_diff_mod -tbam {input.native_bam} "
         "-cbam {input.control_bam} "
         "-ref {input.reference} "
         "-t {threads} "
+        "-o {output} {params.extra}"
 
 
 
-
-rule differr_sampled:
+rule eligos2_sampled:
     input:
         control_bam="results/alignments/{control}_filtered_{sample_size}_{n}.bam",
         control_bai="results/alignments/{control}_filtered_{sample_size}_{n}.bam.bai",
@@ -35,22 +35,20 @@ rule differr_sampled:
         native_bai="results/alignments/{native}_filtered_{sample_size}_{n}.bam.bai",
         reference=config['reference']['transcriptome_fasta']
     output:
-        "results/differr/{native}_{control}-{sample_size}-{n}/differr.bed"
+        "results/eligos2/{native}_{control}-{sample_size}_{n}"
     params:
-        prefix="",
-        extra=config['params']['differr']
+        prefix="{native}_{control}",
+        extra=config['params']['eligo2']
+    threads: config['threads']['eligo2']
     log:
-        stdout="logs/differr/{native}_{control}-{sample_size}-{n}.log"
-    threads: config['threads']['differr']
+        stdout="logs/eligos2/{native}_{control}-{sample_size}_{n}.log"
     benchmark:
-        "benchmarks/{native}_{control}-{sample_size}-{n}.differr.benchmark.txt"
+        "benchmarks/{native}_{control}-{sample_size}_{n}.eligos2.benchmark.txt"
     container:
-        "docker://btrspg/differr:latest"
+        "docker://btrspg/eligos2:latest"
     shell:
-        "differr "
-        " -a {input.control_bam} "
-        " -b {input.native_bam} "
-        " -r {input.reference} "
-        " -o {output} "
-        " {params.extra} "
-        " -p {threads} 2>{log} "
+        "eligos2 pair_diff_mod -tbam {input.native_bam} "
+        "-cbam {input.control_bam} "
+        "-ref {input.reference} "
+        "-t {threads} "
+        "-o {output} {params.extra}"
