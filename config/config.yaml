@@ -17,7 +17,7 @@ params:
   lafite: ""
   xpore: "genome"
   differr: " -f 1  --median-expr-threshold 1  --min-expr-threshold 1 "
-  eligos: "--max_depth 5000000 --min_depth 5 --esb 0 --oddR 1 --pval 1 "
+  eligos2: "--max_depth 5000000 --min_depth 5 --esb 0 --oddR 1 --pval 1 "
 
 
 threads:
