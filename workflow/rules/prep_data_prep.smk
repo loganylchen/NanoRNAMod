@@ -21,7 +21,7 @@ rule link_blow5:
     log:
         "logs/link_blow5/{sample}.log"
     shell:
-        "ln -s {params.relative_path} {output.fastq} && "
+        "ln -s {params.relative_path} {output.blow5} && "
         "echo `date` > {log} "
 
 
