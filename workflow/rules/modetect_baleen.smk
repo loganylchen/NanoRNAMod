@@ -55,11 +55,11 @@ rule baleen_test:
         control_dataprep="results/dataprep/{control}_baleen_dataprep/",
         control_eventalign_index="results/dataprep/{control}_baleen_dataprep/eventalign.index",
     output:
-        dir=directory("results/baleen/{native}_{control}/"),
         result='results/baleen/{native}_{control}/transcripts.csv'
     params:
         bedfile=config['target_region'],
-        params=config['params']['baleen_modcall']
+        params=config['params']['baleen_modcall'],
+        dir="results/baleen/{native}_{control}/",
     container:
         "docker://btrspg/baleen:dev"
     benchmark:
@@ -73,7 +73,7 @@ rule baleen_test:
         "--native-dataprep {input.native_dataprep} "
         "--control-dataprep {input.control_dataprep} "
         "{params.params} "
-        "--output-dir {output.dir} 1 > {log.out} 2 > {log.err}"
+        "--output-dir {params.dir} 1 > {log.out} 2 > {log.err}"
 
 
 rule baleen_test_sampled:
@@ -83,16 +83,12 @@ rule baleen_test_sampled:
         control_eventalign="results/dataprep/{control}_baleen_dataprep_{sample_size}_{n}",
         control_eventalign_index="results/dataprep/{control}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
     output:
-        dir = directory("results/baleen/{native}_{control}-{sample_size}-{n}/"),
+
         result='results/baleen/{native}_{control}-{sample_size}-{n}/transcripts.csv'
     params:
         bedfile=config['target_region'],
-        use_mem=config['baleen']['use_mem'],
-        padding=config['baleen']['padding'],
-        coverage=config['baleen']['coverage'],
-        gmm_component_n=config['baleen']['gmm_component_n'],
-        dtw_normalization=config['baleen']['dtw_normalization'],
-        sample=config['baleen']['sample'],
+        params=config['params']['baleen_modcall'],
+        dir= "results/baleen/{native}_{control}-{sample_size}-{n}/",
     container:
         "docker://btrspg/baleen:dev"
     benchmark:
@@ -106,4 +102,4 @@ rule baleen_test_sampled:
         "--native-dataprep {input.native_dataprep} "
         "--control-dataprep {input.control_dataprep} "
         "{params.params} "
-        "--output-dir {output.dir} 1 > {log.out} 2 > {log.err} "
+        "--output-dir {params.dir} 1 > {log.out} 2 > {log.err} "
