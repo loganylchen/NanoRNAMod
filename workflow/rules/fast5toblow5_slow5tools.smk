@@ -7,9 +7,6 @@ rule slow5tools_f2s:
     log:
         "logs/slow5tools_fast5toslow5/{sample}.log"
     threads: config['threads']['slow5tools']
-    # conda:
-    #     "../envs/slow5tools.yaml"
-    # the normal slow5tools will stuck by the uncompleted fast5 files
     container:
         "docker://btrspg/slow5tools:dev"
     shell:
