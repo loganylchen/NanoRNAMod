@@ -35,7 +35,7 @@ params = {
 sample = params['sample']
 
 bedfile = snakemake.params.bedfile
-outdir = snakemake.output.outdir
+outdir = os.path.dirname(snakemake.output.result)
 
 with open(f'{outdir}/modcall_params.json', 'w') as f:
     json.dump(params, f)
