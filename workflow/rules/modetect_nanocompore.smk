@@ -1,7 +1,42 @@
+rule uncompress_eventalign_full:
+    input:
+        completion="results/eventalign/{sample}_full.tsv.completed",
+        eventalign="results/eventalign/{sample}_full.tsv.bz2",
+    output:
+        uc_eventalign = temp("results/eventalign/{sample}_full.tsv.bz2.tmp"),
+        uc_completion = temp("results/eventalign/{sample}_full.tsv.completed.tmp")
+    log:
+        "logs/uncompress_eventalign_full/{sample}.log"
+    benchmark:
+        "benchmarks/{sample}.full_uncompress_eventalign.benchmark.txt"
+    threads: 1
+    shell:
+        "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
+
+
+rule uncompress_eventalign_full_sampled:
+    input:
+        completion="results/eventalign/{sample}_full)_{sample_size}_{n}.tsv.completed",
+        eventalign="results/eventalign/{sample}_full{sample_size}_{n}.tsv.bz2",
+    output:
+        uc_eventalign = temp("results/eventalign/{sample}_full_{sample_size}_{n}.tsv.bz2.tmp"),
+        uc_completion = temp("results/eventalign/{sample}_full_{sample_size}_{n}.tsv.completed.tmp")
+    log:
+        "logs/uncompress_eventalign_full_{sample_size}_{n}/{sample}.log"
+    benchmark:
+        "benchmarks/{sample}.full)uncompress_eventalign_{sample_size}_{n}.benchmark.txt"
+    threads: 1
+    shell:
+        "gzip -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
+
+
+
+
+
 rule nanocompore_collapse:
     input:
-        eventalign="results/eventalign/{sample}_nanocompore.tsv.gz",
-        completion="results/eventalign/{sample}_nanocompore.tsv.completed"
+        eventalign="results/eventalign/{sample}_full.tsv.bz2.tmp",
+        completion="results/eventalign/{sample}_full.tsv.completed.tmp"
     output:
         output="results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv"
     params:
@@ -24,8 +59,8 @@ rule nanocompore_collapse:
 
 rule nanocompore_collapse_sampled:
     input:
-        eventalign="results/eventalign/{sample}_nanocompore_{sample_size}_{n}.tsv.gz",
-        completion="results/eventalign/{sample}_nanocompore_{sample_size}_{n}.tsv.completed"
+        eventalign="results/eventalign/{sample}_full_{sample_size}_{n}.tsv.bz2.tmp",
+        completion="results/eventalign/{sample}_full_{sample_size}_{n}.tsv.completed.tmp"
     output:
         output="results/nanocompore_eventalign_collapse/{sample}_{sample_size}_{n}/{sample}_{sample_size}_{n}_eventalign_collapse.tsv"
     params:
@@ -103,32 +138,3 @@ rule nanocompore_sampled:
         "--outprefix '' "
         "--overwrite  2>{log}"
 
-rule nanocompore_group:
-    input:
-        control_file=expand("results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv",sample=control_samples),
-        native_file=expand("results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv",sample=native_samples),
-        reference=config['reference']['transcriptome_fasta']
-    output:
-        directory("results/nanocompore/Group_{native_list}_{control_list}")
-    params:
-        prefix="Group_{native_list}_{control_list}",
-        extra=config['params']['nanocompore'],
-        control_files=get_nanocompore_list(control_samples),
-        native_files=get_nanocompore_list(native_samples),
-    log:
-        stdout="logs/nanocompore/Group_{native_list}_{control_list}.log"
-    benchmark:
-        "benchmarks/Group_{native_list}_{control_list}.nanocompore.benchmark.txt"
-    conda:
-        "../envs/nanocompore.yaml"
-    shell:
-        "nanocompore sampcomp "
-        "--file_list1 {params.control_files} "
-        "--file_list2 {params.native_files} "
-        "--label1 Control "
-        "--label2 Native "
-        "{params.extra} "
-        "--fasta {input.reference} "
-        "--outpath {output} "
-        "--outprefix {params.prefix} "
-        "--overwrite  2>{log}"

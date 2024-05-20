@@ -19,6 +19,7 @@ rule qualimap_rnaseq:
         mem='50G',
         javaopt="-Djava.awt.headless=true -Djava.io.tmpdir=results/tmp/"
     shell:
+        "mkdir -p results/tmp/ && "
         "export JAVA_OPTS='{resources.javaopt}' && "
         "qualimap rnaseq -bam {input.bam} "
         "-gtf {params.reference_gtf} "

@@ -55,4 +55,4 @@ rule differr_sampled:
         " -r {input.reference} "
         " -o {output} "
         " {params.extra} "
-        " -p {threads} 2>{log}"
+        " -p {threads} 2>{log} "

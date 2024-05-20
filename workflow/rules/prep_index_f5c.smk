@@ -9,8 +9,6 @@ rule f5c_index:
         "logs/f5c_index/{sample}.log"
     benchmark:
         "benchmarks/{sample}.f5c_index.benchmark.txt"
-    # conda:
-    #     "../envs/f5c.yaml"
     container:
         "docker://btrspg/f5c:dev"
     threads: config['threads']['f5c']

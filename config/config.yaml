@@ -8,16 +8,15 @@ params:
   tombo_lsc: " --store-p-value --minimum-test-reads 2 "
   tombo_msc: " --minimum-test-reads 2 --rna "
   tombo_resquiggle: " --num-most-common-errors 5 --overwrite --rna --skip-index "
-  f5c_eventalign_nanocompore: "--print-read-names --signal-index --scale-events --min-mapq 0 --min-recalib-events 50 --samples --rna "
-  f5c_eventalign_baleen: "--print-read-names --signal-index --scale-events --min-mapq 0 --min-recalib-events 50 --samples --rna "
-  f5c_eventalign_xpore: "--signal-index --scale-events --min-recalib-events 50 --min-mapq 0 --rna "
+  f5c_eventalign_full: "--print-read-names --signal-index --scale-events --min-mapq 0 --min-recalib-events 50 --samples --rna "
+  f5c_eventalign_simple: "--signal-index --scale-events --min-recalib-events 50 --min-mapq 0 --rna "
   xpore_dataprep: "genome"
   nanocompore: "--logit --min_ref_length 50 --overwrite --min_coverage 5 "
   baleen: "  --normalized --sample 100    "
   baleen_bf: ""
   lafite: ""
   xpore: "genome"
-  differr: " -f 2  --median-expr-threshold 0  --min-expr-threshold 0 "
+  differr: " -f 1  --median-expr-threshold 1  --min-expr-threshold 1 "
 
 
 threads:
@@ -53,12 +52,12 @@ baleen:
   dtw_normalization: shape
   sample: 1000
 
-sample: False
+sample: True
 sample_size:
   - 100
   - 200
   - 500
-test_times: 50
+test_times: 10
 
 
 tools:

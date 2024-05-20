@@ -1,7 +1,7 @@
 rule baleen_dataprep:
     input:
-        eventalign="results/eventalign/{sample}_baleen.tsv.bz2",
-        completion="results/eventalign/{sample}_baleen.tsv.completed",
+        eventalign="results/eventalign/{sample}_full.tsv.bz2",
+        completion="results/eventalign/{sample}_full.tsv.completed",
     output:
         data="results/dataprep/{sample}_baleen_dataprep/eventalign.index",
     params:
@@ -21,8 +21,8 @@ rule baleen_dataprep:
 
 rule baleen_dataprep_sampled:
     input:
-        eventalign="results/eventalign/{sample}_baleen_{sample_size}_{n}.tsv.bz2",
-        completion="results/eventalign/{sample}_baleen_{sample_size}_{n}.tsv.completed",
+        eventalign="results/eventalign/{sample}_full_{sample_size}_{n}.tsv.bz2",
+        completion="results/eventalign/{sample}_full_{sample_size}_{n}.tsv.completed",
     output:
         data="results/dataprep/{sample}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
     params:
@@ -42,9 +42,9 @@ rule baleen_dataprep_sampled:
 
 rule baleen_test:
     input:
-        native_eventalign="results/eventalign/{native}_baleen.tsv.bz2",
+        native_eventalign="results/eventalign/{native}_full.tsv.bz2",
         native_eventalign_index="results/dataprep/{native}_baleen_dataprep/eventalign.index",
-        control_eventalign="results/eventalign/{control}_baleen.tsv.bz2",
+        control_eventalign="results/eventalign/{control}_full.tsv.bz2",
         control_eventalign_index="results/dataprep/{control}_baleen_dataprep/eventalign.index",
     output:
         outdir=directory('results/baleen/{native}_{control}/'),
@@ -71,9 +71,9 @@ rule baleen_test:
 
 rule baleen_test_sampled:
     input:
-        native_eventalign="results/eventalign/{native}_baleen_{sample_size}_{n}.tsv.bz2",
+        native_eventalign="results/eventalign/{native}_full_{sample_size}_{n}.tsv.bz2",
         native_eventalign_index="results/dataprep/{native}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
-        control_eventalign="results/eventalign/{control}_baleen_{sample_size}_{n}.tsv.bz2",
+        control_eventalign="results/eventalign/{control}_full_{sample_size}_{n}.tsv.bz2",
         control_eventalign_index="results/dataprep/{control}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
     output:
         outdir=directory('results/baleen/{native}_{control}-{sample_size}-{n}/'),
