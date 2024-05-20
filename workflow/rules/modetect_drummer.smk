@@ -10,7 +10,7 @@ rule prep_drummer_region:
         "logs/drummer/{native}_{control}/regions.log",
     threads: 1
     container:
-        "docker://btrspg/differr:latest"
+        "docker://btrspg/drummer:latest"
     shell:
         "bedtools bamtobed -bed12 -i {input.control_bam} | cut -f1 | sort > {output.region}.tmp && "
         "bedtools bamtobed -bed12 -i {input.native_bam} | cut -f1 | sort >> {output.region}.tmp && "  
@@ -29,7 +29,7 @@ rule prep_drummer_region_sampled:
         "logs/drummer/{native}_{control}-{sample_size}-{n}/regions.log"
     threads: 1
     container:
-        "docker://btrspg/differr:latest"
+        "docker://btrspg/drummer:latest"
     shell:
         "bedtools bamtobed -bed12 -i {input.control_bam} | cut -f1 | sort > {output.region}.tmp && "
         "bedtools bamtobed -bed12 -i {input.native_bam} | cut -f1 | sort >> {output.region}.tmp && "  
@@ -51,7 +51,7 @@ rule drummer:
     benchmark:
         "benchmarks/{native}_{control}.differr.benchmark.txt"
     container:
-        "docker://btrspg/differr:latest"
+        "docker://btrspg/drummer:latest"
     shell:
         "DEUMMER "
         "-r {input.reference} "
@@ -78,7 +78,7 @@ rule drummer_sampled:
     benchmark:
         "benchmarks/{native}_{control}-{sample_size}-{n}.differr.benchmark.txt"
     container:
-        "docker://btrspg/differr:latest"
+        "docker://btrspg/drummer:latest"
     shell:
         "DEUMMER "
         "-r {input.reference} "
