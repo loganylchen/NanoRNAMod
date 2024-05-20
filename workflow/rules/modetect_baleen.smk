@@ -73,7 +73,7 @@ rule baleen_test:
         "--native-dataprep {input.native_dataprep} "
         "--control-dataprep {input.control_dataprep} "
         "{params.params} "
-        "--output-dir {params.dir} 1 > {log.out} 2 > {log.err}"
+        "--output-dir {params.dir} 1>{log.out} 2> log.err}"
 
 
 rule baleen_test_sampled:
@@ -101,4 +101,4 @@ rule baleen_test_sampled:
         "--native-dataprep {input.native_dataprep} "
         "--control-dataprep {input.control_dataprep} "
         "{params.params} "
-        "--output-dir {params.dir} 1 > {log.out} 2 > {log.err} "
+        "--output-dir {params.dir} 1>{log.out} 2>{log.err} "
