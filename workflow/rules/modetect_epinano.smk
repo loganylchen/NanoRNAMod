@@ -25,7 +25,28 @@ rule epinano:
         "-t {threads} "
         "-o {output} {params.extra}"
 
+rule epinano_prep:
+    input:
+        sample_bam="results/alignments/{sample}_filtered.bam",
+        sample_bai="results/alignments/{sample}_filtered.bam.bai",
+        reference=config['reference']['transcriptome_fasta']
+    output:
+        "results/epinano_prep/{sample}"
+    params:
+        extra=config['params']['epinano']
+    threads: config['threads']['epinano']
+    log:
+        stdout="logs/epinano_prep/{sample}.log"
 
+    benchmark:
+        "benchmarks/{sample}.epinano_prep.benchmark.txt"
+    container:
+        "docker://btrspg/epinano:latest"
+    shell:
+        "epinano_variants -R {input.reference} "
+        "-b {input.sample_bam} "
+        "-n {threads} "
+        "-T t "
 
 
 '''Epinano=path_to_Epinano_software
