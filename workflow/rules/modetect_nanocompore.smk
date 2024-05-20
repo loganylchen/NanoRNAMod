@@ -31,8 +31,6 @@ rule uncompress_eventalign_full_sampled:
 
 
 
-
-
 rule nanocompore_collapse:
     input:
         eventalign="results/eventalign/{sample}_full.tsv.bz2.tmp",
