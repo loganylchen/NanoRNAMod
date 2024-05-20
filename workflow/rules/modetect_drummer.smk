@@ -5,7 +5,7 @@ rule prep_drummer_region:
         native_bam = "results/alignments/{native}_filtered.bam",
         native_bai = "results/alignments/{native}_filtered.bam.bai",
     output:
-        region=temp("results/drummer/{native}_{control}/regions.bed")
+        region=temp("results/drummer/{native}_{control}_regions.bed")
     log:
         "logs/drummer/{native}_{control}/regions.log",
     threads: 1
@@ -24,7 +24,7 @@ rule prep_drummer_region_sampled:
         native_bam="results/alignments/{native}_filtered_{sample_size}_{n}.bam",
         native_bai="results/alignments/{native}_filtered_{sample_size}_{n}.bam.bai",
     output:
-        region=temp("results/drummer/{native}_{control}-{sample_size}-{n}/regions.bed")
+        region=temp("results/drummer/{native}_{control}-{sample_size}-{n}_regions.bed")
     log:
         "logs/drummer/{native}_{control}-{sample_size}-{n}/regions.log"
     threads: 1
@@ -42,7 +42,7 @@ rule drummer:
         control_bai="results/alignments/{control}_filtered.bam.bai",
         native_bam="results/alignments/{native}_filtered.bam",
         native_bai="results/alignments/{native}_filtered.bam.bai",
-        region="results/drummer/{native}_{control}/regions.bed",
+        region="results/drummer/{native}_{control}_regions.bed",
         reference=config['reference']['transcriptome_fasta']
     output:
         directory("results/drummer/{native}_{control}/")
@@ -70,7 +70,7 @@ rule drummer_sampled:
         control_bai="results/alignments/{control}_filtered_{sample_size}_{n}.bam.bai",
         native_bam="results/alignments/{native}_filtered_{sample_size}_{n}.bam",
         native_bai="results/alignments/{native}_filtered_{sample_size}_{n}.bam.bai",
-        region=temp("results/drummer/{native}_{control}-{sample_size}-{n}/regions.bed"),
+        region=temp("results/drummer/{native}_{control}-{sample_size}-{n}_regions.bed"),
         reference=config['reference']['transcriptome_fasta']
     output:
         directory("results/drummer/{native}_{control}-{sample_size}-{n}/")
