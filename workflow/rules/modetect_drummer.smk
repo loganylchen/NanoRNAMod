@@ -53,7 +53,7 @@ rule drummer:
     container:
         "docker://btrspg/drummer:latest"
     shell:
-        "DEUMMER "
+        "DRUMMER "
         "-r {input.reference} "
         "-l {input.region} "
         " -c {input.control_bam} "
@@ -81,7 +81,7 @@ rule drummer_sampled:
     container:
         "docker://btrspg/drummer:latest"
     shell:
-        "DEUMMER "
+        "DRUMMER "
         "-r {input.reference} "
         "-l {input.region} "
         " -c {input.control_bam} "
