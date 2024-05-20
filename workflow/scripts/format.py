@@ -24,9 +24,9 @@ def format_differr(input_file,output_file):
     df.columns = columns
     df.to_csv(output_file,sep='\t',index=False)
 
-if snakemake.params.format == 'xpore':
+if snakemake.params.tool == 'xpore':
     format_xpore(snakemake.input[0],snakemake.output[0])
-elif snakemake.params.format == 'baleen':
+elif snakemake.params.tool == 'baleen':
     format_baleen(snakemake.input[0],snakemake.output[0])
-elif snakemake.params.format == 'differr':
+elif snakemake.params.tool == 'differr':
     format_differr(snakemake.input[0],snakemake.output[0])
