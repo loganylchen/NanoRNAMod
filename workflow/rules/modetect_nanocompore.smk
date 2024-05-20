@@ -85,7 +85,8 @@ rule nanocompore:
         native_file="results/nanocompore_eventalign_collapse/{native}/{native}_eventalign_collapse.tsv",
         reference=config['reference']['transcriptome_fasta']
     output:
-        directory("results/nanocompore/{native}_{control}")
+        dir=directory("results/nanocompore/{native}_{control}"),
+        output_file="results/nanocompore/{native}_{control}/nanocompore_results.tsv"
     params:
         prefix="{native}_{control}",
         extra=config['params']['nanocompore']
@@ -103,8 +104,8 @@ rule nanocompore:
         "--label2 Native "
         "{params.extra} "
         "--fasta {input.reference} "
-        "--outpath {output} "
-        "--outprefix {params.prefix} "
+        "--outpath {output.dir} "
+        "--outprefix '' "
         "--overwrite  2>{log}"
 
 rule nanocompore_sampled:
@@ -116,7 +117,7 @@ rule nanocompore_sampled:
         dir=directory("results/nanocompore/{native}_{control}-{sample_size}-{n}"),
         output_file="results/nanocompore/{native}_{control}-{sample_size}-{n}/nanocompore_results.tsv"
     params:
-        prefix="{native}_{control}_{sample_size}",
+        prefix="{native}_{control}_{sample_size}-{n}",
         extra=config['params']['nanocompore']
     log:
         stdout="logs/nanocompore/{native}_{control}_{sample_size}_{n}.log"
