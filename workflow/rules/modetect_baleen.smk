@@ -48,14 +48,14 @@ rule baleen_dataprep_sampled:
         "--threads {threads} 1> {log.out} 2> {log.err}"
 
 
-rule baleen_test:
+rule baleen_modcall:
     input:
         native_dataprep="results/dataprep/{native}_baleen_dataprep/",
         native_eventalign_index="results/dataprep/{native}_baleen_dataprep/eventalign.index",
         control_dataprep="results/dataprep/{control}_baleen_dataprep/",
         control_eventalign_index="results/dataprep/{control}_baleen_dataprep/eventalign.index",
     output:
-        result='results/baleen/{native}_{control}/transcripts.csv'
+        result=directory('results/baleen/{native}_{control}/modcall_sm'),
     params:
         bedfile=config['target_region'],
         params=config['params']['baleen_modcall'],
@@ -76,14 +76,14 @@ rule baleen_test:
         "--output-dir {params.dir} 1>{log.out} 2> {log.err}"
 
 
-rule baleen_test_sampled:
+rule baleen_modcall_sampled:
     input:
         native_dataprep="results/dataprep/{native}_baleen_dataprep_{sample_size}_{n}",
         native_eventalign_index="results/dataprep/{native}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
         control_dataprep="results/dataprep/{control}_baleen_dataprep_{sample_size}_{n}",
         control_eventalign_index="results/dataprep/{control}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
     output:
-        result='results/baleen/{native}_{control}-{sample_size}-{n}/transcripts.csv'
+        result=directory('results/baleen/{native}_{control}-{sample_size}-{n}/modcall_sm')
     params:
         bedfile=config['target_region'],
         params=config['params']['baleen_modcall'],
@@ -102,3 +102,47 @@ rule baleen_test_sampled:
         "--control-dataprep {input.control_dataprep} "
         "{params.params} "
         "--output-dir {params.dir} 1>{log.out} 2>{log.err} "
+
+rule baleen_postcall:
+    input:
+        modcall="results/baleen/{native}_{control}/modcall_sm",
+    output:
+        result='results/baleen/{native}_{control}/transcripts.csv'
+    params:
+        params=config['params']['baleen_postcall'],
+        dir="results/baleen/{native}_{control}/",
+    container:
+        "docker://btrspg/baleen:dev"
+    benchmark:
+        "benchmarks/{native}_{control}.baleen_postcall.txt",
+    threads: config['threads']['baleen']
+    log:
+        "logs/baleen/N_{native}_C_{control}.log",
+    shell:
+        "Baleen.py postcall "
+        "--modcall-sm-dir {input.modcall} "
+        "--threads {threads} "
+        "{params.params} "
+        "--output-dir {params.dir} 2> {log}"
+
+rule baleen_postcall_sampled:
+    input:
+        modcall="results/baleen/{native}_{control}-{sample_size}-{n}/modcall_sm",
+    output:
+        result='results/baleen/{native}_{control}-{sample_size}-{n}/transcripts.csv'
+    params:
+        params=config['params']['baleen_postcall'],
+        dir="results/baleen/{native}_{control}-{sample_size}-{n}/",
+    container:
+        "docker://btrspg/baleen:dev"
+    benchmark:
+        "benchmarks/{native}_{control}-{sample_size}-{n}.baleen_postcall.txt",
+    threads: config['threads']['baleen']
+    log:
+        "logs/baleen/N_{native}_C_{control}-{sample_size}-{n}.log",
+    shell:
+        "Baleen.py postcall "
+        "--modcall-sm-dir {input.modcall} "
+        "--threads {threads} "
+        "{params.params} "
+        "--output-dir {params.dir} 2> {log}"
