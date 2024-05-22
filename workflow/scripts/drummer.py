@@ -1,5 +1,7 @@
 import os
 import sys
+from snakemake.shell import shell
+
 
 control_bam=snakemake.input.control_bam
 native_bam=snakemake.input.native_bam
