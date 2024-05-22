@@ -15,7 +15,7 @@ rule eligos2:
     benchmark:
         "benchmarks/{native}_{control}.eligos2.benchmark.txt"
     container:
-        "docker://btrspg/eligos2:latest"
+        "docker://piroonj/eligos2:latest"
     shell:
         "eligos2 pair_diff_mod -tbam {input.native_bam} "
         "-cbam {input.control_bam} "
@@ -42,7 +42,7 @@ rule eligos2_sampled:
     benchmark:
         "benchmarks/{native}_{control}-{sample_size}_{n}.eligos2.benchmark.txt"
     container:
-        "docker://btrspg/eligos2:latest"
+        "docker://piroonj/eligos2:latest"
     shell:
         "eligos2 pair_diff_mod -tbam {input.native_bam} "
         "-cbam {input.control_bam} "
