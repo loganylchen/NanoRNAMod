@@ -9,8 +9,8 @@ rule eligos2:
         directory("results/eligos2/{native}_{control}")
     params:
         prefix="{native}_{control}",
-        extra=config['params']['eligo2']
-    threads: config['threads']['eligo2']
+        extra=config['params']['eligos2']
+    threads: config['threads']['eligos2']
     benchmark:
         "benchmarks/{native}_{control}.eligos2.benchmark.txt"
     container:
@@ -35,8 +35,8 @@ rule eligos2_sampled:
         directory("results/eligos2/{native}_{control}-{sample_size}_{n}")
     params:
         prefix="{native}_{control}",
-        extra=config['params']['eligo2']
-    threads: config['threads']['eligo2']
+        extra=config['params']['eligos2']
+    threads: config['threads']['eligos2']
     benchmark:
         "benchmarks/{native}_{control}-{sample_size}_{n}.eligos2.benchmark.txt"
     container:
