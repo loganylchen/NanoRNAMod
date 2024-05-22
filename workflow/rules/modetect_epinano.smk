@@ -1,30 +1,30 @@
-rule epinano:
-    input:
-        control_bam="results/alignments/{control}_filtered.bam",
-        control_bai="results/alignments/{control}_filtered.bam.bai",
-        native_bam="results/alignments/{native}_filtered.bam",
-        native_bai="results/alignments/{native}_filtered.bam.bai",
-        reference=config['reference']['transcriptome_fasta'],
-        reference_dict=config['reference']['transcriptome_fasta']+'.dict'
-    output:
-        "results/eligos2/{native}_{control}"
-    params:
-        prefix="{native}_{control}",
-        extra=config['params']['eligo2']
-    threads: config['threads']['eligo2']
-    log:
-        stdout="logs/eligos2/{native}_{control}.log"
-
-    benchmark:
-        "benchmarks/{native}_{control}.eligos2.benchmark.txt"
-    container:
-        "docker://btrspg/eligos2:latest"
-    shell:
-        "eligos2 pair_diff_mod -tbam {input.native_bam} "
-        "-cbam {input.control_bam} "
-        "-ref {input.reference} "
-        "-t {threads} "
-        "-o {output} {params.extra}"
+# rule epinano:
+#     input:
+#         control_bam="results/alignments/{control}_filtered.bam",
+#         control_bai="results/alignments/{control}_filtered.bam.bai",
+#         native_bam="results/alignments/{native}_filtered.bam",
+#         native_bai="results/alignments/{native}_filtered.bam.bai",
+#         reference=config['reference']['transcriptome_fasta'],
+#         reference_dict=config['reference']['transcriptome_fasta']+'.dict'
+#     output:
+#         "results/eligos2/{native}_{control}"
+#     params:
+#         prefix="{native}_{control}",
+#         extra=config['params']['epinano']
+#     threads: config['threads']['epinano']
+#     log:
+#         stdout="logs/epinano/{native}_{control}.log"
+#
+#     benchmark:
+#         "benchmarks/{native}_{control}.epinano.benchmark.txt"
+#     container:
+#         "docker://btrspg/epinano:latest"
+#     shell:
+#         "eligos2 pair_diff_mod -tbam {input.native_bam} "
+#         "-cbam {input.control_bam} "
+#         "-ref {input.reference} "
+#         "-t {threads} "
+#         "-o {output} {params.extra}"
 
 rule epinano_prep:
     input:
