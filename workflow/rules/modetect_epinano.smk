@@ -1,31 +1,3 @@
-# rule epinano:
-#     input:
-#         control_bam="results/alignments/{control}_filtered.bam",
-#         control_bai="results/alignments/{control}_filtered.bam.bai",
-#         native_bam="results/alignments/{native}_filtered.bam",
-#         native_bai="results/alignments/{native}_filtered.bam.bai",
-#         reference=config['reference']['transcriptome_fasta'],
-#         reference_dict=config['reference']['transcriptome_fasta']+'.dict'
-#     output:
-#         "results/eligos2/{native}_{control}"
-#     params:
-#         prefix="{native}_{control}",
-#         extra=config['params']['epinano']
-#     threads: config['threads']['epinano']
-#     log:
-#         stdout="logs/epinano/{native}_{control}.log"
-#
-#     benchmark:
-#         "benchmarks/{native}_{control}.epinano.benchmark.txt"
-#     container:
-#         "docker://btrspg/epinano:latest"
-#     shell:
-#         "eligos2 pair_diff_mod -tbam {input.native_bam} "
-#         "-cbam {input.control_bam} "
-#         "-ref {input.reference} "
-#         "-t {threads} "
-#         "-o {output} {params.extra}"
-
 rule epinano_prep:
     input:
         sample_bam="results/alignments/{sample}_filtered.bam",
@@ -33,7 +5,7 @@ rule epinano_prep:
         reference=config['reference']['transcriptome_fasta'],
         reference_dict=config['reference']['transcriptome_fasta'] + '.dict'
     output:
-        directory("results/dataprep/{sample}_epinano_dataprep/")
+        "results/alignments/{sample}_filtered.plus_strand.per.site.csv"
     params:
         extra=config['params']['epinano_dataprep']
     threads: config['threads']['epinano']
@@ -47,7 +19,7 @@ rule epinano_prep:
         "epinano_variants -R {input.reference} "
         "-b {input.sample_bam} "
         "-n {threads} "
-        "-T t "
+        "-T t 2>{log}"
 
 
 
@@ -58,7 +30,7 @@ rule epinano_prep_sampled:
         reference=config['reference']['transcriptome_fasta'],
         reference_dict=config['reference']['transcriptome_fasta'] + '.dict'
     output:
-        directory("results/dataprep/{sample}_{sample_size}_{n}_epinano_dataprep/")
+        "results/alignments/{sample}_filtered_{sample_size}_{n}.plus_strand.per.site.csv"
     params:
         extra=config['params']['epinano_dataprep']
     threads: config['threads']['epinano']
@@ -72,8 +44,29 @@ rule epinano_prep_sampled:
         "epinano_variants -R {input.reference} "
         "-b {input.sample_bam} "
         "-n {threads} "
-        "-T t "
+        "-T t 2>{log}"
 
+
+# rule epinano:
+#     input:
+#         control="results/alignments/{control}_filtered.plus_strand.per.site.csv",
+#         native="results/alignments/{native}_filtered.plus_strand.per.site.csv",
+#     output:
+#         "results/alignments/{wt}_{ko}_delta.5mer.csv"
+#     params:
+#         extra=config['params']['epinano']
+#     threads: config['threads']['epinano']
+#     log:
+#         "logs/epinano/{wt}_{ko}.log"
+#     benchmark:
+#         "benchmarks/{wt}_{ko}.epinano.benchmark.txt"
+#     container:
+#         "docker://btrspg/epinano:latest"
+#     shell:
+#         "epinano_predict --model {input.model} "
+#         "--predict {input.delta} "
+#         "--columns 7,12,22 "
+#         "--out_prefix {output} 2>{log}"
 
 '''Epinano=path_to_Epinano_software
 ref=path_to_reference_transcriptome
