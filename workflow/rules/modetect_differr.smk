@@ -8,7 +8,7 @@ rule differr:
     output:
         "results/differr/{native}_{control}/differr.bed"
     params:
-        prefix="{native}_{control}",
+        prefix="",
         extra=config['params']['differr']
     log:
         stdout="logs/differr/{native}_{control}.log"
