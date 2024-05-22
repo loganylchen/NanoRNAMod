@@ -66,7 +66,7 @@ rule eligos2_prep_sampled:
     shell:
         "bedtools bamtobed -bed12 -i {input.control_bam}  > {output.region}.tmp && "
         "bedtools bamtobed -bed12 -i {input.native_bam} >> {output.region}.tmp && "
-        "bedtools sort -i {output.region}.tmp {output.region}.tmp2 && "
+        "bedtools sort -i {output.region}.tmp > {output.region}.tmp2 && "
         "bedtools merge -i {output.region}.tmp2 > {output.region} && "
         "rm {output.region}.tmp {output.region}.tmp2"
 
@@ -84,6 +84,6 @@ rule eligos2_prep:
     shell:
         "bedtools bamtobed -bed12 -i {input.control_bam}  > {output.region}.tmp && "
         "bedtools bamtobed -bed12 -i {input.native_bam} >> {output.region}.tmp && "
-        "bedtools sort -i {output.region}.tmp {output.region}.tmp2 && "
+        "bedtools sort -i {output.region}.tmp > {output.region}.tmp2 && "
         "bedtools merge -i {output.region}.tmp2 > {output.region} && "
         "rm {output.region}.tmp {output.region}.tmp2"
