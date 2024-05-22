@@ -66,7 +66,7 @@ rule drummer_sampled:
         reference=config['reference']['transcriptome_fasta']
     output:
         outdir=directory("results/drummer/{native}_{control}-{sample_size}-{n}/"),
-        summary="results/drummer/{native}_{control}/{control}_filtered_{sample_size}_{n}-{native}_filtered_{sample_size}_{n}/summary.txt"
+        summary="results/drummer/{native}_{control}-{sample_size}-{n}/{control}_filtered_{sample_size}_{n}-{native}_filtered_{sample_size}_{n}/summary.txt"
     benchmark:
         "benchmarks/{native}_{control}-{sample_size}-{n}.drummer.benchmark.txt"
     container:
