@@ -7,7 +7,7 @@ control_bam=snakemake.input.control_bam
 native_bam=snakemake.input.native_bam
 region=snakemake.input.region
 reference=snakemake.params.reference
-output=snakemake.output[0]
+output=snakemake.output.outdir
 
 
 
