@@ -33,7 +33,7 @@ rule epinano_prep:
         reference=config['reference']['transcriptome_fasta'],
         reference_dict=config['reference']['transcriptome_fasta'] + '.dict'
     output:
-        "results/dataprep/{sample}_epinano_dataprep/"
+        directory("results/dataprep/{sample}_epinano_dataprep/")
     params:
         extra=config['params']['epinano_dataprep']
     threads: config['threads']['epinano']
@@ -41,6 +41,31 @@ rule epinano_prep:
         "logs/epinano_prep/{sample}.log"
     benchmark:
         "benchmarks/{sample}.epinano_prep.benchmark.txt"
+    container:
+        "docker://btrspg/epinano:latest"
+    shell:
+        "epinano_variants -R {input.reference} "
+        "-b {input.sample_bam} "
+        "-n {threads} "
+        "-T t "
+
+
+
+rule epinano_prep_sampled:
+    input:
+        sample_bam="results/alignments/{sample}_filtered_{sample_size}_{n}.bam",
+        sample_bai="results/alignments/{sample}_filtered_{sample_size}_{n}.bam.bai",
+        reference=config['reference']['transcriptome_fasta'],
+        reference_dict=config['reference']['transcriptome_fasta'] + '.dict'
+    output:
+        directory("results/dataprep/{sample}_{sample_size}_{n}_epinano_dataprep/")
+    params:
+        extra=config['params']['epinano_dataprep']
+    threads: config['threads']['epinano']
+    log:
+        "logs/epinano_prep/{sample}_{sample_size}_{n}.log"
+    benchmark:
+        "benchmarks/{sample}_{sample_size}_{n}.epinano_prep.benchmark.txt"
     container:
         "docker://btrspg/epinano:latest"
     shell:
