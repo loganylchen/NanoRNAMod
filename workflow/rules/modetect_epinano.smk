@@ -4,7 +4,8 @@ rule epinano:
         control_bai="results/alignments/{control}_filtered.bam.bai",
         native_bam="results/alignments/{native}_filtered.bam",
         native_bai="results/alignments/{native}_filtered.bam.bai",
-        reference=config['reference']['transcriptome_fasta']
+        reference=config['reference']['transcriptome_fasta'],
+        reference_dict=config['reference']['transcriptome_fasta']+'.dict'
     output:
         "results/eligos2/{native}_{control}"
     params:
@@ -29,15 +30,15 @@ rule epinano_prep:
     input:
         sample_bam="results/alignments/{sample}_filtered.bam",
         sample_bai="results/alignments/{sample}_filtered.bam.bai",
-        reference=config['reference']['transcriptome_fasta']
+        reference=config['reference']['transcriptome_fasta'],
+        reference_dict=config['reference']['transcriptome_fasta'] + '.dict'
     output:
-        "results/epinano_prep/{sample}"
+        "results/dataprep/{sample}_epinano_dataprep/"
     params:
-        extra=config['params']['epinano']
+        extra=config['params']['epinano_dataprep']
     threads: config['threads']['epinano']
     log:
-        stdout="logs/epinano_prep/{sample}.log"
-
+        "logs/epinano_prep/{sample}.log"
     benchmark:
         "benchmarks/{sample}.epinano_prep.benchmark.txt"
     container:
