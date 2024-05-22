@@ -56,7 +56,8 @@ def get_final_output():
             final_output += expand("results/eligos2/{comp}-{sample_size}_{n}",comp=comparisons,
                 sample_size=config['sample_size'],n=iter_number)
         if 'epinano' in tools:
-            final_output += expand("results/dataprep/{sample}_epinano_dataprep/",sample=list(samples.index))
+            final_output += expand("results/alignments/{sample}_filtered_{sample_size}_{n}.plus_strand.per.site.csv",sample=list(samples.index),
+            sample_size=config['sample_size'],n=iter_number)
     else:
         if 'baleen' in tools:
             final_output += expand('results/baleen/{comp}/baleen_results.tsv',comp=comparisons)
@@ -71,7 +72,7 @@ def get_final_output():
         if 'eligos2' in tools:
             final_output += expand("results/eligos2/{comp}",comp=comparisons)
         if 'epinano' in tools:
-            final_output += expand("results/dataprep/{sample}_epinano_dataprep/",sample=list(samples.index))
+            final_output += expand("results/alignments/{sample}_filtered.plus_strand.per.site.csv",sample=list(samples.index))
     return final_output
 
 
