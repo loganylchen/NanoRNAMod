@@ -43,7 +43,8 @@ rule drummer:
         native_bam="results/alignments/{native}_filtered.bam",
         native_bai="results/alignments/{native}_filtered.bam.bai",
         region="results/drummer/{native}_{control}_regions.bed",
-        reference=config['reference']['transcriptome_fasta']
+    params:
+        reference = config['reference']['transcriptome_fasta']
     output:
         directory("results/drummer/{native}_{control}/")
     log:
@@ -65,6 +66,7 @@ rule drummer_sampled:
         native_bam="results/alignments/{native}_filtered_{sample_size}_{n}.bam",
         native_bai="results/alignments/{native}_filtered_{sample_size}_{n}.bam.bai",
         region="results/drummer/{native}_{control}-{sample_size}-{n}_regions.bed",
+    params:
         reference=config['reference']['transcriptome_fasta']
     output:
         directory("results/drummer/{native}_{control}-{sample_size}-{n}/")
