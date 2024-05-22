@@ -52,14 +52,8 @@ rule drummer:
         "benchmarks/{native}_{control}.drummer.benchmark.txt"
     container:
         "docker://btrspg/drummer:latest"
-    shell:
-        "DRUMMER "
-        "-r {input.reference} "
-        "-l {input.region} "
-        " -c {input.control_bam} "
-        " -t {input.native_bam} "
-        " -o {output} "
-        " -a isoform  2>{log.stdout}"
+    script:
+        "../scripts/drummer.py"
 
 
 
@@ -80,11 +74,5 @@ rule drummer_sampled:
         "benchmarks/{native}_{control}-{sample_size}-{n}.drummer.benchmark.txt"
     container:
         "docker://btrspg/drummer:latest"
-    shell:
-        "DRUMMER "
-        "-r {input.reference} "
-        "-l {input.region} "
-        " -c {input.control_bam} "
-        " -t {input.native_bam} "
-        " -o {output} "
-        " -a isoform  2>{log.stdout}"
+    script:
+        "../scripts/drummer.py"
