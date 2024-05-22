@@ -6,14 +6,11 @@ rule eligos2:
         native_bai="results/alignments/{native}_filtered.bam.bai",
         reference=config['reference']['transcriptome_fasta']
     output:
-        "results/eligos2/{native}_{control}"
+        directory("results/eligos2/{native}_{control}")
     params:
         prefix="{native}_{control}",
         extra=config['params']['eligo2']
     threads: config['threads']['eligo2']
-    log:
-        stdout="logs/eligos2/{native}_{control}.log"
-
     benchmark:
         "benchmarks/{native}_{control}.eligos2.benchmark.txt"
     container:
@@ -35,13 +32,11 @@ rule eligos2_sampled:
         native_bai="results/alignments/{native}_filtered_{sample_size}_{n}.bam.bai",
         reference=config['reference']['transcriptome_fasta']
     output:
-        "results/eligos2/{native}_{control}-{sample_size}_{n}"
+        directory("results/eligos2/{native}_{control}-{sample_size}_{n}")
     params:
         prefix="{native}_{control}",
         extra=config['params']['eligo2']
     threads: config['threads']['eligo2']
-    log:
-        stdout="logs/eligos2/{native}_{control}-{sample_size}_{n}.log"
     benchmark:
         "benchmarks/{native}_{control}-{sample_size}_{n}.eligos2.benchmark.txt"
     container:
