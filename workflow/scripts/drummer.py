@@ -27,5 +27,6 @@ shell("python3 DRUMMER.py -r {reference} "
       " -c {control_bam} "
       " -t {native_bam} "
       " -o {output} "
+      " {snakemake.params.extra} "
       " -a isoform  ")
 
