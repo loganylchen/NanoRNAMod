@@ -5,7 +5,8 @@ rule epinano_prep:
         reference=config['reference']['transcriptome_fasta'],
         reference_dict=config['reference']['transcriptome_fasta'] + '.dict'
     output:
-        "results/alignments/{sample}_filtered.plus_strand.per.site.csv"
+        per_site = "results/alignments/{sample}_filtered.plus_strand.per.site.csv",
+        kmer_5_site = "results/alignments/{sample}_filtered.plus_strand.per.site.5mer.csv",
     params:
         extra=config['params']['epinano_dataprep']
     threads: config['threads']['epinano']
@@ -19,9 +20,15 @@ rule epinano_prep:
         "epinano_variants -R {input.reference} "
         "-b {input.sample_bam} "
         "-n {threads} "
-        "-T t 2>{log}"
+        "-T t 2>{log} && "
+        "python3 /opt/EpiNano/misc/Slide_Variants.py {output.per_site} 5 2>>{log} &&"
+        "python3 /opt/EpiNano/Epinano_Predict.py "
+        "--model /opt/EpiNano/models/rrach.q3.mis3.del3.linear.dump "
+        "--predict {output.kmer_5_site} "
+        "--columns 8,13,23 "
+        "--out_prefix {params.prefix}  2>>{log}"
 
-
+# rule epinano_
 
 rule epinano_prep_sampled:
     input:
@@ -30,9 +37,11 @@ rule epinano_prep_sampled:
         reference=config['reference']['transcriptome_fasta'],
         reference_dict=config['reference']['transcriptome_fasta'] + '.dict'
     output:
-        "results/alignments/{sample}_filtered_{sample_size}_{n}.plus_strand.per.site.csv"
+        per_site = "results/alignments/{sample}_filtered_{sample_size}_{n}.plus_strand.per.site.csv",
+        kmer_5_site = "results/alignments/{sample}_filtered_{sample_size}_{n}.plus_strand.per.site.5mer.csv",
     params:
-        extra=config['params']['epinano_dataprep']
+        extra=config['params']['epinano_dataprep'],
+        prefix="results/alignments/{sample}_filtered_{sample_size}_{n}"
     threads: config['threads']['epinano']
     log:
         "logs/epinano_prep/{sample}_{sample_size}_{n}.log"
@@ -44,7 +53,15 @@ rule epinano_prep_sampled:
         "epinano_variants -R {input.reference} "
         "-b {input.sample_bam} "
         "-n {threads} "
-        "-T t 2>{log}"
+        "-T t 2>{log} && "
+        "python3 /opt/EpiNano/misc/Slide_Variants.py {output.per_site} 5 2>>{log} &&"
+        "python3 /opt/EpiNano/Epinano_Predict.py "
+        "--model /opt/EpiNano/models/rrach.q3.mis3.del3.linear.dump "
+        "--predict {output.kmer_5_site} "
+        "--columns 8,13,23 "
+        "--out_prefix {params.prefix}  2>>{log}"
+
+
 
 
 # rule epinano:
@@ -82,6 +99,9 @@ python $Epinano/Epinano_Variants.py -R $ref \
 
 #slide features
 python $Epinano/misc/Slide_Variants.py wt.plus_strand.per.site.csv 5
+# output results/alignments/RNA081120181_filtered.plus_strand.per.site.5mer.csv
+
+
 
 #predict modifications
 python $Epinano/Epinano_Predict.py \
