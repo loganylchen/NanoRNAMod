@@ -7,9 +7,9 @@ min_version("6.4.1")
 
 
 wildcard_constraints:
-    sample="[\da-zA-Z]+",
-    control="[\da-zA-Z]+",
-    native="[\da-zA-Z]+",
+    sample="[\da-zA-Z]+_?[\d]*",
+    control="[\da-zA-Z]+_?[\d]*",
+    native="[\da-zA-Z]+_?[\d]*",
     sample_size="[\d]+",
     n="[\d]+"
 
