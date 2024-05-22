@@ -9,7 +9,7 @@ region=snakemake.input.region
 reference=snakemake.params.reference
 output=snakemake.output[0]
 
-log = snakemake.log_fmt_shell(stdout=False, stderr=True)
+
 
 
 
@@ -27,5 +27,5 @@ shell("python3 DRUMMER.py -r {reference} "
       " -c {control_bam} "
       " -t {native_bam} "
       " -o {output} "
-      " -a isoform {log} ")
+      " -a isoform  ")
 
