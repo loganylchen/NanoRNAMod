@@ -43,7 +43,8 @@ rule drummer:
     params:
         reference = config['reference']['transcriptome_fasta']
     output:
-        directory("results/drummer/{native}_{control}/")
+        outdir=directory("results/drummer/{native}_{control}/"),
+        summary="results/drummer/{native}_{control}/{control}_filtered-{native}_filtered/summary.txt"
     benchmark:
         "benchmarks/{native}_{control}.drummer.benchmark.txt"
     container:
@@ -64,7 +65,8 @@ rule drummer_sampled:
     params:
         reference=config['reference']['transcriptome_fasta']
     output:
-        directory("results/drummer/{native}_{control}-{sample_size}-{n}/")
+        outdir=directory("results/drummer/{native}_{control}-{sample_size}-{n}/"),
+        summary="results/drummer/{native}_{control}/{control}_filtered_{sample_size}_{n}-{native}_filtered_{sample_size}_{n}/summary.txt"
     benchmark:
         "benchmarks/{native}_{control}-{sample_size}-{n}.drummer.benchmark.txt"
     container:
