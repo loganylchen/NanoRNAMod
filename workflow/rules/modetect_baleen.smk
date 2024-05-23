@@ -5,9 +5,6 @@ rule baleen_dataprep:
     output:
         data="results/dataprep/{sample}_baleen_dataprep/eventalign.index",
         dir=directory("results/dataprep/{sample}_baleen_dataprep"),
-    params:
-        label="{sample}",
-        use_mem=config['baleen']['use_mem'],
     container:
         "docker://btrspg/baleen:dev"
     benchmark:
@@ -30,9 +27,6 @@ rule baleen_dataprep_sampled:
     output:
         data="results/dataprep/{sample}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
         dir=directory("results/dataprep/{sample}_baleen_dataprep_{sample_size}_{n}"),
-    params:
-        label="{sample}",
-        use_mem=config['baleen']['use_mem'],
     container:
         "docker://btrspg/baleen:dev"
     benchmark:
