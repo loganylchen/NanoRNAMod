@@ -8,7 +8,8 @@ rule epinano_prep:
         per_site = "results/alignments/{sample}_filtered.plus_strand.per.site.csv",
         kmer_5_site = "results/alignments/{sample}_filtered.plus_strand.per.site.5mer.csv",
     params:
-        extra=config['params']['epinano_dataprep']
+        extra=config['params']['epinano_dataprep'],
+        prefix="results/alignments/{sample}_filtered"
     threads: config['threads']['epinano']
     log:
         "logs/epinano_prep/{sample}.log"
