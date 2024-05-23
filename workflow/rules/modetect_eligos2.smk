@@ -34,9 +34,9 @@ rule eligos2_sampled:
         native_bam="results/alignments/{native}_filtered_{sample_size}_{n}.bam",
         native_bai="results/alignments/{native}_filtered_{sample_size}_{n}.bam.bai",
         reference=config['reference']['transcriptome_fasta'],
-        region="results/eligos2/{native}_{control}-{sample_size}_{n}.bed"
+        region="results/eligos2/{native}_{control}-{sample_size}-{n}.bed"
     output:
-        directory("results/eligos2/{native}_{control}-{sample_size}_{n}")
+        directory("results/eligos2/{native}_{control}-{sample_size}-{n}")
     params:
         prefix="{native}_{control}",
         extra=config['params']['eligos2']
@@ -62,7 +62,7 @@ rule eligos2_prep_sampled:
         native_bam="results/alignments/{native}_filtered_{sample_size}_{n}.bam",
         native_bai="results/alignments/{native}_filtered_{sample_size}_{n}.bam.bai",
     output:
-        region=temp("results/eligos2/{native}_{control}-{sample_size}_{n}.bed")
+        region=temp("results/eligos2/{native}_{control}-{sample_size}-{n}.bed")
     threads: 1
     conda:
         "../envs/bedtools.yaml"
