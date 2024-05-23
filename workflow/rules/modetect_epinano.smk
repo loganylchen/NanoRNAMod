@@ -19,18 +19,8 @@ rule epinano_prep:
         "benchmarks/{sample}.epinano_prep.benchmark.txt"
     container:
         "docker://btrspg/epinano:latest"
-    shell:
-        "python /opt/Epinano/Epinano_Variants.py  -s /opt/Epinano/misc/sam2tsv.jar  -R {input.reference} "
-        "-b {input.sample_bam} "
-        "-n {threads} "
-        "-T t 2>{log} && "
-        "python /opt/Epinano/misc/Epinano_sumErr.py --kmer 0 --file {output.per_site} --out {output.sum_err} 2>>{log} && "
-        "python /opt/EpiNano/misc/Slide_Variants.py {output.per_site} 5 2>>{log} &&"
-        "python /opt/EpiNano/Epinano_Predict.py "
-        "--model /opt/EpiNano/models/rrach.q3.mis3.del3.linear.dump "
-        "--predict {output.kmer_5_site} "
-        "--columns 8,13,23 "
-        "--out_prefix {params.prefix}  2>>{log}"
+    script:
+        "../scripts/epinano_prep.sh"
 
 # rule epinano_
 
@@ -55,18 +45,8 @@ rule epinano_prep_sampled:
         "benchmarks/{sample}_{sample_size}_{n}.epinano_prep.benchmark.txt"
     container:
         "docker://btrspg/epinano:latest"
-    shell:
-        "python /opt/Epinano/Epinano_Variants.py  -s /opt/Epinano/misc/sam2tsv.jar  -R {input.reference} "
-        "-b {input.sample_bam} "
-        "-n {threads} "
-        "-T t 2>{log} && "
-        "python /opt/Epinano/misc/Epinano_sumErr.py --kmer 0 --file {output.per_site} --out {output.sum_err} 2>>{log} && "
-        "python /opt/Epinano/misc/Slide_Variants.py {output.per_site} 5 2>>{log} &&"
-        "python /opt/Epinano/Epinano_Predict.py "
-        "--model /opt/Epinano/models/rrach.q3.mis3.del3.linear.dump "
-        "--predict {output.kmer_5_site} "
-        "--columns 8,13,23 "
-        "--out_prefix {params.prefix}  2>>{log}"
+    script:
+        "../scripts/epinano_prep.sh"
 
 
 rule epinano:
