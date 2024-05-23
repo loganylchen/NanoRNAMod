@@ -17,10 +17,12 @@ rule eligos2:
     container:
         "docker://piroonj/eligos2:latest"
     shell:
-        "eligos2 pair_diff_mod -tbam {input.native_bam} "
+        "eligos2 pair_diff_mod "
+        "-tbam {input.native_bam} "
         "-cbam {input.control_bam} "
         "-ref {input.reference} "
         "-t {threads} "
+        "-reg {input.region} "
         "-o {output} {params.extra}"
 
 
@@ -44,7 +46,8 @@ rule eligos2_sampled:
     container:
         "docker://piroonj/eligos2:latest"
     shell:
-        "eligos2 pair_diff_mod -tbam {input.native_bam} "
+        "eligos2 pair_diff_mod "
+        "-tbam {input.native_bam} "
         "-cbam {input.control_bam} "
         "-ref {input.reference} "
         "-t {threads} "
