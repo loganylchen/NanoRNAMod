@@ -20,27 +20,12 @@ properties:
   tools:
     type: object
     properties:
-      tombo_lsc:
-        type: object
-        properties:
-          activate:
-            type: boolean
-      tombo_msc:
-        type: object
-        properties:
-          activate:
-            type: boolean
       xpore:
         type: object
         properties:
           activate:
             type: boolean
       nanocompore:
-        type: object
-        properties:
-          activate:
-            type: boolean
-      m6anet:
         type: object
         properties:
           activate:
@@ -52,15 +37,9 @@ properties:
         type: string
       samtools_filtering:
         type: string
-      tombo_lsc:
+      f5c_eventalign_full:
         type: string
-      tombo_msc:
-        type: string
-      tombo_resquiggle:
-        type: string
-      f5c_eventalign_nanocompore:
-        type: string
-      f5c_eventalign_xpore:
+      f5c_eventalign_simple:
         type: string
       nanocompore:
         type: string
@@ -87,8 +66,7 @@ properties:
       nanocompore:
         type: integer
 
-realign:
-  type: boolean
+
 
 required:
   - samples
@@ -96,7 +74,7 @@ required:
   - reference
   - threads
   - tools
-  - realign
+
 
 
 
