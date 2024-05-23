@@ -15,6 +15,7 @@ params:
   eligos2: "--max_depth 5000000 --min_depth 5 --esb 0 --oddR 1 --pval 1 "
   epinano_dataprep: " "
   epinano: ""
+  drummer: " -p 1 "
 
 
 threads:

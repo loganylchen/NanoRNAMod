@@ -41,10 +41,11 @@ rule drummer:
         native_bai="results/alignments/{native}_filtered.bam.bai",
         region="results/drummer/{native}_{control}_regions.bed",
     params:
-        reference = config['reference']['transcriptome_fasta']
+        reference = config['reference']['transcriptome_fasta'],
+        extra=config['params']['drummer']
     output:
         outdir=directory("results/drummer/{native}_{control}/"),
-        summary="results/drummer/{native}_{control}/{control}_filtered-{native}_filtered/summary.txt"
+        # summary="results/drummer/{native}_{control}/{control}_filtered-{native}_filtered/summary.txt"
     benchmark:
         "benchmarks/{native}_{control}.drummer.benchmark.txt"
     container:
@@ -63,10 +64,11 @@ rule drummer_sampled:
         native_bai="results/alignments/{native}_filtered_{sample_size}_{n}.bam.bai",
         region="results/drummer/{native}_{control}-{sample_size}-{n}_regions.bed",
     params:
-        reference=config['reference']['transcriptome_fasta']
+        reference=config['reference']['transcriptome_fasta'],
+        extra=config['params']['drummer']
     output:
         outdir=directory("results/drummer/{native}_{control}-{sample_size}-{n}/"),
-        summary="results/drummer/{native}_{control}-{sample_size}-{n}/{control}_filtered_{sample_size}_{n}-{native}_filtered_{sample_size}_{n}/summary.txt"
+        # summary="results/drummer/{native}_{control}-{sample_size}-{n}/{control}_filtered_{sample_size}_{n}-{native}_filtered_{sample_size}_{n}/summary.txt"
     benchmark:
         "benchmarks/{native}_{control}-{sample_size}-{n}.drummer.benchmark.txt"
     container:
