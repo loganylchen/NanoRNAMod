@@ -7,6 +7,7 @@ rule epinano_prep:
     output:
         per_site = "results/alignments/{sample}_filtered.plus_strand.per.site.csv",
         kmer_5_site = "results/alignments/{sample}_filtered.plus_strand.per.site.5mer.csv",
+        dump_csv = "results/alignments/{sample}_filtered.q3.mis3.del3.MODEL.rrach.q3.mis3.del3.linear.dump.csv"
     params:
         extra=config['params']['epinano_dataprep'],
         prefix="results/alignments/{sample}_filtered"
@@ -18,7 +19,7 @@ rule epinano_prep:
     container:
         "docker://btrspg/epinano:latest"
     shell:
-        "epinano_variants -R {input.reference} "
+        "python3 /opt/Epinano/Epinano_Variants.py  -s /opt/Epinano/misc/sam2tsv.jar  -R {input.reference} "
         "-b {input.sample_bam} "
         "-n {threads} "
         "-T t 2>{log} && "
@@ -40,6 +41,7 @@ rule epinano_prep_sampled:
     output:
         per_site = "results/alignments/{sample}_filtered_{sample_size}_{n}.plus_strand.per.site.csv",
         kmer_5_site = "results/alignments/{sample}_filtered_{sample_size}_{n}.plus_strand.per.site.5mer.csv",
+        dump_csv = "results/alignments/{sample}_filtered_{sample_size}_{n}.q3.mis3.del3.MODEL.rrach.q3.mis3.del3.linear.dump.csv"
     params:
         extra=config['params']['epinano_dataprep'],
         prefix="results/alignments/{sample}_filtered_{sample_size}_{n}"
@@ -51,13 +53,13 @@ rule epinano_prep_sampled:
     container:
         "docker://btrspg/epinano:latest"
     shell:
-        "epinano_variants -R {input.reference} "
+        "python3 /opt/Epinano/Epinano_Variants.py  -s /opt/Epinano/misc/sam2tsv.jar  -R {input.reference} "
         "-b {input.sample_bam} "
         "-n {threads} "
         "-T t 2>{log} && "
-        "python3 /opt/EpiNano/misc/Slide_Variants.py {output.per_site} 5 2>>{log} &&"
-        "python3 /opt/EpiNano/Epinano_Predict.py "
-        "--model /opt/EpiNano/models/rrach.q3.mis3.del3.linear.dump "
+        "python3 /opt/Epinano/misc/Slide_Variants.py {output.per_site} 5 2>>{log} &&"
+        "python3 /opt/Epinano/Epinano_Predict.py "
+        "--model /opt/Epinano/models/rrach.q3.mis3.del3.linear.dump "
         "--predict {output.kmer_5_site} "
         "--columns 8,13,23 "
         "--out_prefix {params.prefix}  2>>{log}"
