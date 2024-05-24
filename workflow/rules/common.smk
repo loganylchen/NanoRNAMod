@@ -56,7 +56,7 @@ def get_final_output():
             final_output += expand("results/eligos2/{comp}-{sample_size}-{n}",comp=comparisons,
                 sample_size=config['sample_size'],n=iter_number)
         if 'epinano' in tools:
-            final_output += expand("results/epinano/{comp}-{sample_size}-{n}/epinano.delta-sum_err.prediction.csv",comp=comparisons,
+            final_output += expand("results/epinano/{comp}-{sample_size}-{n}/epinano_results.tsv",comp=comparisons,
             sample_size=config['sample_size'],n=iter_number)
     else:
         if 'baleen' in tools:
@@ -72,7 +72,7 @@ def get_final_output():
         if 'eligos2' in tools:
             final_output += expand("results/eligos2/{comp}",comp=comparisons)
         if 'epinano' in tools:
-            final_output += expand("results/epinano/{comp}/epinano.delta-sum_err.prediction.csv",comp=comparisons)
+            final_output += expand("results/epinano/{comp}-{sample_size}-{n}/epinano_results.tsv",comp=comparisons)
     return final_output
 
 

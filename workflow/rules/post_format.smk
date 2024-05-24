@@ -98,3 +98,34 @@ rule post_differr:
         "../scripts/format.py"
 
 
+rule post_epinano:
+    input:
+        'results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv'
+    output:
+        "results/epinano/{native}_{control}/epinano_results.tsv"
+    params:
+        tool="epinano",
+    log:
+        "logs/post_epinano_sampled_format/{native}_{control}.log"
+    benchmark:
+        "benchmarks/{native}_{control}.post_epinano_sampled_format.benchmark.txt"
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+rule post_epinano_sampled:
+    input:
+        'results/epinano/{native}_{control}-{sample_size}-{n}/epinano.delta-sum_err.prediction.csv'
+    output:
+        "results/epinano/{native}_{control}-{sample_size}-{n}/epinano_results.tsv"
+    params:
+        tool="epinano",
+    log:
+        "logs/post_epinano_sampled_format/{native}_{control}-{sample_size}-{n}.log"
+    benchmark:
+        "benchmarks/{native}_{control}-{sample_size}-{n}.post_epinano_sampled_format.benchmark.txt"
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
