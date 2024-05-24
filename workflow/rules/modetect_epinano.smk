@@ -51,8 +51,8 @@ rule epinano_prep_sampled:
 
 rule epinano:
     input:
-        control="results/alignments/{control}_filtered.plus.sumErrOut.csv",
-        native="results/alignments/{native}_filtered.plus.sumErrOut.csv",
+        control="results/alignments/{control}_filtered.plus_strand.per.site.csv",
+        native="results/alignments/{native}_filtered.plus_strand.per.site.csv",
     output:
         "results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv"
     params:
@@ -74,8 +74,8 @@ rule epinano:
 
 rule epinano_sampled:
     input:
-        control="results/alignments/{control}_filtered_{sample_size}_{n}.plus.sumErrOut.csv",
-        native="results/alignments/{native}_filtered_{sample_size}_{n}.plus.sumErrOut.csv",
+        control="results/alignments/{control}_filtered_{sample_size}_{n}.plus_strand.per.site.csv",
+        native="results/alignments/{native}_filtered_{sample_size}_{n}.plus_strand.per.site.csv",
     output:
         "results/epinano/{native}_{control}-{sample_size}-{n}/epinano.delta-sum_err.prediction.csv"
     params:
