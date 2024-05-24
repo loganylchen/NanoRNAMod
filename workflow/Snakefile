@@ -1,4 +1,61 @@
-# Main entrypoint of the workflow. 
-# Please follow the best practices: 
-# https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
-# in particular regarding the standardized folder structure mentioned there. 
+# libraries
+
+import os
+from snakemake.utils import min_version
+
+min_version("6.4.1")
+
+
+wildcard_constraints:
+    sample="[\da-zA-Z]+_?[\d]*",
+    control="[\da-zA-Z]+_?[\d]*",
+    native="[\da-zA-Z]+_?[\d]*",
+    sample_size="[\d]+",
+    n="[\d]+"
+
+
+
+
+##### setup report #####
+configfile: "config/config.yaml"
+
+##### setup singularity #####
+
+
+# this container defines the underlying OS for each job when using the workflow
+# with --use-conda --use-singularity
+container: "docker://condaforge/mambaforge:22.11.1-4"
+
+report: "report/workflow.rst"
+
+
+include: "rules/common.smk"
+include: "rules/prep_data_prep.smk"
+include: "rules/prep_align_minimap2.smk"
+include: "rules/prep_readsfiltering.smk"
+include: "rules/prep_index_f5c.smk"
+include: "rules/prep_eventalign_f5c.smk"
+include: "rules/prep_reference.smk"
+include: "rules/modetect_xpore.smk"
+include: "rules/modetect_nanocompore.smk"
+include: "rules/modetect_baleen.smk"
+include: "rules/modetect_differr.smk"
+include: "rules/modetect_drummer.smk"
+include: "rules/modetect_eligos2.smk"
+include: "rules/modetect_epinano.smk"
+include: "rules/post_format.smk"
+include: "rules/qc_quantification_nanocount.smk"
+
+
+##### target rules #####
+
+
+
+
+
+rule all:
+    input:
+        get_final_output(),
+        
+        # "results/qc/multiqc_report.html",
+        # "results/pca.svg",
