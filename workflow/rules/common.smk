@@ -72,7 +72,7 @@ def get_final_output():
         if 'eligos2' in tools:
             final_output += expand("results/eligos2/{comp}",comp=comparisons)
         if 'epinano' in tools:
-            final_output += expand("results/epinano/{comp}-{sample_size}-{n}/epinano_results.tsv",comp=comparisons)
+            final_output += expand("results/epinano/{comp}/epinano_results.tsv",comp=comparisons)
     return final_output
 
 
