@@ -9,7 +9,7 @@ validate(config, schema="../schemas/config.schema.yaml")
 
 # loading samples
 samples = (
-    pd.read_csv(config['samples'], sep="\t", dtype={"SampleName": str})
+    pd.read_csv(config['samples'], sep="\t", dtype={"SampleName": str},comment='#')
     .set_index("SampleName", drop=False)
     .sort_index()
 )
