@@ -42,6 +42,9 @@ def format_drummer(input_dir,output_file):
     df = pd.read_csv(f,sep='\t').sort_values(['transcript_id','transcript_pos'])
     df.to_csv(output_file,sep='\t',index=False)
 
+def format_nanocompore(input_file,output_file):
+    df = pd.read_csv(input_file,sep='\t').sort_values(['ref_id','pos'])
+    df.to_csv(output_file,sep='\t',index=False)
 
 if snakemake.params.tool == 'xpore':
     format_xpore(snakemake.input[0],snakemake.output[0])
