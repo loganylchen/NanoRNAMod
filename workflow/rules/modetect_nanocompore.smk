@@ -36,7 +36,7 @@ rule nanocompore_collapse:
         eventalign="results/eventalign/{sample}_full.tsv.bz2.tmp",
         completion="results/eventalign/{sample}_full.tsv.completed.tmp"
     output:
-        output="results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv"
+        output=temp("results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv")
     params:
         prefix="{sample}",
         dir="results/nanocompore_eventalign_collapse/{sample}",
@@ -60,7 +60,7 @@ rule nanocompore_collapse_sampled:
         eventalign="results/eventalign/{sample}_full_{sample_size}_{n}.tsv.bz2.tmp",
         completion="results/eventalign/{sample}_full_{sample_size}_{n}.tsv.completed.tmp"
     output:
-        output="results/nanocompore_eventalign_collapse/{sample}_{sample_size}_{n}/{sample}_{sample_size}_{n}_eventalign_collapse.tsv"
+        output=temp("results/nanocompore_eventalign_collapse/{sample}_{sample_size}_{n}/{sample}_{sample_size}_{n}_eventalign_collapse.tsv")
     params:
         prefix="{sample}_{sample_size}_{n}",
         dir="results/nanocompore_eventalign_collapse/{sample}_{sample_size}_{n}",
