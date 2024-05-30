@@ -162,3 +162,35 @@ rule post_eligos2_sampled:
         "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
+
+rule post_drummer:
+    input:
+        "results/drummer/{native}_{control}/"
+    output:
+        "results/drummer/{native}_{control}/drummer_results.tsv"
+    params:
+        tool="drummer",
+    log:
+        "logs/post_drummer_sampled_format/{native}_{control}.log"
+    benchmark:
+        "benchmarks/{native}_{control}.post_drummer_sampled_format.benchmark.txt"
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+rule post_drummer_sampled:
+    input:
+        "results/drummer/{native}_{control}-{sample_size}-{n}/"
+    output:
+        "results/drummer/{native}_{control}-{sample_size}-{n}/drummer_results.tsv"
+    params:
+        tool="drummer",
+    log:
+        "logs/post_drummer_sampled_format/{native}_{control}-{sample_size}-{n}.log"
+    benchmark:
+        "benchmarks/{native}_{control}-{sample_size}-{n}.post_drummer_sampled_format.benchmark.txt"
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
