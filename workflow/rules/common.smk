@@ -53,7 +53,7 @@ def get_final_output():
             final_output += expand("results/drummer/{comp}-{sample_size}-{n}/",comp=comparisons,sample_size=config[
             'sample_size'],n=iter_number)
         if 'eligos2' in tools:
-            final_output += expand("results/eligos2/{comp}-{sample_size}-{n}",comp=comparisons,
+            final_output += expand("results/eligos2/{comp}-{sample_size}-{n}/eligos2_results.tsv",comp=comparisons,
                 sample_size=config['sample_size'],n=iter_number)
         if 'epinano' in tools:
             final_output += expand("results/epinano/{comp}-{sample_size}-{n}/epinano_results.tsv",comp=comparisons,
@@ -70,7 +70,7 @@ def get_final_output():
         if 'drummer' in tools:
             final_output += expand("results/drummer/{comp}/",comp=comparisons)
         if 'eligos2' in tools:
-            final_output += expand("results/eligos2/{comp}",comp=comparisons)
+            final_output += expand("results/eligos2/{comp}/eligos2_results.tsv",comp=comparisons)
         if 'epinano' in tools:
             final_output += expand("results/epinano/{comp}/epinano_results.tsv",comp=comparisons)
     return final_output
