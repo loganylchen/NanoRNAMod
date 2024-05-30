@@ -58,3 +58,5 @@ elif snakemake.params.tool == 'eligos2':
     format_eligos2(snakemake.input[0],snakemake.output[0])
 elif snakemake.params.tool == 'drummer':
     format_drummer(snakemake.input[0],snakemake.output[0])
+elif snakemake.params.tool == 'nanocompore':
+    format_nanocompore(snakemake.input[0],snakemake.output[0])
