@@ -50,7 +50,7 @@ def get_final_output():
             final_output += expand("results/differr/{comp}-{sample_size}-{n}/differr_results.tsv",comp=comparisons,sample_size=config[
             'sample_size'],n=iter_number)
         if 'drummer' in tools:
-            final_output += expand("results/drummer/{comp}-{sample_size}-{n}/",comp=comparisons,sample_size=config[
+            final_output += expand("results/drummer/{comp}-{sample_size}-{n}/drummer_results.tsv",comp=comparisons,sample_size=config[
             'sample_size'],n=iter_number)
         if 'eligos2' in tools:
             final_output += expand("results/eligos2/{comp}-{sample_size}-{n}/eligos2_results.tsv",comp=comparisons,
@@ -68,7 +68,7 @@ def get_final_output():
         if 'differr' in tools:
             final_output += expand('results/differr/{comp}/differr_results.tsv',comp=comparisons)
         if 'drummer' in tools:
-            final_output += expand("results/drummer/{comp}/",comp=comparisons)
+            final_output += expand("results/drummer/{comp}/drummer_results.tsv",comp=comparisons)
         if 'eligos2' in tools:
             final_output += expand("results/eligos2/{comp}/eligos2_results.tsv",comp=comparisons)
         if 'epinano' in tools:
