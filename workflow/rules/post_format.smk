@@ -129,3 +129,36 @@ rule post_epinano_sampled:
         "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
+
+
+rule post_eligos2:
+    input:
+        "results/eligos2/{native}_{control}/{native}_filtered_vs_{control}_filtered_on_{native}_{control}_baseExt0.txt"
+    output:
+        "results/eligos2/{native}_{control}/eligos2_results.tsv"
+    params:
+        tool="eligos2",
+    log:
+        "logs/post_eligos2_sampled_format/{native}_{control}.log"
+    benchmark:
+        "benchmarks/{native}_{control}.post_eligos2_sampled_format.benchmark.txt"
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+rule post_eligos2_sampled:
+    input:
+        "results/eligos2/{native}_{control}-{sample_size}-{n}/{native}_filtered_{sample_size}_{n}_vs_{control}_filtered_{sample_size}_{n}_on_{native}_filtered_{sample_size}_{n}_{control}_filtered_{sample_size}_{n}_baseExt0.txt",
+    output:
+        "results/eligos2/{native}_{control}-{sample_size}-{n}/eligos2_results.tsv"
+    params:
+        tool="eligos2",
+    log:
+        "logs/post_eligos2_sampled_format/{native}_{control}-{sample_size}-{n}.log"
+    benchmark:
+        "benchmarks/{native}_{control}-{sample_size}-{n}.post_eligos2_sampled_format.benchmark.txt"
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"

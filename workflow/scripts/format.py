@@ -24,6 +24,10 @@ def format_differr(input_file,output_file):
     df.columns = columns
     df.to_csv(output_file,sep='\t',index=False)
 
+def format_eligos2(input_file,output_file):
+    df = pd.read_csv(input_file,sep='\t').sort_values(['chrom','start_loc'])
+    df.to_csv(output_file,sep='\t',index=False)
+
 def format_epinano(input_file,output_file):
     df = pd.read_csv(input_file)
     df[['chrom','pos','ref','strand']] = df['chr_pos'].str.split(' ',expand=True)
@@ -38,3 +42,5 @@ elif snakemake.params.tool == 'differr':
     format_differr(snakemake.input[0],snakemake.output[0])
 elif snakemake.params.tool == 'epinano':
     format_epinano(snakemake.input[0],snakemake.output[0])
+elif snakemake.params.tool == 'eligos2':
+    format_eligos2(snakemake.input[0],snakemake.output[0])
