@@ -31,6 +31,41 @@ rule post_xpore:
     script:
         "../scripts/format.py"
 
+
+rule post_nanocompore_sampled:
+    input:
+        "results/nanocompore/{native}_{control}-{sample_size}-{n}/nanocompore_results.tsv",
+    output:
+        "results/modifications/nanocompore/{native}_{control}-{sample_size}-{n}/nanocompore_results.tsv"
+    params:
+        tool="nanocompore",
+    log:
+        "logs/post_nanocompore_sampled_format/{native}_{control}_{sample_size}_{n}.log"
+    benchmark:
+        "benchmarks/{native}_{control}_{sample_size}_{n}.post_nanocompore_sampled_format.benchmark.txt"
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+
+rule post_nanocompore:
+    input:
+        "results/nanocompore/{native}_{control}/nanocompore_results.tsv",
+    output:
+        "results/modifications/nanocompore/{native}_{control}/nanocompore_results.tsv"
+    params:
+        tool="nanocompore",
+    log:
+        "logs/post_nanocompore_sampled_format/{native}_{control}.log"
+    benchmark:
+        "benchmarks/{native}_{control}.post_nanocompore_sampled_format.benchmark.txt"
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+
 rule post_baleen_sampled:
     input:
         'results/baleen/{native}_{control}-{sample_size}-{n}/transcripts.csv'
