@@ -5,8 +5,8 @@ rule epinano_prep:
         reference=config['reference']['transcriptome_fasta'],
         reference_dict=config['reference']['transcriptome_fasta'] + '.dict'
     output:
-        per_site = "results/alignments/{sample}_filtered.plus_strand.per.site.csv",
-        sum_err="results/alignments/{sample}_filtered.plus.sumErrOut.csv",
+        per_site = temp("results/alignments/{sample}_filtered.plus_strand.per.site.csv"),
+        sum_err=temp("results/alignments/{sample}_filtered.plus.sumErrOut.csv"),
         # kmer_5_site = "results/alignments/{sample}_filtered.plus_strand.per.site.5mer.csv",
         # dump_csv = "results/alignments/{sample}_filtered.q3.mis3.del3.MODEL.rrach.q3.mis3.del3.linear.dump.csv"
     params:
@@ -31,8 +31,8 @@ rule epinano_prep_sampled:
         reference=config['reference']['transcriptome_fasta'],
         reference_dict=config['reference']['transcriptome_fasta'] + '.dict'
     output:
-        per_site = "results/alignments/{sample}_filtered_{sample_size}_{n}.plus_strand.per.site.csv",
-        sum_err ="results/alignments/{sample}_filtered_{sample_size}_{n}.plus.sumErrOut.csv",
+        per_site = temp("results/alignments/{sample}_filtered_{sample_size}_{n}.plus_strand.per.site.csv"),
+        sum_err =temp("results/alignments/{sample}_filtered_{sample_size}_{n}.plus.sumErrOut.csv"),
         # kmer_5_site = "results/alignments/{sample}_filtered_{sample_size}_{n}.plus_strand.per.site.5mer.csv",
         # dump_csv = "results/alignments/{sample}_filtered_{sample_size}_{n}.q3.mis3.del3.MODEL.rrach.q3.mis3.del3.linear.dump.csv"
     params:
