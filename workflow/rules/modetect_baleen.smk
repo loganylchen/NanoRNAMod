@@ -6,7 +6,7 @@ rule baleen_dataprep:
         data="results/dataprep/{sample}_baleen_dataprep/eventalign.index",
         dir=directory("results/dataprep/{sample}_baleen_dataprep"),
     container:
-        "docker://btrspg/baleen:dev"
+        "docker://btrspg/baleen:clean"
     benchmark:
         "benchmarks/{sample}.baleen_dataprep.txt",
     threads: config['threads']['baleen']
@@ -28,7 +28,7 @@ rule baleen_dataprep_sampled:
         data="results/dataprep/{sample}_baleen_dataprep_{sample_size}_{n}/eventalign.index",
         dir=directory("results/dataprep/{sample}_baleen_dataprep_{sample_size}_{n}"),
     container:
-        "docker://btrspg/baleen:dev"
+        "docker://btrspg/baleen:clean"
     benchmark:
         "benchmarks/{sample}.baleen_dataprep_{sample_size}_{n}.txt",
     threads: config['threads']['baleen']
@@ -55,7 +55,7 @@ rule baleen_modcall:
         params=config['params']['baleen_modcall'],
         dir="results/baleen/{native}_{control}/",
     container:
-        "docker://btrspg/baleen:dev"
+        "docker://btrspg/baleen:clean"
     benchmark:
         "benchmarks/{native}_{control}.baleen_test.txt",
     threads: config['threads']['baleen']
@@ -83,7 +83,7 @@ rule baleen_modcall_sampled:
         params=config['params']['baleen_modcall'],
         dir= "results/baleen/{native}_{control}-{sample_size}-{n}/",
     container:
-        "docker://btrspg/baleen:dev"
+        "docker://btrspg/baleen:clean"
     benchmark:
         "benchmarks/{native}_{control}_{sample_size}_{n}.baleen_test.txt",
     threads: config['threads']['baleen']
@@ -106,7 +106,7 @@ rule baleen_postcall:
         params=config['params']['baleen_postcall'],
         dir="results/baleen/{native}_{control}/",
     container:
-        "docker://btrspg/baleen:dev"
+        "docker://btrspg/baleen:clean"
     benchmark:
         "benchmarks/{native}_{control}.baleen_postcall.txt",
     threads: config['threads']['baleen']
@@ -128,7 +128,7 @@ rule baleen_postcall_sampled:
         params=config['params']['baleen_postcall'],
         dir="results/baleen/{native}_{control}-{sample_size}-{n}/",
     container:
-        "docker://btrspg/baleen:dev"
+        "docker://btrspg/baleen:clean"
     benchmark:
         "benchmarks/{native}_{control}-{sample_size}-{n}.baleen_postcall.txt",
     threads: config['threads']['baleen']
