@@ -39,15 +39,7 @@ reference:
   transcriptome_gtf: transcriptome.gtf
 
 
-realign: False
-group: False
-baleen:
-  use_mem: True
-  padding: 1
-  coverage: 0.8
-  gmm_component_n: 2
-  dtw_normalization: shape
-  sample: 1000
+
 
 
 
