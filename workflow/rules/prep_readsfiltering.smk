@@ -16,6 +16,30 @@ rule samtools_filter_mapped:
         "samtools view -Sbh {params.extra} --write-index -o {output.bam} {input.bam} 2>{log} && "
         "samtools index {output.bam} "
 
+rule samtools_depth:
+    input:
+        bams = expand("results/alignments/{sample}_filtered.bam",sample=list(samples.index)),
+        bai= expand("results/alignments/{sample}_filtered.bam.bai",sample=list(samples.index)),
+    output:
+        temp("results/bams.depth")
+    log:
+        "logs/depth.log"
+    conda:
+        "../envs/minimap2.yaml"
+    shell:
+        "samtools depth  {input.bams} > {output} 2>{log}  "
+
+rule make_depth_table:
+    input:
+        "results/bams.depth"
+    output:
+        "results/depth_table.tsv"
+    params:
+        samples=list(samples.index)
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/depth.py"
 
 rule samtools_filter_mapped_epi:
     input:
