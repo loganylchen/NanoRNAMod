@@ -29,50 +29,28 @@ def get_nanocompore_list(sample_list):
     nanocompore_list = [f"results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv" for sample in sample_list]
     return ','.join(nanocompore_list)
 
-iter_number = range(int(config['test_times']))
+
 
 def get_final_output():
     tools = [tool for tool in config['tools'] if config['tools'][tool]['activate']]
     final_output = []
     final_output += expand("results/quantification/{sample}.tx_counts.tsv",sample=list(samples.index))
     # For some small dataset (on limited transcripts), sampling may be a good choice, while for other big datasets, it may not be necessary
-    if config['sample']:
-        if 'nanocompore' in tools:
-            final_output += expand("results/modifications/nanocompore/{comp}-{sample_size}-{n}/nanocompore_results.tsv",comp=comparisons,
-                sample_size=config['sample_size'],n=iter_number)
-        if 'xpore' in tools:
-            final_output += expand("results/modifications/xpore/{comp}-{sample_size}-{n}/xpore_results.tsv",comp=comparisons,sample_size=config[
-            'sample_size'],n=iter_number)
-        if 'baleen' in tools:
-            final_output += expand('results/modifications/baleen/{comp}-{sample_size}-{n}/baleen_results.tsv',comp=comparisons,sample_size=config[
-            'sample_size'],n=iter_number)
-        if 'differr' in tools:
-            final_output += expand("results/modifications/differr/{comp}-{sample_size}-{n}/differr_results.tsv",comp=comparisons,sample_size=config[
-            'sample_size'],n=iter_number)
-        if 'drummer' in tools:
-            final_output += expand("results/modifications/drummer/{comp}-{sample_size}-{n}/drummer_results.tsv",comp=comparisons,sample_size=config[
-            'sample_size'],n=iter_number)
-        if 'eligos2' in tools:
-            final_output += expand("results/modifications/eligos2/{comp}-{sample_size}-{n}/eligos2_results.tsv",comp=comparisons,
-                sample_size=config['sample_size'],n=iter_number)
-        if 'epinano' in tools:
-            final_output += expand("results/modifications/epinano/{comp}-{sample_size}-{n}/epinano_results.tsv",comp=comparisons,
-            sample_size=config['sample_size'],n=iter_number)
-    else:
-        if 'baleen' in tools:
-            final_output += expand('results/modifications/baleen/{comp}/baleen_results.tsv',comp=comparisons)
-        if 'nanocompore' in tools:
-            final_output += expand("results/modifications/nanocompore/{comp}/nanocompore_results.tsv",comp=comparisons)
-        if 'xpore' in tools:
-            final_output += expand("results/modifications/xpore/{comp}/xpore_results.tsv",comp=comparisons)
-        if 'differr' in tools:
-            final_output += expand('results/modifications/differr/{comp}/differr_results.tsv',comp=comparisons)
-        if 'drummer' in tools:
-            final_output += expand("results/modifications/drummer/{comp}/drummer_results.tsv",comp=comparisons)
-        if 'eligos2' in tools:
-            final_output += expand("results/modifications/eligos2/{comp}/eligos2_results.tsv",comp=comparisons)
-        if 'epinano' in tools:
-            final_output += expand("results/modifications/epinano/{comp}/epinano_results.tsv",comp=comparisons)
+
+    if 'baleen' in tools:
+        final_output += expand('results/modifications/baleen/{comp}/baleen_results.tsv',comp=comparisons)
+    if 'nanocompore' in tools:
+        final_output += expand("results/modifications/nanocompore/{comp}/nanocompore_results.tsv",comp=comparisons)
+    if 'xpore' in tools:
+        final_output += expand("results/modifications/xpore/{comp}/xpore_results.tsv",comp=comparisons)
+    if 'differr' in tools:
+        final_output += expand('results/modifications/differr/{comp}/differr_results.tsv',comp=comparisons)
+    if 'drummer' in tools:
+        final_output += expand("results/modifications/drummer/{comp}/drummer_results.tsv",comp=comparisons)
+    if 'eligos2' in tools:
+        final_output += expand("results/modifications/eligos2/{comp}/eligos2_results.tsv",comp=comparisons)
+    if 'epinano' in tools:
+        final_output += expand("results/modifications/epinano/{comp}/epinano_results.tsv",comp=comparisons)
     return final_output
 
 

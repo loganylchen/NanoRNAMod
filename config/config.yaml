@@ -49,12 +49,7 @@ baleen:
   dtw_normalization: shape
   sample: 1000
 
-sample: True
-sample_size:
-  - 100
-  - 200
-  - 500
-test_times: 10
+
 
 
 tools:
