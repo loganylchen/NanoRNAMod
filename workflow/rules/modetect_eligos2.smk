@@ -1,14 +1,14 @@
 rule eligos2:
     input:
-        control_bam="results/alignments/{control}_3.2.4_filtered.bam",
-        control_bai="results/alignments/{control}_3.2.4_filtered.bam.bai",
-        native_bam="results/alignments/{native}_3.2.4_filtered.bam",
-        native_bai="results/alignments/{native}_3.2.4_filtered.bam.bai",
+        control_bam="results/alignments/{control}_of.bam",
+        control_bai="results/alignments/{control}_of.bam.bai",
+        native_bam="results/alignments/{native}_of.bam",
+        native_bai="results/alignments/{native}_of.bam.bai",
         reference=config['reference']['transcriptome_fasta'],
         region="results/eligos2/{native}_{control}.bed"
     output:
         directory=directory("results/eligos2/{native}_{control}"),
-        result="results/eligos2/{native}_{control}/{native}_3.2.4_filtered_vs_{control}_3.2.4_filtered_on_{native}_{control}_baseExt0.txt",
+        result="results/eligos2/{native}_{control}/{native}_of_vs_{control}_of_on_{native}_{control}_baseExt0.txt",
     params:
         prefix="{native}_{control}",
         extra=config['params']['eligos2']
@@ -31,10 +31,10 @@ rule eligos2:
 
 rule eligos2_prep:
     input:
-        control_bam="results/alignments/{control}_filtered.bam",
-        control_bai="results/alignments/{control}_filtered.bam.bai",
-        native_bam="results/alignments/{native}_filtered.bam",
-        native_bai="results/alignments/{native}_filtered.bam.bai",
+        control_bam="results/alignments/{control}_of.bam",
+        control_bai="results/alignments/{control}_of.bam.bai",
+        native_bam="results/alignments/{native}_of.bam",
+        native_bai="results/alignments/{native}_of.bam.bai",
     output:
         region=temp("results/eligos2/{native}_{control}.bed")
     threads: 1

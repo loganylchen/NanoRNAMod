@@ -22,9 +22,9 @@ rule samtools_filter_mapped_epi:
         bam="results/alignments/{sample}_3.2.4.bam",
         csi="results/alignments/{sample}_3.2.4.bam.csi"
     output:
-        bam="results/alignments/{sample}_3.2.4_filtered.bam",
-        bai="results/alignments/{sample}_3.2.4_filtered.bam.bai",
-        csi="results/alignments/{sample}_3.2.4_filtered.bam.csi",
+        bam="results/alignments/{sample}_of.bam",
+        bai="results/alignments/{sample}_of.bam.bai",
+        csi="results/alignments/{sample}_of.bam.csi",
     log:
         "logs/readfiltering_3.2.4/{sample}.log"
     conda:

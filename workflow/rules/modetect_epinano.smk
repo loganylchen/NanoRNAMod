@@ -1,12 +1,12 @@
 rule epinano_prep:
     input:
-        sample_bam="results/alignments/{sample}_3.2.4_filtered.bam",
-        sample_bai="results/alignments/{sample}_3.2.4_filtered.bam.bai",
+        sample_bam="results/alignments/{sample}_of.bam",
+        sample_bai="results/alignments/{sample}_of.bam.bai",
         reference=config['reference']['transcriptome_fasta'],
         reference_dict=config['reference']['transcriptome_fasta'] + '.dict'
     output:
-        per_site = temp("results/alignments/{sample}_3.2.4_filtered.plus_strand.per.site.csv"),
-        sum_err=temp("results/alignments/{sample}_3.2.4_filtered.plus.sumErrOut.csv"),
+        per_site = temp("results/alignments/{sample}_of.plus_strand.per.site.csv"),
+        sum_err=temp("results/alignments/{sample}_of.plus.sumErrOut.csv"),
         # kmer_5_site = "results/alignments/{sample}_filtered.plus_strand.per.site.5mer.csv",
         # dump_csv = "results/alignments/{sample}_filtered.q3.mis3.del3.MODEL.rrach.q3.mis3.del3.linear.dump.csv"
     params:
@@ -29,8 +29,8 @@ rule epinano_prep:
 
 rule epinano:
     input:
-        control="results/alignments/{control}_3.2.4_filtered.plus_strand.per.site.csv",
-        native="results/alignments/{native}_3.2.4_filtered.plus_strand.per.site.csv",
+        control="results/alignments/{control}_of.plus_strand.per.site.csv",
+        native="results/alignments/{native}_of.plus_strand.per.site.csv",
     output:
         "results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv"
     params:
