@@ -33,7 +33,7 @@ def get_nanocompore_list(sample_list):
 
 def get_final_output():
     tools = [tool for tool in config['tools'] if config['tools'][tool]['activate']]
-    final_output = []
+    final_output = ['results/depth_table.tsv']
     final_output += expand("results/quantification/{sample}.tx_counts.tsv",sample=list(samples.index))
     # For some small dataset (on limited transcripts), sampling may be a good choice, while for other big datasets, it may not be necessary
 
