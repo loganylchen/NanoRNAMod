@@ -94,7 +94,7 @@ rule post_epinano:
 
 rule post_eligos2:
     input:
-        "results/eligos2/{native}_{control}/{native}_of_vs_{control}_of_on_{native}_{control}_baseExt0.txt"
+        "results/eligos2/{native}_{control}/{native}_filtered_vs_{control}_filtered_on_{native}_{control}_baseExt0.txt",
     output:
         "results/modifications/eligos2/{native}_{control}/eligos2_results.tsv"
     params:
