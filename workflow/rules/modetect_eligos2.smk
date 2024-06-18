@@ -8,7 +8,7 @@ rule eligos2:
         region="results/eligos2/{native}_{control}.bed"
     output:
         directory=directory("results/eligos2/{native}_{control}"),
-        result="results/eligos2/{native}_{control}/{native}_filtered_vs_{control}_filtered_on_{native}_{control}_baseExt0.txt",
+        result="results/eligos2/{native}_{control}/{native}_3.2.4_filtered_vs_{control}_3.2.4_filtered_on_{native}_{control}_baseExt0.txt",
     params:
         prefix="{native}_{control}",
         extra=config['params']['eligos2']
