@@ -27,7 +27,7 @@ rule samtools_depth:
     conda:
         "../envs/minimap2.yaml"
     shell:
-        "samtools depth  {input.bams} > {output} 2>{log}  "
+        "samtools depth  -J {input.bams} > {output} 2>{log}  "
 
 rule make_depth_table:
     input:
