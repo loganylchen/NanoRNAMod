@@ -32,15 +32,15 @@ rule baleen_modcall:
     params:
         bedfile=config['target_region'],
         params=config['params']['baleen_modcall'],
-        dir="results/baleen_modcall/{native}_{control}/",
+        dir="results/baleen/{native}_{control}/",
     container:
         "docker://btrspg/baleen:clean"
     benchmark:
         "benchmarks/{native}_{control}.baleen_modcall.txt",
     threads: config['threads']['baleen']
     log:
-        out="logs/baleen/N_{native}_C_{control}.log",
-        err="logs/baleen/N_{native}_C_{control}.error"
+        out="logs/baleen_modcall/N_{native}_C_{control}.log",
+        err="logs/baleen_modcall/N_{native}_C_{control}.error"
     shell:
         "Baleen.py modcall "
         "--native-dataprep {input.native_dataprep} "
@@ -64,10 +64,11 @@ rule baleen_postcall:
         "benchmarks/{native}_{control}.baleen_postcall.txt",
     threads: config['threads']['baleen']
     log:
-        "logs/baleen_postcall/N_{native}_C_{control}.log",
+        out="logs/baleen_postcall/N_{native}_C_{control}.log",
+        err="logs/baleen_postcall/N_{native}_C_{control}.error"
     shell:
         "Baleen.py postcall "
         "--modcall-sm-dir {input.modcall} "
         "--threads {threads} "
         "{params.params} "
-        "--output-dir {params.dir} 2> {log}"
+        "--output-dir {params.dir} 2> {log.err} 1> {log.out}"
