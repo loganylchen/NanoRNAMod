@@ -35,7 +35,7 @@ rule xpore_annotate:
         "--sep tab "
         "--transcript-column id "
         "--loc-column position "
-        "--gtf {param.gtf} "
+        "--gtf {params.gtf} "
         "--output {output.result} 2> {log.err} 1> {log.out}"
 
 
@@ -76,7 +76,7 @@ rule nanocompore_annotate:
         "--sep tab "
         "--transcript-column ref_id "
         "--loc-column pos "
-        "--gtf {param.gtf} "
+        "--gtf {params.gtf} "
         "--output {output.result} 2> {log.err} 1> {log.out}"
 
 
@@ -118,7 +118,7 @@ rule baleen_annotate:
         "--sep tab "
         "--transcript-column transcript "
         "--loc-column loc "
-        "--gtf {param.gtf} "
+        "--gtf {params.gtf} "
         "--output {output.result} 2> {log.err} 1> {log.out}"
 
 
@@ -159,7 +159,7 @@ rule differr_annotate:
         "--sep tab "
         "--transcript-column chrom "
         "--loc-column start "
-        "--gtf {param.gtf} "
+        "--gtf {params.gtf} "
         "--output {output.result} 2> {log.err} 1> {log.out}"
 
 
@@ -201,7 +201,7 @@ rule epinano_annotate:
         "--sep tab "
         "--transcript-column chrom "
         "--loc-column pos "
-        "--gtf {param.gtf} "
+        "--gtf {params.gtf} "
         "--output {output.result} 2> {log.err} 1> {log.out}"
 
 
@@ -242,7 +242,7 @@ rule eligos2_annotate:
         "--sep tab "
         "--transcript-column chrom "
         "--loc-column start_loc "
-        "--gtf {param.gtf} "
+        "--gtf {params.gtf} "
         "--output {output.result} 2> {log.err} 1> {log.out}"
 
 
@@ -283,5 +283,5 @@ rule drummer_annotate:
         "--sep tab "
         "--transcript-column transcript_id "
         "--loc-column transcript_pos "
-        "--gtf {param.gtf} "
+        "--gtf {params.gtf} "
         "--output {output.result} 2> {log.err} 1> {log.out}"
