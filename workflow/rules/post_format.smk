@@ -14,7 +14,29 @@ rule post_xpore:
     script:
         "../scripts/format.py"
 
-
+rule xpore_annotate:
+    input:
+        transcripts="results/modifications/xpore/{native}_{control}/xpore_results.tsv"
+    output:
+        result="results/modifications/xpore/{native}_{control}/xpore_annotated_results.tsv"
+    container:
+        "docker://btrspg/baleen:clean"
+    params:
+        gtf=config['reference']['transcriptome_gtf'],
+    benchmark:
+        "benchmarks/{native}_{control}.xpore_annotate.txt",
+    threads: 1
+    log:
+        out="logs/xpore_annotate/N_{native}_C_{control}.log",
+        err="logs/xpore_annotate/N_{native}_C_{control}.error"
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column id "
+        "--loc-column position "
+        "--gtf {param.gtf} "
+        "--output {output.result} 2> {log.err} 1> {log.out}"
 
 
 rule post_nanocompore:
@@ -33,7 +55,29 @@ rule post_nanocompore:
     script:
         "../scripts/format.py"
 
-
+rule nanocompore_annotate:
+    input:
+        transcripts="results/modifications/nanocompore/{native}_{control}/nanocompore_results.tsv"
+    output:
+        result="results/modifications/nanocompore/{native}_{control}/nanocompore_annotated_results.tsv"
+    container:
+        "docker://btrspg/baleen:clean"
+    params:
+        gtf=config['reference']['transcriptome_gtf'],
+    benchmark:
+        "benchmarks/{native}_{control}.nanocompore_annotate.txt",
+    threads: 1
+    log:
+        out="logs/nanocompore_annotate/N_{native}_C_{control}.log",
+        err="logs/nanocompore_annotate/N_{native}_C_{control}.error"
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column ref_id "
+        "--loc-column pos "
+        "--gtf {param.gtf} "
+        "--output {output.result} 2> {log.err} 1> {log.out}"
 
 
 
@@ -53,7 +97,29 @@ rule post_baleen:
     script:
         "../scripts/format.py"
 
-
+rule baleen_annotate:
+    input:
+        transcripts="results/modifications/baleen/{native}_{control}/baleen_results.tsv"
+    output:
+        result="results/modifications/baleen/{native}_{control}/baleen_annotated_results.tsv"
+    container:
+        "docker://btrspg/baleen:clean"
+    params:
+        gtf=config['reference']['transcriptome_gtf'],
+    benchmark:
+        "benchmarks/{native}_{control}.baleen_annotate.txt",
+    threads: 1
+    log:
+        out="logs/baleen_annotate/N_{native}_C_{control}.log",
+        err="logs/baleen_annotate/N_{native}_C_{control}.error"
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column transcript "
+        "--loc-column loc "
+        "--gtf {param.gtf} "
+        "--output {output.result} 2> {log.err} 1> {log.out}"
 
 
 rule post_differr:
@@ -72,6 +138,31 @@ rule post_differr:
     script:
         "../scripts/format.py"
 
+rule differr_annotate:
+    input:
+        transcripts="results/modifications/differr/{native}_{control}/differr_results.tsv"
+    output:
+        result="results/modifications/differr/{native}_{control}/differr_annotated_results.tsv"
+    container:
+        "docker://btrspg/baleen:clean"
+    params:
+        gtf=config['reference']['transcriptome_gtf'],
+    benchmark:
+        "benchmarks/{native}_{control}.differr_annotate.txt",
+    threads: 1
+    log:
+        out="logs/differr_annotate/N_{native}_C_{control}.log",
+        err="logs/differr_annotate/N_{native}_C_{control}.error"
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column chrom "
+        "--loc-column start "
+        "--gtf {param.gtf} "
+        "--output {output.result} 2> {log.err} 1> {log.out}"
+
+
 
 rule post_epinano:
     input:
@@ -89,7 +180,29 @@ rule post_epinano:
     script:
         "../scripts/format.py"
 
-
+rule epinano_annotate:
+    input:
+        transcripts="results/modifications/epinano/{native}_{control}/epinano_results.tsv"
+    output:
+        result="results/modifications/epinano/{native}_{control}/epinano_annotated_results.tsv"
+    container:
+        "docker://btrspg/baleen:clean"
+    params:
+        gtf=config['reference']['transcriptome_gtf'],
+    benchmark:
+        "benchmarks/{native}_{control}.epinano_annotate.txt",
+    threads: 1
+    log:
+        out="logs/epinano_annotate/N_{native}_C_{control}.log",
+        err="logs/epinano_annotate/N_{native}_C_{control}.error"
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column chrom "
+        "--loc-column pos "
+        "--gtf {param.gtf} "
+        "--output {output.result} 2> {log.err} 1> {log.out}"
 
 
 rule post_eligos2:
@@ -108,6 +221,30 @@ rule post_eligos2:
     script:
         "../scripts/format.py"
 
+rule eligos2_annotate:
+    input:
+        transcripts="results/modifications/eligos2/{native}_{control}/eligos2_results.tsv"
+    output:
+        result="results/modifications/eligos2/{native}_{control}/eligos2_annotated_results.tsv"
+    container:
+        "docker://btrspg/baleen:clean"
+    params:
+        gtf=config['reference']['transcriptome_gtf'],
+    benchmark:
+        "benchmarks/{native}_{control}.eligos2_annotate.txt",
+    threads: 1
+    log:
+        out="logs/eligos2_annotate/N_{native}_C_{control}.log",
+        err="logs/eligos2_annotate/N_{native}_C_{control}.error"
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column chrom "
+        "--loc-column start_loc "
+        "--gtf {param.gtf} "
+        "--output {output.result} 2> {log.err} 1> {log.out}"
+
 
 rule post_drummer:
     input:
@@ -125,3 +262,26 @@ rule post_drummer:
     script:
         "../scripts/format.py"
 
+rule drummer_annotate:
+    input:
+        transcripts="results/modifications/drummer/{native}_{control}/drummer_results.tsv"
+    output:
+        result="results/modifications/drummer/{native}_{control}/drummer_annotated_results.tsv"
+    container:
+        "docker://btrspg/baleen:clean"
+    params:
+        gtf=config['reference']['transcriptome_gtf'],
+    benchmark:
+        "benchmarks/{native}_{control}.drummer_annotate.txt",
+    threads: 1
+    log:
+        out="logs/drummer_annotate/N_{native}_C_{control}.log",
+        err="logs/drummer_annotate/N_{native}_C_{control}.error"
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column transcript_id "
+        "--loc-column transcript_pos "
+        "--gtf {param.gtf} "
+        "--output {output.result} 2> {log.err} 1> {log.out}"

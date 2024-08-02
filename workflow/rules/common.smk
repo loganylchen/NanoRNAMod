@@ -39,18 +39,32 @@ def get_final_output():
 
     if 'baleen' in tools:
         final_output += expand('results/modifications/baleen/{comp}/baleen_results.tsv',comp=comparisons)
+        if os.path.exists(config['reference']['transcriptome_gtf']):
+            final_output += expand('results/modifications/baleen/{comp}/baleen_annotated_results.tsv',comp=comparisons)
     if 'nanocompore' in tools:
         final_output += expand("results/modifications/nanocompore/{comp}/nanocompore_results.tsv",comp=comparisons)
+        if os.path.exists(config['reference']['transcriptome_gtf']):
+            final_output += expand('results/modifications/nanocompore/{comp}/nanocompore_annotated_results.tsv',comp=comparisons)
     if 'xpore' in tools:
         final_output += expand("results/modifications/xpore/{comp}/xpore_results.tsv",comp=comparisons)
+        if os.path.exists(config['reference']['transcriptome_gtf']):
+            final_output += expand('results/modifications/xpore/{comp}/xpore_annotated_results.tsv',comp=comparisons)
     if 'differr' in tools:
         final_output += expand('results/modifications/differr/{comp}/differr_results.tsv',comp=comparisons)
+        if os.path.exists(config['reference']['transcriptome_gtf']):
+            final_output += expand('results/modifications/differr/{comp}/differr_annotated_results.tsv',comp=comparisons)
     if 'drummer' in tools:
         final_output += expand("results/modifications/drummer/{comp}/drummer_results.tsv",comp=comparisons)
+        if os.path.exists(config['reference']['transcriptome_gtf']):
+            final_output += expand('results/modifications/drummer/{comp}/drummer_annotated_results.tsv',comp=comparisons)
     if 'eligos2' in tools:
         final_output += expand("results/modifications/eligos2/{comp}/eligos2_results.tsv",comp=comparisons)
+        if os.path.exists(config['reference']['transcriptome_gtf']):
+            final_output += expand('results/modifications/eligos2/{comp}/eligos2_annotated_results.tsv',comp=comparisons)
     if 'epinano' in tools:
         final_output += expand("results/modifications/epinano/{comp}/epinano_results.tsv",comp=comparisons)
+        if os.path.exists(config['reference']['transcriptome_gtf']):
+            final_output += expand('results/modifications/epinano/{comp}/epinano_annotated_results.tsv',comp=comparisons)
     return final_output
 
 
