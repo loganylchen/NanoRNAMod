@@ -1,6 +1,7 @@
 import glob
 import pandas as pd
 import sys
+import os
 from snakemake.utils import validate
 from snakemake.logging import logger
 
