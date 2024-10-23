@@ -126,9 +126,9 @@ rule baleen_annotate:
 
 rule post_differr:
     input:
-        "results/{project}/differr/{native}_{control}/differr.bed",
+        "{project}/results/differr/{native}_{control}/differr.bed",
     output:
-        "results/{project}/modifications/differr/{native}_{control}/differr_results.tsv",
+        "{project}/results/modifications/differr/{native}_{control}/differr_results.tsv",
     params:
         tool="differr",
     log:
