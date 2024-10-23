@@ -1,13 +1,13 @@
 rule samtools_filter_mapped:
     input:
-        bam="results/alignments/{sample}.bam",
-        csi="results/alignments/{sample}.bam.csi"
+        bam="{project}/results/alignments/{sample}.bam",
+        csi="{project}/results/alignments/{sample}.bam.csi"
     output:
-        bam="results/alignments/{sample}_filtered.bam",
-        bai="results/alignments/{sample}_filtered.bam.bai",
-        csi="results/alignments/{sample}_filtered.bam.csi",
+        bam="{project}/results/alignments/{sample}_filtered.bam",
+        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
+        csi="{project}/results/alignments/{sample}_filtered.bam.csi",
     log:
-        "logs/readfiltering/{sample}.log"
+        "logs/{project}/readfiltering/{sample}.log"
     conda:
         "../envs/minimap2.yaml"
     params:
@@ -18,12 +18,12 @@ rule samtools_filter_mapped:
 
 rule samtools_depth:
     input:
-        bams = expand("results/alignments/{sample}_filtered.bam",sample=list(samples.index)),
-        bai= expand("results/alignments/{sample}_filtered.bam.bai",sample=list(samples.index)),
+        bams = expand("{project}/results/alignments/{sample}_filtered.bam",sample=list(samples.index)),
+        bai= expand("{project}/results/alignments/{sample}_filtered.bam.bai",sample=list(samples.index)),
     output:
-        temp("results/bams.depth")
+        temp("{project}/results/bams.depth")
     log:
-        "logs/depth.log"
+        "logs/{project}/depth.log"
     conda:
         "../envs/minimap2.yaml"
     shell:
@@ -31,9 +31,9 @@ rule samtools_depth:
 
 rule make_depth_table:
     input:
-        "results/bams.depth"
+        "{project}/results/bams.depth"
     output:
-        "results/depth_table.tsv"
+        "{project}/results/depth_table.tsv"
     params:
         samples=list(samples.index)
     conda:
@@ -43,14 +43,14 @@ rule make_depth_table:
 
 rule samtools_filter_mapped_epi:
     input:
-        bam="results/alignments/{sample}_3.2.4.bam",
-        csi="results/alignments/{sample}_3.2.4.bam.csi"
+        bam="{project}/results/alignments/{sample}_3.2.4.bam",
+        csi="{project}/results/alignments/{sample}_3.2.4.bam.csi"
     output:
-        bam="results/alignments/{sample}_of.bam",
-        bai="results/alignments/{sample}_of.bam.bai",
-        csi="results/alignments/{sample}_of.bam.csi",
+        bam="{project}/results/alignments/{sample}_of.bam",
+        bai="{project}/results/alignments/{sample}_of.bam.bai",
+        csi="{project}/results/alignments/{sample}_of.bam.csi",
     log:
-        "logs/readfiltering_3.2.4/{sample}.log"
+        "logs/{project}/readfiltering_3.2.4/{sample}.log"
     conda:
         "../envs/minimap2.yaml"
     params:

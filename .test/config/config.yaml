@@ -1,10 +1,11 @@
 # path or URL to sample sheet (TSV format, columns: SampleName, Condition, Directory...)
 samples: config/samples.tsv
 
+project: test
 params:
   minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 1 "
   minimap2_genome: " -ax splice -u f -k 14 -G 500000 --secondary=no "
-  samtools_filtering: " -F0x2324 -q 10 --min-qlen 80 "
+  samtools_filtering: " -F 2324 -q 10 --min-qlen 80 "
   tombo_lsc: " --store-p-value --minimum-test-reads 2 "
   tombo_msc: " --minimum-test-reads 2 --rna "
   tombo_resquiggle: " --num-most-common-errors 5 --overwrite --rna --skip-index "
