@@ -1,20 +1,20 @@
 rule eligos2:
     input:
-        control_bam="results/alignments/{control}_filtered.bam",
-        control_bai="results/alignments/{control}_filtered.bam.bai",
-        native_bam="results/alignments/{native}_filtered.bam",
-        native_bai="results/alignments/{native}_filtered.bam.bai",
-        reference=config['reference']['transcriptome_fasta'],
-        region="results/eligos2/{native}_{control}.bed"
+        control_bam="{project}/results/alignments/{control}_filtered.bam",
+        control_bai="{project}/results/alignments/{control}_filtered.bam.bai",
+        native_bam="{project}/results/alignments/{native}_filtered.bam",
+        native_bai="{project}/results/alignments/{native}_filtered.bam.bai",
+        reference=config["reference"]["transcriptome_fasta"],
+        region="{project}/results/eligos2/{native}_{control}.bed",
     output:
-        directory=directory("results/eligos2/{native}_{control}"),
-        result="results/eligos2/{native}_{control}/{native}_filtered_vs_{control}_filtered_on_{native}_{control}_baseExt0.txt",
+        directory=directory("{project}/results/eligos2/{native}_{control}"),
+        result="{project}/results/eligos2/{native}_{control}/{native}_filtered_vs_{control}_filtered_on_{native}_{control}_baseExt0.txt",
     params:
         prefix="{native}_{control}",
-        extra=config['params']['eligos2']
-    threads: config['threads']['eligos2']
+        extra=config["params"]["eligos2"],
+    threads: config["threads"]["eligos2"]
     benchmark:
-        "benchmarks/{native}_{control}.eligos2.benchmark.txt"
+        "benchmarks/{project}/{native}_{control}.eligos2.benchmark.txt"
     container:
         "docker://piroonj/eligos2:latest"
     shell:
@@ -27,16 +27,14 @@ rule eligos2:
         "-o {output.directory} {params.extra}"
 
 
-
-
 rule eligos2_prep:
     input:
-        control_bam="results/alignments/{control}_filtered.bam",
-        control_bai="results/alignments/{control}_filtered.bam.bai",
-        native_bam="results/alignments/{native}_filtered.bam",
-        native_bai="results/alignments/{native}_filtered.bam.bai",
+        control_bam="{project}/results/alignments/{control}_filtered.bam",
+        control_bai="{project}/results/alignments/{control}_filtered.bam.bai",
+        native_bam="{project}/results/alignments/{native}_filtered.bam",
+        native_bai="{project}/results/alignments/{native}_filtered.bam.bai",
     output:
-        region=temp("results/eligos2/{native}_{control}.bed")
+        region=temp("{project}/results/eligos2/{native}_{control}.bed"),
     threads: 1
     conda:
         "../envs/bedtools.yaml"

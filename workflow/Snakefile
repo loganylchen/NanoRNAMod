@@ -7,17 +7,17 @@ min_version("6.4.1")
 
 
 wildcard_constraints:
-    sample="[\da-zA-Z]+_?[\d]*",
-    control="[\da-zA-Z]+_?[\d]*",
-    native="[\da-zA-Z]+_?[\d]*",
-    sample_size="[\d]+",
-    n="[\d]+"
-
-
+    sample="[\da-zA-Z]+_?[0-9]*",
+    control="[\da-zA-Z]+_?[0-9]*",
+    native="[\da-zA-Z]+_?[0-9]*",
+    sample_size="[0-9]+",
+    n="[0-9]+",
+    project="[\da-zA-Z]+_?[0-9]*",
 
 
 ##### setup report #####
 configfile: "config/config.yaml"
+
 
 ##### setup singularity #####
 
@@ -25,6 +25,7 @@ configfile: "config/config.yaml"
 # this container defines the underlying OS for each job when using the workflow
 # with --use-conda --use-singularity
 container: "docker://condaforge/mambaforge:22.11.1-4"
+
 
 report: "report/workflow.rst"
 
@@ -50,12 +51,8 @@ include: "rules/qc_quantification_nanocount.smk"
 ##### target rules #####
 
 
-
-
-
 rule all:
     input:
         get_final_output(),
-        
         # "results/qc/multiqc_report.html",
         # "results/pca.svg",

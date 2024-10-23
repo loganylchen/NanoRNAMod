@@ -1,20 +1,20 @@
 rule differr:
     input:
-        control_bam="results/alignments/{control}_filtered.bam",
-        control_bai="results/alignments/{control}_filtered.bam.bai",
-        native_bam="results/alignments/{native}_filtered.bam",
-        native_bai="results/alignments/{native}_filtered.bam.bai",
-        reference=config['reference']['transcriptome_fasta']
+        control_bam="{project}/results/alignments/{control}_filtered.bam",
+        control_bai="{project}/results/alignments/{control}_filtered.bam.bai",
+        native_bam="{project}/results/alignments/{native}_filtered.bam",
+        native_bai="{project}/results/alignments/{native}_filtered.bam.bai",
+        reference=config["reference"]["transcriptome_fasta"],
     output:
-        "results/differr/{native}_{control}/differr.bed"
+        "{project}/results/differr/{native}_{control}/differr.bed",
     params:
         prefix="",
-        extra=config['params']['differr']
+        extra=config["params"]["differr"],
     log:
-        stdout="logs/differr/{native}_{control}.log"
-    threads: config['threads']['differr']
+        stdout="logs/{project}/differr/{native}_{control}.log",
+    threads: config["threads"]["differr"]
     benchmark:
-        "benchmarks/{native}_{control}.differr.benchmark.txt"
+        "benchmarks/{project}/{native}_{control}.differr.benchmark.txt"
     container:
         "docker://btrspg/differr:latest"
     shell:
@@ -25,5 +25,3 @@ rule differr:
         " -o {output} "
         " {params.extra} "
         " -p {threads} 2>{log}"
-
-

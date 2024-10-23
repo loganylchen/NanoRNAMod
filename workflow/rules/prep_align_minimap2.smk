@@ -1,20 +1,20 @@
 rule minimap2_transcriptome_align:
     input:
-        fastq="results/fastq/{sample}.fq.gz",
+        fastq="{project}/results/fastq/{sample}.fq.gz",
     output:
-        bam="results/alignments/{sample}.bam",
-        csi="results/alignments/{sample}.bam.csi",
-        bai="results/alignments/{sample}.bam.bai",
+        bam="{project}/results/alignments/{sample}.bam",
+        csi="{project}/results/alignments/{sample}.bam.csi",
+        bai="{project}/results/alignments/{sample}.bam.bai",
     log:
-        "logs/minimap2_transcriptome_alignment/{sample}.log"
+        "logs/{project}/minimap2_transcriptome_alignment/{sample}.log",
     benchmark:
-        "benchmarks/{sample}.minimap2_transcriptome_alignment.benchmark.txt"
+        "benchmarks/{project}/{sample}.minimap2_transcriptome_alignment.benchmark.txt"
     conda:
         "../envs/minimap2.yaml"
     params:
         extra=config["params"]["minimap2_transcriptome"],
-        reference=config['reference']['transcriptome_fasta'],
-    threads: config['threads']['minimap2']
+        reference=config["reference"]["transcriptome_fasta"],
+    threads: config["threads"]["minimap2"]
     shell:
         "minimap2 -t {threads} {params.extra} {params.reference} {input.fastq} 2>> {log} "
         "| samtools view -Sbh "
@@ -24,21 +24,21 @@ rule minimap2_transcriptome_align:
 
 rule minimap2_transcriptome_align_epi:
     input:
-        fastq="results/fastq/{sample}_3.2.4.fq.gz",
+        fastq="{project}/results/fastq/{sample}_3.2.4.fq.gz",
     output:
-        bam="results/alignments/{sample}_3.2.4.bam",
-        csi="results/alignments/{sample}_3.2.4.bam.csi",
-        bai="results/alignments/{sample}_3.2.4.bam.bai",
+        bam="{project}/results/alignments/{sample}_3.2.4.bam",
+        csi="{project}/results/alignments/{sample}_3.2.4.bam.csi",
+        bai="{project}/results/alignments/{sample}_3.2.4.bam.bai",
     log:
-        "logs/minimap2_transcriptome_alignment_3.2.4/{sample}.log"
+        "logs/{project}/minimap2_transcriptome_alignment_3.2.4/{sample}.log",
     benchmark:
-        "benchmarks/{sample}.minimap2_transcriptome_alignment_3.2.4.benchmark.txt"
+        "benchmarks/{project}/{sample}.minimap2_transcriptome_alignment_3.2.4.benchmark.txt"
     conda:
         "../envs/minimap2.yaml"
     params:
         extra=config["params"]["minimap2_transcriptome"],
-        reference=config['reference']['transcriptome_fasta'],
-    threads: config['threads']['minimap2']
+        reference=config["reference"]["transcriptome_fasta"],
+    threads: config["threads"]["minimap2"]
     shell:
         "minimap2 -t {threads} {params.extra} {params.reference} {input.fastq} 2>> {log} "
         "| samtools view -Sbh "

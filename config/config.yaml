@@ -1,6 +1,8 @@
 # path or URL to sample sheet (TSV format, columns: SampleName, Condition, Directory...)
 samples: config/samples.tsv
 
+project: RNAMOD
+
 params:
   minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 10 -p 0 "
   samtools_filtering: " -F 2324 -q 10 --min-qlen 80 "
