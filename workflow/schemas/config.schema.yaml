@@ -5,6 +5,8 @@ type: object
 properties:
   samples:
     type: string
+  project:
+    type: string
   reference:
     type: object
     properties:
@@ -70,6 +72,7 @@ properties:
 
 required:
   - samples
+  - project
   - params
   - reference
   - threads
