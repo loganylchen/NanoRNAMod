@@ -42,29 +42,29 @@ rule xpore_dataprep:
 
 rule xpore_config:
     input:
-        control_dir="results/dataprep/{control}_xpore_dataprep",
-        native_dir="results/dataprep/{native}_xpore_dataprep",
+        control_dir="{project}/results/dataprep/{control}_xpore_dataprep",
+        native_dir="{project}/results/dataprep/{native}_xpore_dataprep",
     output:
-        conf="results/xpore/{native}_{control}.xpore_config.yaml",
+        conf="{project}/results/xpore/{native}_{control}.xpore_config.yaml",
     threads: 1
     params:
-        "results/xpore/{native}_{control}",
+        "{project}/results/xpore/{native}_{control}",
     log:
-        "logs/xpore_config/{native}_{control}.log",
+        "logs/{project}/xpore_config/{native}_{control}.log",
     script:
         "../scripts/xpore_config.py"
 
 
 rule xpore_run:
     input:
-        "results/xpore/{native}_{control}.xpore_config.yaml",
+        "{project}/results/xpore/{native}_{control}.xpore_config.yaml",
     output:
-        difftable="results/xpore/{native}_{control}/diffmod.table",
+        difftable="{project}/results/xpore/{native}_{control}/diffmod.table",
     threads: config["threads"]["xpore"]
     log:
-        "logs/xpore/{native}_{control}.log",
+        "logs/{project}/xpore/{native}_{control}.log",
     benchmark:
-        "benchmarks/{native}_{control}.xpore.benchmark.txt"
+        "benchmarks/{project}/{native}_{control}.xpore.benchmark.txt"
     conda:
         "../envs/xpore.yaml"
     shell:
@@ -73,17 +73,17 @@ rule xpore_run:
 
 rule xpore_postprocessing:
     input:
-        "results/xpore/{native}_{control}/diffmod.table",
+        "{project}/results/xpore/{native}_{control}/diffmod.table",
     output:
-        "results/xpore/{native}_{control}/majority_direction_kmer_diffmod.table",
+        "{project}/results/xpore/{native}_{control}/majority_direction_kmer_diffmod.table",
     threads: config["threads"]["xpore"]
     params:
-        "results/xpore/{native}_{control}",
+        "{project}/results/xpore/{native}_{control}",
     threads: 1
     log:
-        "logs/xpore_postprocessing/{native}_{control}.log",
+        "logs/{project}/xpore_postprocessing/{native}_{control}.log",
     benchmark:
-        "benchmarks/{native}_{control}.xpore_postprocessing.benchmark.txt"
+        "benchmarks/{project}/{native}_{control}.xpore_postprocessing.benchmark.txt"
     conda:
         "../envs/xpore.yaml"
     shell:
