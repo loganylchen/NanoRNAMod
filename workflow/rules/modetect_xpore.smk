@@ -58,6 +58,8 @@ rule xpore_config:
 rule xpore_run:
     input:
         "{project}/results/xpore/{native}_{control}.xpore_config.yaml",
+        "{project}/results/dataprep/{control}_xpore_dataprep",
+        "{project}/results/dataprep/{native}_xpore_dataprep",
     output:
         difftable=KEEP_OR_NOT(
             "{project}/results/xpore/{native}_{control}/diffmod.table"
