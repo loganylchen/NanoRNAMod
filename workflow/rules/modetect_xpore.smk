@@ -22,7 +22,7 @@ rule xpore_dataprep:
         eventalign="{project}/results/eventalign/{sample}_simple.tsv.bz2.tmp",
         reference=config["reference"]["transcriptome_fasta"],
     output:
-        directory("{project}/results/dataprep/{sample}_xpore_dataprep"),
+        KEEP_OR_NOT(directory("{project}/results/dataprep/{sample}_xpore_dataprep")),
     log:
         "logs/{project}/xpore_dataprep/{sample}.log",
     benchmark:
