@@ -32,9 +32,8 @@ rule epinano:
         control="{project}/results/alignments/{control}_filtered.plus_strand.per.site.csv",
         native="{project}/results/alignments/{native}_filtered.plus_strand.per.site.csv",
     output:
-        KEEP_OR_NOT(
-            "{project}/results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv"
-        ),
+        results="{project}/results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv",
+        output_dir=KEEP_OR_NOT("{project}/results/epinano/{native}_{control}"),
     params:
         extra=config["params"]["epinano"],
         prefix="{project}/results/epinano/{native}_{control}/epinano",

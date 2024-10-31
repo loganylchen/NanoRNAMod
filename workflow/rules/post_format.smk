@@ -43,6 +43,7 @@ rule xpore_annotate:
 rule post_nanocompore:
     input:
         "{project}/results/nanocompore/{native}_{control}/nanocompore_results.tsv",
+        "{project}/results/nanocompore/{native}_{control}",
     output:
         "{project}/results/modifications/nanocompore/{native}_{control}/nanocompore_results.tsv",
     params:
@@ -169,6 +170,7 @@ rule differr_annotate:
 rule post_epinano:
     input:
         "{project}/results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv",
+        "{project}/results/epinano/{native}_{control}",
     output:
         "{project}/results/modifications/epinano/{native}_{control}/epinano_results.tsv",
     params:
@@ -211,6 +213,7 @@ rule epinano_annotate:
 rule post_eligos2:
     input:
         "{project}/results/eligos2/{native}_{control}/{native}_filtered_vs_{control}_filtered_on_{native}_{control}_baseExt0.txt",
+        "{project}/results/eligos2/{native}_{control}",
     output:
         "{project}/results/modifications/eligos2/{native}_{control}/eligos2_results.tsv",
     params:
