@@ -49,11 +49,10 @@ rule nanocompore:
         native_file="{project}/results/nanocompore_eventalign_collapse/{native}/{native}_eventalign_collapse.tsv",
         reference=config["reference"]["transcriptome_fasta"],
     output:
-        dir=directory("{project}/results/nanocompore/{native}_{control}"),
-        output_file="{project}/results/nanocompore/{native}_{control}/nanocompore_results.tsv",
-        tempfile=temp(
-            "{project}/results/nanocompore/{native}_{control}/SampComp.db.dat"
+        output_dir=KEEP_OR_NOT(
+            directory("{project}/results/nanocompore/{native}_{control}")
         ),
+        output_file="{project}/results/nanocompore/{native}_{control}/nanocompore_results.tsv",
     params:
         prefix="{native}_{control}",
         extra=config["params"]["nanocompore"],
@@ -71,6 +70,6 @@ rule nanocompore:
         "--label2 Native "
         "{params.extra} "
         "--fasta {input.reference} "
-        "--outpath {output.dir} "
+        "--outpath {output.output_dir} "
         "--outprefix '' "
         "--overwrite  2>{log}"

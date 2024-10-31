@@ -4,7 +4,9 @@ rule baleen_dataprep:
         completion="{project}/results/eventalign/{sample}_full.tsv.completed",
     output:
         data="{project}/results/dataprep/{sample}_baleen_dataprep/eventalign.index",
-        dir=directory("{project}/results/dataprep/{sample}_baleen_dataprep"),
+        dir=KEEP_OR_NOT(
+            directory("{project}/results/dataprep/{sample}_baleen_dataprep")
+        ),
     container:
         "docker://btrspg/baleen:clean"
     benchmark:
@@ -27,7 +29,9 @@ rule baleen_modcall:
         control_dataprep="{project}/results/dataprep/{control}_baleen_dataprep/",
         control_eventalign_index="{project}/results/dataprep/{control}_baleen_dataprep/eventalign.index",
     output:
-        result="{project}/results/baleen/{native}_{control}/transcript_mod_results.csv",
+        result=KEEP_OR_NOT(
+            "{project}/results/baleen/{native}_{control}/transcript_mod_results.csv"
+        ),
     params:
         bedfile=config["target_region"],
         params=config["params"]["baleen_modcall"],

@@ -59,7 +59,9 @@ rule xpore_run:
     input:
         "{project}/results/xpore/{native}_{control}.xpore_config.yaml",
     output:
-        difftable="{project}/results/xpore/{native}_{control}/diffmod.table",
+        difftable=KEEP_OR_NOT(
+            "{project}/results/xpore/{native}_{control}/diffmod.table"
+        ),
     threads: config["threads"]["xpore"]
     log:
         stdout="logs/{project}/xpore/{native}_{control}.log",
@@ -76,7 +78,9 @@ rule xpore_postprocessing:
     input:
         "{project}/results/xpore/{native}_{control}/diffmod.table",
     output:
-        "{project}/results/xpore/{native}_{control}/majority_direction_kmer_diffmod.table",
+        KEEP_OR_NOT(
+            "{project}/results/xpore/{native}_{control}/majority_direction_kmer_diffmod.table"
+        ),
     threads: config["threads"]["xpore"]
     params:
         "{project}/results/xpore/{native}_{control}",
