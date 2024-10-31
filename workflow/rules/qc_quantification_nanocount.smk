@@ -6,10 +6,11 @@ rule quant_nanocount:
     benchmark:
         "benchmarks/{project}/{sample}.quantification_nanocount.benchmark.txt"
     log:
-        "logs/{project}/qc/{sample}_quantification_nanocount.log",
+        stdout="logs/{project}/qc/{sample}_quantification_nanocount.log",
+        stderr="logs/{project}/qc/{sample}_quantification_nanocount.err",
     container:
         "docker://btrspg/nanocount:latest"
     shell:
         "NanoCount -i {input.bam}  "
         "--extra_tx_info "
-        "-o {output.count_tsv} > {log}"
+        "-o {output.count_tsv} 1> {log.stdout} 2>{log.stderr}"

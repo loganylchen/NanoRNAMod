@@ -2,6 +2,7 @@ import os
 import sys
 from snakemake.shell import shell
 
+log = snakemake.log_fmt_shell(stdout=True, stderr=True)
 
 control_bam=snakemake.input.control_bam
 native_bam=snakemake.input.native_bam
@@ -28,5 +29,5 @@ shell("python3 DRUMMER.py -r {reference} "
       " -t {native_bam} "
       " -o {output} "
       " {snakemake.params.extra} "
-      " -a isoform  ")
+      " -a isoform  {log}")
 
