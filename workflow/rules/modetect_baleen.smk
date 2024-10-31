@@ -27,11 +27,11 @@ rule baleen_modcall:
         control_dataprep="{project}/results/dataprep/{control}_baleen_dataprep/",
         control_eventalign_index="{project}/results/dataprep/{control}_baleen_dataprep/eventalign.index",
     output:
-        result=directory("{project}/results/baleen/{native}_{control}/modcall_sm"),
+        result="{project}/results/baleen/{native}_{control}/transcript_mod_results.csv",
     params:
         bedfile=config["target_region"],
         params=config["params"]["baleen_modcall"],
-        dir="{project}/results/baleen/{native}_{control}/",
+        output_dir="{project}/results/baleen/{native}_{control}/",
     container:
         "docker://btrspg/baleen:clean"
     benchmark:
@@ -45,7 +45,7 @@ rule baleen_modcall:
         "--native-dataprep {input.native_dataprep} "
         "--control-dataprep {input.control_dataprep} "
         "{params.params} "
-        "--output-dir {params.dir} 1>{log.out} 2> {log.err}"
+        "--output-dir {params.output_dir} 1>{log.out} 2> {log.err}"
 
 
 rule baleen_postcall:

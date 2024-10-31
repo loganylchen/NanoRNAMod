@@ -84,7 +84,7 @@ rule nanocompore_annotate:
 
 rule post_baleen:
     input:
-        "{project}/results/baleen/{native}_{control}/transcripts.csv",
+        "{project}/results/baleen/{native}_{control}/transcript_mod_results.csv",
     output:
         "{project}/results/modifications/baleen/{native}_{control}/baleen_results.tsv",
     params:
@@ -119,7 +119,7 @@ rule baleen_annotate:
         "--transcript-mod-file {input.transcripts} "
         "--sep tab "
         "--transcript-column transcript "
-        "--loc-column loc "
+        "--loc-column position "
         "--gtf {params.gtf} "
         "--output {output.result} 2> {log.err} 1> {log.out}"
 
