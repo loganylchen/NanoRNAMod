@@ -2,9 +2,9 @@ rule minimap2_transcriptome_align:
     input:
         fastq="{project}/results/fastq/{sample}.fq.gz",
     output:
-        bam="{project}/results/alignments/{sample}.bam",
-        csi="{project}/results/alignments/{sample}.bam.csi",
-        bai="{project}/results/alignments/{sample}.bam.bai",
+        bam=KEEP_OR_NOT("{project}/results/alignments/{sample}.bam"),
+        csi=KEEP_OR_NOT("{project}/results/alignments/{sample}.bam.csi"),
+        bai=KEEP_OR_NOT("{project}/results/alignments/{sample}.bam.bai"),
     log:
         "logs/{project}/minimap2_transcriptome_alignment/{sample}.log",
     benchmark:
@@ -26,9 +26,9 @@ rule minimap2_transcriptome_align_epi:
     input:
         fastq="{project}/results/fastq/{sample}_3.2.4.fq.gz",
     output:
-        bam="{project}/results/alignments/{sample}_3.2.4.bam",
-        csi="{project}/results/alignments/{sample}_3.2.4.bam.csi",
-        bai="{project}/results/alignments/{sample}_3.2.4.bam.bai",
+        bam=KEEP_OR_NOT("{project}/results/alignments/{sample}_3.2.4.bam"),
+        csi=KEEP_OR_NOT("{project}/results/alignments/{sample}_3.2.4.bam.csi"),
+        bai=KEEP_OR_NOT("{project}/results/alignments/{sample}_3.2.4.bam.bai"),
     log:
         "logs/{project}/minimap2_transcriptome_alignment_3.2.4/{sample}.log",
     benchmark:
