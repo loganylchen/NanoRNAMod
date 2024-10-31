@@ -51,6 +51,9 @@ rule nanocompore:
     output:
         dir=directory("{project}/results/nanocompore/{native}_{control}"),
         output_file="{project}/results/nanocompore/{native}_{control}/nanocompore_results.tsv",
+        tempfile=temp(
+            "{project}/results/nanocompore/{native}_{control}/SampComp.db.dat"
+        ),
     params:
         prefix="{native}_{control}",
         extra=config["params"]["nanocompore"],
