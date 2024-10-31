@@ -14,6 +14,9 @@ rule eligos2:
     params:
         prefix="{native}_{control}",
         extra=config["params"]["eligos2"],
+    log:
+        stdout="logs/{project}/eligos2/{native}_{control}.log",
+        stderr="logs/{project}/eligos2/{native}_{control}.log",
     threads: config["threads"]["eligos2"]
     benchmark:
         "benchmarks/{project}/{native}_{control}.eligos2.benchmark.txt"
@@ -26,7 +29,7 @@ rule eligos2:
         "-ref {input.reference} "
         "-t {threads} "
         "-reg {input.region} "
-        "-o {output.directory} {params.extra}"
+        "-o {output.directory} {params.extra} 1>{log.stdout} 2>{log.stderr}"
 
 
 rule eligos2_prep:

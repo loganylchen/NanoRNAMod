@@ -62,13 +62,14 @@ rule xpore_run:
         difftable="{project}/results/xpore/{native}_{control}/diffmod.table",
     threads: config["threads"]["xpore"]
     log:
-        "logs/{project}/xpore/{native}_{control}.log",
+        stdout="logs/{project}/xpore/{native}_{control}.log",
+        stderr="logs/{project}/xpore/{native}_{control}.err",
     benchmark:
         "benchmarks/{project}/{native}_{control}.xpore.benchmark.txt"
     conda:
         "../envs/xpore.yaml"
     shell:
-        "xpore diffmod --config {input} --n_processes {threads} 2>{log}"
+        "xpore diffmod --config {input} --n_processes {threads} 1>{log.stdout} 1>{log.stderr}"
 
 
 rule xpore_postprocessing:
