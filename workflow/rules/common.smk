@@ -11,6 +11,15 @@ validate(config, schema="../schemas/config.schema.yaml")
 PROJECT = config["project"]
 
 RESULT_ROOT = f"{PROJECT}/results"
+ONLY_FINAL_RESULTS = config["only_final_results"]
+
+
+def KEEP_OR_NOT(output_file, delete=ONLY_FINAL_RESULTS):
+    if delete:
+        return temp(output_file)
+    else:
+        return output_file
+
 
 # loading samples
 samples = (

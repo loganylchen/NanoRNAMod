@@ -1,6 +1,9 @@
 # path or URL to sample sheet (TSV format, columns: SampleName, Condition, Directory...)
 samples: config/samples.tsv
 project: RNAModProject
+
+only_final_results: True
+
 params:
   minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 10 -p 0 "
   minimap2_genome: " -ax splice -u f -k 14 -G 500000 --secondary=no "
