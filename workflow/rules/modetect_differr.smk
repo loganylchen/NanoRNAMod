@@ -12,6 +12,7 @@ rule differr:
         extra=config["params"]["differr"],
     log:
         stdout="logs/{project}/differr/{native}_{control}.log",
+        stderr="logs/{project}/differr/{native}_{control}.err",
     threads: config["threads"]["differr"]
     benchmark:
         "benchmarks/{project}/{native}_{control}.differr.benchmark.txt"
@@ -24,4 +25,4 @@ rule differr:
         " -r {input.reference} "
         " -o {output} "
         " {params.extra} "
-        " -p {threads} 2>{log}"
+        " -p {threads} 1>{log.stdout} 2>{log.stderr}"
