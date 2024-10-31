@@ -1,8 +1,8 @@
 import os
 import sys
 from snakemake.shell import shell
-os.makedirs(os.path.dirname(snakemake.log[0]),exist_ok=True)
-log = snakemake.log_fmt_shell(stdout=True, stderr=True)
+# os.makedirs(os.path.dirname(snakemake.log[0]),exist_ok=True)
+# log = snakemake.log_fmt_shell(stdout=True, stderr=True)
 
 control_bam=snakemake.input.control_bam
 native_bam=snakemake.input.native_bam
@@ -29,5 +29,5 @@ shell("python3 DRUMMER.py -r {reference} "
       " -t {native_bam} "
       " -o {output} "
       " {snakemake.params.extra} "
-      " -a isoform  {log}")
+      " -a isoform  ")
 
