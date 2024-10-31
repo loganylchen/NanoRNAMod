@@ -8,7 +8,7 @@ def format_xpore(input_file,output_file):
     df.to_csv(output_file,sep='\t',index=False)
 
 def format_baleen(input_file,output_file):
-    df = pd.read_csv(input_file).sort_values(['transcript','loc'])
+    df = pd.read_csv(input_file).sort_values(['transcript','position'])
     df.to_csv(output_file,sep='\t',index=False)
 
 def format_differr(input_file,output_file):
