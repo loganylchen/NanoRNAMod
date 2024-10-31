@@ -8,6 +8,7 @@ rule eligos2:
         region="{project}/results/eligos2/{native}_{control}.bed",
     output:
         directory=directory("{project}/results/eligos2/{native}_{control}"),
+        tempfile=temp("{project}/results/eligos2/{native}_{control}/tmp"),
         result="{project}/results/eligos2/{native}_{control}/{native}_filtered_vs_{control}_filtered_on_{native}_{control}_baseExt0.txt",
     params:
         prefix="{native}_{control}",
