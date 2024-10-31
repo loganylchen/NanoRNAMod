@@ -73,7 +73,7 @@ rule xpore_run:
     conda:
         "../envs/xpore.yaml"
     shell:
-        "xpore diffmod --config {input} --n_processes {threads} 1>{log.stdout} 1>{log.stderr}"
+        "xpore diffmod --config {input} --n_processes {threads} 1>{log.stdout} 2>{log.stderr}"
 
 
 rule xpore_postprocessing:
