@@ -26,6 +26,8 @@ rule drummer:
     params:
         reference=config["reference"]["transcriptome_fasta"],
         extra=config["params"]["drummer"],
+    log:
+        "logs/{project}/drummer/{native}_{control}.log",
     output:
         outdir=KEEP_OR_NOT(directory("{project}/results/drummer/{native}_{control}/")),
         # summary="results/drummer/{native}_{control}/{control}_filtered-{native}_filtered/summary.txt"

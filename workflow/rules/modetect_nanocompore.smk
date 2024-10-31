@@ -28,7 +28,8 @@ rule nanocompore_collapse:
         prefix="{sample}",
         dir="{project}/results/nanocompore_eventalign_collapse/{sample}",
     log:
-        "logs/{project}/nanocompore_collapse/{sample}.log",
+        stdout="logs/{project}/nanocompore_collapse/{sample}.log",
+        stderr="logs/{project}/nanocompore_collapse/{sample}.err",
     benchmark:
         "benchmarks/{project}/{sample}.nanocompore_collapse.benchmark.txt"
     conda:
@@ -40,7 +41,7 @@ rule nanocompore_collapse:
         "--outpath {params.dir} "
         "--outprefix {params.prefix} "
         "--overwrite "
-        "--nthreads {threads} 2>{log}"
+        "--nthreads {threads} 1>{log.stdout} 2>{log.stderr}"
 
 
 rule nanocompore:
@@ -58,6 +59,7 @@ rule nanocompore:
         extra=config["params"]["nanocompore"],
     log:
         stdout="logs/{project}/nanocompore/{native}_{control}.log",
+        stderr="logs/{project}/nanocompore/{native}_{control}.err",
     benchmark:
         "benchmarks/{project}/{native}_{control}.nanocompore.benchmark.txt"
     conda:
@@ -72,4 +74,4 @@ rule nanocompore:
         "--fasta {input.reference} "
         "--outpath {output.output_dir} "
         "--outprefix '' "
-        "--overwrite  2>{log}"
+        "--overwrite  1>{log.stdout} 2>{log.stderr}"
