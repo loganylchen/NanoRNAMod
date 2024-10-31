@@ -27,7 +27,7 @@ rule drummer:
         reference=config["reference"]["transcriptome_fasta"],
         extra=config["params"]["drummer"],
     output:
-        outdir=directory("{project}/results/drummer/{native}_{control}/"),
+        outdir=temp(directory("{project}/results/drummer/{native}_{control}/")),
         # summary="results/drummer/{native}_{control}/{control}_filtered-{native}_filtered/summary.txt"
     benchmark:
         "benchmarks/{project}/{native}_{control}.drummer.benchmark.txt"
