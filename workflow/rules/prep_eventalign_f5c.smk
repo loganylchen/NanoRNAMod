@@ -13,8 +13,10 @@ rule f5c_eventalign_with_readname:
         index="{project}/results/blow5/{sample}.blow5.idx",
         blow5="{project}/results/blow5/{sample}.blow5",
     output:
-        outfile=temp("{project}/results/eventalign/{sample}_full.tsv.bz2"),
-        completion=temp("{project}/results/eventalign/{sample}_full.tsv.completed"),
+        outfile=KEEP_OR_NOT("{project}/results/eventalign/{sample}_full.tsv.bz2"),
+        completion=KEEP_OR_NOT(
+            "{project}/results/eventalign/{sample}_full.tsv.completed"
+        ),
     log:
         "logs/{project}/eventalign/{sample}_full.log",
     params:
@@ -50,8 +52,10 @@ rule f5c_eventalign_simple:
         index="{project}/results/blow5/{sample}.blow5.idx",
         blow5="{project}/results/blow5/{sample}.blow5",
     output:
-        outfile=temp("{project}/results/eventalign/{sample}_simple.tsv.bz2"),
-        completion=temp("{project}/results/eventalign/{sample}_simple.tsv.completed"),
+        outfile=KEEP_OR_NOT("{project}/results/eventalign/{sample}_simple.tsv.bz2"),
+        completion=KEEP_OR_NOT(
+            "{project}/results/eventalign/{sample}_simple.tsv.completed"
+        ),
     log:
         "logs/{project}/eventalign/{sample}_xpore.log",
     params:
