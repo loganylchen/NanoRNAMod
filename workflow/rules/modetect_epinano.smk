@@ -19,6 +19,7 @@ rule epinano_prep:
     threads: config["threads"]["epinano"]
     resources:
         mem_mb = 1024 * 50
+    priority: 10
     log:
         "logs/{project}/epinano_prep/{sample}.log",
     benchmark:
@@ -41,6 +42,7 @@ rule epinano:
     params:
         extra=config["params"]["epinano"],
         prefix="{project}/results/epinano/{native}_{control}/epinano",
+    priority: 10
     threads: config["threads"]["epinano"]
     resources:
         mem_mb = 1024 * 50

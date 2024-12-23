@@ -16,6 +16,7 @@ rule differr:
     threads: config["threads"]["differr"]
     resources:
         mem_mb = 1024 *50
+    priority: 10
     benchmark:
         "benchmarks/{project}/{native}_{control}.differr.benchmark.txt"
     container:

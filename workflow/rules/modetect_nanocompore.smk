@@ -14,6 +14,7 @@ rule uncompress_eventalign_full:
     threads: 1
     resources:
         mem_mb = 1024 
+    priority: 10
     shell:
         "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
 
@@ -36,6 +37,7 @@ rule nanocompore_collapse:
         "benchmarks/{project}/{sample}.nanocompore_collapse.benchmark.txt"
     resources:
         mem_mb = 1024 * 50
+    priority: 10
     conda:
         "../envs/nanocompore.yaml"
     threads: config["threads"]["nanocompore"]
@@ -61,6 +63,7 @@ rule nanocompore:
     params:
         prefix="{native}_{control}",
         extra=config["params"]["nanocompore"],
+    priority: 10
     resources:
         mem_mb = 1024 * 50
     threads: config["threads"]["nanocompore"]

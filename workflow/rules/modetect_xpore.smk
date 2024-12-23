@@ -13,6 +13,7 @@ rule uncompress_eventalign:
         "benchmarks/{project}/{sample}.uncompress_eventalign.benchmark.txt"
     resources:
         mem_mb = 1024
+    priority: 10
     threads: 1
     shell:
         "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
@@ -30,6 +31,7 @@ rule xpore_dataprep:
     benchmark:
         "benchmarks/{project}/{sample}.xpore_dataprep.benchmark.txt"
     threads: config["threads"]["xpore"]
+    priority: 10
     resources:
         mem_mb = 1024 * 50
     params:
@@ -73,6 +75,7 @@ rule xpore_run:
     threads: config["threads"]["xpore"]
     resources:
         mem_mb = 1024 * 50
+    priority: 10
     log:
         stdout="logs/{project}/xpore/{native}_{control}.log",
         stderr="logs/{project}/xpore/{native}_{control}.err",

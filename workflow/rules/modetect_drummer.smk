@@ -9,6 +9,7 @@ rule prep_drummer_region:
     threads: 1
     resources:
         mem_mb = 1024 
+    priority: 10
     container:
         "docker://btrspg/drummer:latest"
     shell:
@@ -28,6 +29,7 @@ rule drummer:
     params:
         reference=config["reference"]["transcriptome_fasta"],
         extra=config["params"]["drummer"],
+    priority: 10
     log:
         "logs/{project}/drummer/{native}_{control}.log",
     resources:
