@@ -20,6 +20,8 @@ rule eligos2:
         "benchmarks/{project}/{native}_{control}.eligos2.benchmark.txt"
     container:
         "docker://piroonj/eligos2:latest"
+    resources:
+        mem_mb = 1024 * 50
     shell:
         "eligos2 pair_diff_mod "
         "-tbam {input.native_bam} "
@@ -39,6 +41,8 @@ rule eligos2_prep:
     output:
         region=temp("{project}/results/eligos2/{native}_{control}.bed"),
     threads: 1
+    resources:
+        mem_mb = 1024 * 50
     conda:
         "../envs/bedtools.yaml"
     shell:

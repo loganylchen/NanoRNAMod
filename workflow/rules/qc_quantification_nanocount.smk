@@ -10,6 +10,9 @@ rule quant_nanocount:
         stderr="logs/{project}/qc/{sample}_quantification_nanocount.err",
     container:
         "docker://btrspg/nanocount:latest"
+    resources:
+        mem_mb = 1024 * 10,
+        disk_mb = 1024 * 10
     shell:
         "NanoCount -i {input.bam}  "
         "--extra_tx_info "

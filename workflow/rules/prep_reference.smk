@@ -13,5 +13,6 @@ rule create_dict:
     # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
     resources:
         mem_mb=10240,
+        disk_mb = 1024 * 10
     wrapper:
         "v3.10.2/bio/picard/createsequencedictionary"

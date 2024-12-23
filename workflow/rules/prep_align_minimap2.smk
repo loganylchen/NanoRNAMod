@@ -14,6 +14,8 @@ rule minimap2_transcriptome_align:
     params:
         extra=config["params"]["minimap2_transcriptome"],
         reference=config["reference"]["transcriptome_fasta"],
+    resources:
+        mem_mb = 1024 * 30
     threads: config["threads"]["minimap2"]
     shell:
         "minimap2 -t {threads} {params.extra} {params.reference} {input.fastq} 2>> {log} "
@@ -39,6 +41,8 @@ rule minimap2_transcriptome_align_epi:
         extra=config["params"]["minimap2_transcriptome"],
         reference=config["reference"]["transcriptome_fasta"],
     threads: config["threads"]["minimap2"]
+    resources:
+        mem_mb = 1024 * 30
     shell:
         "minimap2 -t {threads} {params.extra} {params.reference} {input.fastq} 2>> {log} "
         "| samtools view -Sbh "

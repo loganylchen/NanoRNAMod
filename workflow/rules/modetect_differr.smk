@@ -14,6 +14,8 @@ rule differr:
         stdout="logs/{project}/differr/{native}_{control}.log",
         stderr="logs/{project}/differr/{native}_{control}.err",
     threads: config["threads"]["differr"]
+    resources:
+        mem_mb = 1024 *50
     benchmark:
         "benchmarks/{project}/{native}_{control}.differr.benchmark.txt"
     container:

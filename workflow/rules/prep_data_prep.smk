@@ -7,6 +7,9 @@ rule link_fastq:
         relative_path="../../../data/{sample}/fastq/pass.fq.gz",
     log:
         "logs/{project}/link_fastq/{sample}.log",
+    threads: 1
+    resources:
+        mem_mb = 1024 
     shell:
         "ln -s {params.relative_path} {output.fastq} && "
         "echo `date` > {log} "
@@ -35,6 +38,9 @@ rule link_blow5:
         relative_path="../../../data/{sample}/blow5/nanopore.blow5",
     log:
         "logs/{project}/link_blow5/{sample}.log",
+    threads: 1
+    resources:
+        mem_mb = 1024 
     shell:
         "ln -s {params.relative_path} {output.blow5} && "
         "echo `date` > {log} "
