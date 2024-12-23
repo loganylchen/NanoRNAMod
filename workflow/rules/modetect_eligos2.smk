@@ -22,6 +22,7 @@ rule eligos2:
         "docker://piroonj/eligos2:latest"
     resources:
         mem_mb = 1024 * 50
+    priority: 10
     shell:
         "eligos2 pair_diff_mod "
         "-tbam {input.native_bam} "
@@ -43,6 +44,7 @@ rule eligos2_prep:
     threads: 1
     resources:
         mem_mb = 1024 * 50
+    priority: 10
     conda:
         "../envs/bedtools.yaml"
     shell:
