@@ -13,7 +13,7 @@ rule baleen_dataprep:
         "benchmarks/{project}/{sample}.baleen_dataprep.txt"
     threads: config["threads"]["baleen"]
     resources:
-        mem_mb = 1024 *200
+        mem_mb = 1024 *450
     log:
         out="logs/{project}/baleen_dataprep/{sample}.log",
         err="logs/{project}/baleen_dataprep/{sample}.error",
@@ -44,7 +44,7 @@ rule baleen_modcall:
         "benchmarks/{project}/{native}_{control}.baleen_modcall.txt"
     threads: config["threads"]["baleen"]
     resources:
-        mem_mb = 1024 *200
+        mem_mb = 1024 *450
     log:
         out="logs/{project}/baleen_modcall/N_{native}_C_{control}.log",
         err="logs/{project}/baleen_modcall/N_{native}_C_{control}.error",
@@ -70,7 +70,7 @@ rule baleen_postcall:
         "benchmarks/{project}/{native}_{control}.baleen_postcall.txt"
     threads: config["threads"]["baleen"]
     resources:
-        mem_mb = 1024 *200
+        mem_mb = 1024 *450
     log:
         out="logs/{project}/baleen_postcall/N_{native}_C_{control}.log",
         err="logs/{project}/baleen_postcall/N_{native}_C_{control}.error",
