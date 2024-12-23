@@ -17,6 +17,8 @@ rule epinano_prep:
         extra=config["params"]["epinano_dataprep"],
         prefix="{project}/results/alignments/{sample}_filtered",
     threads: config["threads"]["epinano"]
+    resources:
+        mem_mb = 1024 * 50
     log:
         "logs/{project}/epinano_prep/{sample}.log",
     benchmark:
@@ -40,6 +42,8 @@ rule epinano:
         extra=config["params"]["epinano"],
         prefix="{project}/results/epinano/{native}_{control}/epinano",
     threads: config["threads"]["epinano"]
+    resources:
+        mem_mb = 1024 * 50
     log:
         stdout="logs/{project}/epinano/{native}_{control}.log",
         stderr="logs/{project}/epinano/{native}_{control}.err",

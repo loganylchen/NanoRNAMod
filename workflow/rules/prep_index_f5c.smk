@@ -18,6 +18,8 @@ rule f5c_index:
     container:
         "docker://btrspg/f5c:dev"
     threads: config["threads"]["f5c"]
+    resources:
+        mem_mb = 1024 * 50,
     shell:
         "f5c index "
         "--slow5 {input.blow5} "

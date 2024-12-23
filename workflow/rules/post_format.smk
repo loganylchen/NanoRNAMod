@@ -9,6 +9,9 @@ rule post_xpore:
         "logs/{project}/post_xpore_sampled_format/{native}_{control}.log",
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_xpore_sampled_format.benchmark.txt"
+    resources:
+        mem_mb = 1024 * 30
+    threads: 1
     conda:
         "../envs/pandas.yaml"
     script:
@@ -26,6 +29,8 @@ rule xpore_annotate:
         gtf=config["reference"]["transcriptome_gtf"],
     benchmark:
         "benchmarks/{project}/{native}_{control}.xpore_annotate.txt"
+    resources:
+        mem_mb = 1024 * 30
     threads: 1
     log:
         out="logs/{project}/xpore_annotate/N_{native}_C_{control}.log",
@@ -52,6 +57,9 @@ rule post_nanocompore:
         "logs/{project}/post_nanocompore_sampled_format/{native}_{control}.log",
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_nanocompore_sampled_format.benchmark.txt"
+    resources:
+        mem_mb = 1024 * 30
+    threads: 1
     conda:
         "../envs/pandas.yaml"
     script:
@@ -69,6 +77,8 @@ rule nanocompore_annotate:
         gtf=config["reference"]["transcriptome_gtf"],
     benchmark:
         "benchmarks/{project}/{native}_{control}.nanocompore_annotate.txt"
+    resources:
+        mem_mb = 1024 * 30
     threads: 1
     log:
         out="logs/{project}/nanocompore_annotate/N_{native}_C_{control}.log",
@@ -94,6 +104,9 @@ rule post_baleen:
         "logs/{project}/post_baleen_sampled_format/{native}_{control}.log",
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_baleen_sampled_format.benchmark.txt"
+    resources:
+        mem_mb = 1024 * 30
+    threads: 1
     conda:
         "../envs/pandas.yaml"
     script:
@@ -111,6 +124,8 @@ rule baleen_annotate:
         gtf=config["reference"]["transcriptome_gtf"],
     benchmark:
         "benchmarks/{project}/{native}_{control}.baleen_annotate.txt"
+    resources:
+        mem_mb = 1024 * 30
     threads: 1
     log:
         out="logs/{project}/baleen_annotate/N_{native}_C_{control}.log",
@@ -136,6 +151,9 @@ rule post_differr:
         "logs/{project}/post_differr_sampled_format/{native}_{control}.log",
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_differr_sampled_format.benchmark.txt"
+    resources:
+        mem_mb = 1024 * 30
+    threads: 1
     conda:
         "../envs/pandas.yaml"
     script:
@@ -153,6 +171,8 @@ rule differr_annotate:
         gtf=config["reference"]["transcriptome_gtf"],
     benchmark:
         "benchmarks/{project}/{native}_{control}.differr_annotate.txt"
+    resources:
+        mem_mb = 1024 * 30
     threads: 1
     log:
         out="logs/{project}/differr_annotate/N_{native}_C_{control}.log",
@@ -175,6 +195,9 @@ rule post_epinano:
         "{project}/results/modifications/epinano/{native}_{control}/epinano_results.tsv",
     params:
         tool="epinano",
+    resources:
+        mem_mb = 1024 * 30
+    threads: 1
     log:
         "logs/{project}/post_epinano_sampled_format/{native}_{control}.log",
     benchmark:
@@ -196,6 +219,8 @@ rule epinano_annotate:
         gtf=config["reference"]["transcriptome_gtf"],
     benchmark:
         "benchmarks/{project}/{native}_{control}.epinano_annotate.txt"
+    resources:
+        mem_mb = 1024 * 30
     threads: 1
     log:
         out="logs/{project}/epinano_annotate/N_{native}_C_{control}.log",
@@ -218,6 +243,9 @@ rule post_eligos2:
         "{project}/results/modifications/eligos2/{native}_{control}/eligos2_results.tsv",
     params:
         tool="eligos2",
+    resources:
+        mem_mb = 1024 * 30
+    threads: 1
     log:
         "logs/{project}/post_eligos2_sampled_format/{native}_{control}.log",
     benchmark:
@@ -239,6 +267,8 @@ rule eligos2_annotate:
         gtf=config["reference"]["transcriptome_gtf"],
     benchmark:
         "benchmarks/{project}/{native}_{control}.eligos2_annotate.txt"
+    resources:
+        mem_mb = 1024 * 30
     threads: 1
     log:
         out="logs/{project}/eligos2_annotate/N_{native}_C_{control}.log",
@@ -260,6 +290,9 @@ rule post_drummer:
         "{project}/results/modifications/drummer/{native}_{control}/drummer_results.tsv",
     params:
         tool="drummer",
+    resources:
+        mem_mb = 1024 * 30
+    threads: 1
     log:
         "logs/{project}/post_drummer_sampled_format/{native}_{control}.log",
     benchmark:
@@ -281,6 +314,8 @@ rule drummer_annotate:
         gtf=config["reference"]["transcriptome_gtf"],
     benchmark:
         "benchmarks/{project}/{native}_{control}.drummer_annotate.txt"
+    resources:
+        mem_mb = 1024 * 30
     threads: 1
     log:
         out="logs/{project}/drummer_annotate/N_{native}_C_{control}.log",

@@ -11,6 +11,8 @@ rule uncompress_eventalign:
         "logs/{project}/uncompress_eventalign/{sample}.log",
     benchmark:
         "benchmarks/{project}/{sample}.uncompress_eventalign.benchmark.txt"
+    resources:
+        mem_mb = 1024
     threads: 1
     shell:
         "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
@@ -28,6 +30,8 @@ rule xpore_dataprep:
     benchmark:
         "benchmarks/{project}/{sample}.xpore_dataprep.benchmark.txt"
     threads: config["threads"]["xpore"]
+    resources:
+        mem_mb = 1024 * 50
     params:
         extra="",
     conda:
@@ -47,6 +51,8 @@ rule xpore_config:
     output:
         conf="{project}/results/xpore/{native}_{control}.xpore_config.yaml",
     threads: 1
+    resources:
+        mem_mb = 1024
     params:
         "{project}/results/xpore/{native}_{control}",
     log:
@@ -65,6 +71,8 @@ rule xpore_run:
             "{project}/results/xpore/{native}_{control}/diffmod.table"
         ),
     threads: config["threads"]["xpore"]
+    resources:
+        mem_mb = 1024 * 50
     log:
         stdout="logs/{project}/xpore/{native}_{control}.log",
         stderr="logs/{project}/xpore/{native}_{control}.err",
@@ -84,6 +92,8 @@ rule xpore_postprocessing:
             "{project}/results/xpore/{native}_{control}/majority_direction_kmer_diffmod.table"
         ),
     threads: config["threads"]["xpore"]
+    resources:
+        mem_mb = 1024 * 50
     params:
         "{project}/results/xpore/{native}_{control}",
     threads: 1

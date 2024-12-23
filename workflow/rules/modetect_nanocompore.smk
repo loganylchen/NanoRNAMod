@@ -12,6 +12,8 @@ rule uncompress_eventalign_full:
     benchmark:
         "benchmarks/{project}/{sample}.full_uncompress_eventalign.benchmark.txt"
     threads: 1
+    resources:
+        mem_mb = 1024 
     shell:
         "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
 
@@ -32,6 +34,8 @@ rule nanocompore_collapse:
         stderr="logs/{project}/nanocompore_collapse/{sample}.err",
     benchmark:
         "benchmarks/{project}/{sample}.nanocompore_collapse.benchmark.txt"
+    resources:
+        mem_mb = 1024 * 50
     conda:
         "../envs/nanocompore.yaml"
     threads: config["threads"]["nanocompore"]
@@ -57,6 +61,9 @@ rule nanocompore:
     params:
         prefix="{native}_{control}",
         extra=config["params"]["nanocompore"],
+    resources:
+        mem_mb = 1024 * 50
+    threads: config["threads"]["nanocompore"]
     log:
         stdout="logs/{project}/nanocompore/{native}_{control}.log",
         stderr="logs/{project}/nanocompore/{native}_{control}.err",
@@ -70,6 +77,7 @@ rule nanocompore:
         "--file_list2 {input.native_file} "
         "--label1 Control "
         "--label2 Native "
+        "--nthreads {threads} "
         "{params.extra} "
         "--fasta {input.reference} "
         "--outpath {output.output_dir} "

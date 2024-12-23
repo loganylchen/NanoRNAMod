@@ -7,6 +7,8 @@ rule prep_drummer_region:
     output:
         region=temp("{project}/results/drummer/{native}_{control}_regions.bed"),
     threads: 1
+    resources:
+        mem_mb = 1024 
     container:
         "docker://btrspg/drummer:latest"
     shell:
@@ -28,6 +30,8 @@ rule drummer:
         extra=config["params"]["drummer"],
     log:
         "logs/{project}/drummer/{native}_{control}.log",
+    resources:
+        mem_mb = 1024 *20
     output:
         outdir=KEEP_OR_NOT(directory("{project}/results/drummer/{native}_{control}/")),
         # summary="results/drummer/{native}_{control}/{control}_filtered-{native}_filtered/summary.txt"
