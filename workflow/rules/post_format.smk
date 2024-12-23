@@ -11,6 +11,7 @@ rule post_xpore:
         "benchmarks/{project}/{native}_{control}.post_xpore_sampled_format.benchmark.txt"
     resources:
         mem_mb = 1024 * 30
+    priority: 20
     threads: 1
     conda:
         "../envs/pandas.yaml"
@@ -27,6 +28,7 @@ rule xpore_annotate:
         "docker://btrspg/baleen:clean"
     params:
         gtf=config["reference"]["transcriptome_gtf"],
+    priority: 20
     benchmark:
         "benchmarks/{project}/{native}_{control}.xpore_annotate.txt"
     resources:
@@ -53,6 +55,7 @@ rule post_nanocompore:
         "{project}/results/modifications/nanocompore/{native}_{control}/nanocompore_results.tsv",
     params:
         tool="nanocompore",
+    priority: 20
     log:
         "logs/{project}/post_nanocompore_sampled_format/{native}_{control}.log",
     benchmark:
@@ -73,6 +76,7 @@ rule nanocompore_annotate:
         result="{project}/results/modifications/nanocompore/{native}_{control}/nanocompore_annotated_results.tsv",
     container:
         "docker://btrspg/baleen:clean"
+    priority: 20
     params:
         gtf=config["reference"]["transcriptome_gtf"],
     benchmark:
@@ -100,6 +104,7 @@ rule post_baleen:
         "{project}/results/modifications/baleen/{native}_{control}/baleen_results.tsv",
     params:
         tool="baleen",
+    priority: 20
     log:
         "logs/{project}/post_baleen_sampled_format/{native}_{control}.log",
     benchmark:
@@ -120,6 +125,7 @@ rule baleen_annotate:
         result="{project}/results/modifications/baleen/{native}_{control}/baleen_annotated_results.tsv",
     container:
         "docker://btrspg/baleen:clean"
+    priority: 20
     params:
         gtf=config["reference"]["transcriptome_gtf"],
     benchmark:
@@ -147,6 +153,7 @@ rule post_differr:
         "{project}/results/modifications/differr/{native}_{control}/differr_results.tsv",
     params:
         tool="differr",
+    priority: 20
     log:
         "logs/{project}/post_differr_sampled_format/{native}_{control}.log",
     benchmark:
@@ -169,6 +176,7 @@ rule differr_annotate:
         "docker://btrspg/baleen:clean"
     params:
         gtf=config["reference"]["transcriptome_gtf"],
+    priority: 20
     benchmark:
         "benchmarks/{project}/{native}_{control}.differr_annotate.txt"
     resources:
@@ -197,6 +205,7 @@ rule post_epinano:
         tool="epinano",
     resources:
         mem_mb = 1024 * 30
+    priority: 20
     threads: 1
     log:
         "logs/{project}/post_epinano_sampled_format/{native}_{control}.log",
@@ -221,6 +230,7 @@ rule epinano_annotate:
         "benchmarks/{project}/{native}_{control}.epinano_annotate.txt"
     resources:
         mem_mb = 1024 * 30
+    priority: 20
     threads: 1
     log:
         out="logs/{project}/epinano_annotate/N_{native}_C_{control}.log",
@@ -246,6 +256,7 @@ rule post_eligos2:
     resources:
         mem_mb = 1024 * 30
     threads: 1
+    priority: 20
     log:
         "logs/{project}/post_eligos2_sampled_format/{native}_{control}.log",
     benchmark:
@@ -270,6 +281,7 @@ rule eligos2_annotate:
     resources:
         mem_mb = 1024 * 30
     threads: 1
+    priority: 20
     log:
         out="logs/{project}/eligos2_annotate/N_{native}_C_{control}.log",
         err="logs/{project}/eligos2_annotate/N_{native}_C_{control}.error",
@@ -293,6 +305,7 @@ rule post_drummer:
     resources:
         mem_mb = 1024 * 30
     threads: 1
+    priority: 20
     log:
         "logs/{project}/post_drummer_sampled_format/{native}_{control}.log",
     benchmark:
@@ -317,6 +330,7 @@ rule drummer_annotate:
     resources:
         mem_mb = 1024 * 30
     threads: 1
+    priority: 20
     log:
         out="logs/{project}/drummer_annotate/N_{native}_C_{control}.log",
         err="logs/{project}/drummer_annotate/N_{native}_C_{control}.error",
