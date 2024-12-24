@@ -4,7 +4,7 @@ rule link_fastq:
     output:
         fastq="{project}/results/fastq/{sample}.fq.gz",
     params:
-        relative_path="../../../data/{sample}/fastq/pass.fq.gz",
+        relative_path=lambda w: "../../../" + get_raw_fastq(w),
     log:
         "logs/{project}/link_fastq/{sample}.log",
     threads: 1
