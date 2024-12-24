@@ -1,10 +1,6 @@
 rule link_fastq:
     input:
-        fastq=(
-            "data/{sample}/fastq/pass.fq.gz"
-            if os.path.exists("data/{sample}/fastq/pass.fq.gz")
-            else "data/{sample}/fastq/pass.fastq.gz"
-        ),
+        fastq=get_raw_fastq,
     output:
         fastq="{project}/results/fastq/{sample}.fq.gz",
     params:

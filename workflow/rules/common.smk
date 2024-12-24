@@ -39,6 +39,13 @@ else:
     comparisons = [f"{ns}_{cs}" for ns in native_samples for cs in control_samples]
 
 
+def get_raw_fastq(wildcards):
+    if os.path.exists(f"data/{wildcards.sample}/fastq/pass.fq.gz"):
+        return f"data/{wildcards.sample}/fastq/pass.fq.gz"
+    else:
+        return f"data/{wildcards.sample}/fastq/pass.fastq.gz"
+
+
 def get_nanocompore_list(sample_list):
     nanocompore_list = [
         f"{RESULT_ROOT}/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv"
