@@ -1,6 +1,10 @@
 rule link_fastq:
     input:
-        fastq="data/{sample}/fastq/pass.fq.gz",
+        fastq=(
+            "data/{sample}/fastq/pass.fq.gz"
+            if os.path.exists("data/{sample}/fastq/pass.fq.gz")
+            else "data/{sample}/fastq/pass.fastq.gz"
+        ),
     output:
         fastq="{project}/results/fastq/{sample}.fq.gz",
     params:
@@ -9,7 +13,7 @@ rule link_fastq:
         "logs/{project}/link_fastq/{sample}.log",
     threads: 1
     resources:
-        mem_mb = 1024 
+        mem_mb=1024,
     shell:
         "ln -s {params.relative_path} {output.fastq} && "
         "echo `date` > {log} "
@@ -40,7 +44,7 @@ rule link_blow5:
         "logs/{project}/link_blow5/{sample}.log",
     threads: 1
     resources:
-        mem_mb = 1024 
+        mem_mb=1024,
     shell:
         "ln -s {params.relative_path} {output.blow5} && "
         "echo `date` > {log} "
