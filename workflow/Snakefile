@@ -7,12 +7,12 @@ min_version("6.4.1")
 
 
 wildcard_constraints:
-    sample="[0-9a-zA-Z]+_?[0-9]*",
-    control="[0-9a-zA-Z]+_?[0-9]*",
-    native="[0-9a-zA-Z]+_?[0-9]*",
+    sample="[\da-zA-Z]+_?[0-9]*",
+    control="[\da-zA-Z]+_?[0-9]*",
+    native="[\da-zA-Z]+_?[0-9]*",
     sample_size="[0-9]+",
     n="[0-9]+",
-    project="[0-9a-zA-Z]+_?[0-9]*",
+    project="[\da-zA-Z]+_?[0-9]*",
 
 
 ##### setup report #####
