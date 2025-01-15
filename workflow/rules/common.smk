@@ -45,6 +45,12 @@ def get_raw_fastq(wildcards):
     else:
         return f"data/{wildcards.sample}/fastq/pass.fastq.gz"
 
+def get_raw_blow5(wildcards):
+    if os.path.exists(f"data/{wildcards.sample}/blow5/nanopore.blow5"):
+        return f"data/{wildcards.sample}/blow5/nanopore.blow5"
+    else:
+        return f"data/{wildcards.sample}/blow5/nanopore.drs.blow5"
+
 
 def get_nanocompore_list(sample_list):
     nanocompore_list = [
@@ -59,6 +65,11 @@ def get_final_output():
     final_output = [f"{RESULT_ROOT}/depth_table.tsv"]
     final_output += expand(
         "{RESULT_ROOT}/quantification/{sample}.tx_counts.tsv",
+        sample=list(samples.index),
+        RESULT_ROOT=RESULT_ROOT,
+    )
+    final_output += expand(
+        "{RESULT_ROOT}/alignments/{sample}.splice.bam",
         sample=list(samples.index),
         RESULT_ROOT=RESULT_ROOT,
     )
