@@ -31,11 +31,11 @@ rule link_fastq:
 
 rule link_blow5:
     input:
-        blow5="data/{sample}/blow5/nanopore.blow5",
+        blow5=get_raw_blow5,
     output:
         blow5="{project}/results/blow5/{sample}.blow5",
     params:
-        relative_path="../../../data/{sample}/blow5/nanopore.blow5",
+        relative_path=lambda w: "../../../"+ get_raw_blow5(w),
     log:
         "logs/{project}/link_blow5/{sample}.log",
     threads: 1
