@@ -69,12 +69,12 @@ def get_final_output():
         RESULT_ROOT=RESULT_ROOT,
     )
     final_output += expand(
-        "{RESULT_ROOT}/alignments/{sample}.genome.nanopolish.polya.tsv.gz",
+        "{RESULT_ROOT}/polya/{sample}.genome.nanopolish.polya.tsv.gz",
         sample=list(samples.index),
         RESULT_ROOT=RESULT_ROOT,
     )
     final_output += expand(
-        "{RESULT_ROOT}/alignments/{sample}.transcriptome.nanopolish.polya.tsv.gz",
+        "{RESULT_ROOT}/polya/{sample}.transcriptome.nanopolish.polya.tsv.gz",
         sample=list(samples.index),
         RESULT_ROOT=RESULT_ROOT,
     )
