@@ -4,3 +4,4 @@ channels:
 dependencies:
   - nanopolish =0.14.0
   - gzip =1.12
+  - ont_vbz_hdf_plugin
