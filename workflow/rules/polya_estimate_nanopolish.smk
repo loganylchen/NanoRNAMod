@@ -17,8 +17,8 @@ rule nanopolish_transcriptome_polya:
         "logs/{project}/nanopolish_transcriptome_polya/{sample}.log",
     benchmark:
         "benchmarks/{project}/{sample}.nanopolish_transcriptome_polya.benchmark.txt"
-    conda:
-        "../envs/nanopolish.yaml"
+    container:
+        "docker://btrspg/nanopolish:latest"
     params:
         reference=config["reference"]["transcriptome_fasta"],
     resources:
@@ -50,8 +50,8 @@ rule nanopolish_genome_polya:
         "logs/{project}/nanopolish_genome_polya/{sample}.log",
     benchmark:
         "benchmarks/{project}/{sample}.nanopolish_genome_polya.benchmark.txt"
-    conda:
-        "../envs/nanopolish.yaml"
+    container:
+        "docker://btrspg/nanopolish:latest"
     params:
         reference=config["reference"]["genome_fasta"],
     resources:
