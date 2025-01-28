@@ -10,7 +10,7 @@ rule post_xpore:
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_xpore_sampled_format.benchmark.txt"
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     priority: 20
     threads: 1
     conda:
@@ -32,7 +32,7 @@ rule xpore_annotate:
     benchmark:
         "benchmarks/{project}/{native}_{control}.xpore_annotate.txt"
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     threads: 1
     log:
         out="logs/{project}/xpore_annotate/N_{native}_C_{control}.log",
@@ -61,7 +61,7 @@ rule post_nanocompore:
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_nanocompore_sampled_format.benchmark.txt"
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     threads: 1
     conda:
         "../envs/pandas.yaml"
@@ -82,7 +82,7 @@ rule nanocompore_annotate:
     benchmark:
         "benchmarks/{project}/{native}_{control}.nanocompore_annotate.txt"
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     threads: 1
     log:
         out="logs/{project}/nanocompore_annotate/N_{native}_C_{control}.log",
@@ -110,7 +110,7 @@ rule post_baleen:
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_baleen_sampled_format.benchmark.txt"
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     threads: 1
     conda:
         "../envs/pandas.yaml"
@@ -131,7 +131,7 @@ rule baleen_annotate:
     benchmark:
         "benchmarks/{project}/{native}_{control}.baleen_annotate.txt"
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     threads: 1
     log:
         out="logs/{project}/baleen_annotate/N_{native}_C_{control}.log",
@@ -159,7 +159,7 @@ rule post_differr:
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_differr_sampled_format.benchmark.txt"
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     threads: 1
     conda:
         "../envs/pandas.yaml"
@@ -180,7 +180,7 @@ rule differr_annotate:
     benchmark:
         "benchmarks/{project}/{native}_{control}.differr_annotate.txt"
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     threads: 1
     log:
         out="logs/{project}/differr_annotate/N_{native}_C_{control}.log",
@@ -204,7 +204,7 @@ rule post_epinano:
     params:
         tool="epinano",
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     priority: 20
     threads: 1
     log:
@@ -229,7 +229,7 @@ rule epinano_annotate:
     benchmark:
         "benchmarks/{project}/{native}_{control}.epinano_annotate.txt"
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     priority: 20
     threads: 1
     log:
@@ -254,7 +254,7 @@ rule post_eligos2:
     params:
         tool="eligos2",
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     threads: 1
     priority: 20
     log:
@@ -279,7 +279,7 @@ rule eligos2_annotate:
     benchmark:
         "benchmarks/{project}/{native}_{control}.eligos2_annotate.txt"
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     threads: 1
     priority: 20
     log:
@@ -303,7 +303,7 @@ rule post_drummer:
     params:
         tool="drummer",
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     threads: 1
     priority: 20
     log:
@@ -328,7 +328,7 @@ rule drummer_annotate:
     benchmark:
         "benchmarks/{project}/{native}_{control}.drummer_annotate.txt"
     resources:
-        mem_mb = 1024 * 30
+        mem_mb=1024 * 50,
     threads: 1
     priority: 20
     log:
