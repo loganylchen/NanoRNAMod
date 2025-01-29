@@ -13,7 +13,7 @@ rule baleen_dataprep:
         "benchmarks/{project}/{sample}.baleen_dataprep.txt"
     threads: config["threads"]["baleen"]
     resources:
-        mem_mb=1024 * 250,
+        mem_mb=1024 * 450,
     log:
         out="logs/{project}/baleen_dataprep/{sample}.log",
         err="logs/{project}/baleen_dataprep/{sample}.error",
