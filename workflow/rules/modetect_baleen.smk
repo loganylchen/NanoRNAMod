@@ -14,6 +14,7 @@ rule baleen_dataprep:
     threads: config["threads"]["baleen"]
     resources:
         mem_mb=1024 * 450,
+    priority: 10
     log:
         out="logs/{project}/baleen_dataprep/{sample}.log",
         err="logs/{project}/baleen_dataprep/{sample}.error",
@@ -45,6 +46,7 @@ rule baleen_modcall:
     threads: config["threads"]["baleen"]
     resources:
         mem_mb=1024 * 650,
+    priority: 5
     log:
         out="logs/{project}/baleen_modcall/N_{native}_C_{control}.log",
         err="logs/{project}/baleen_modcall/N_{native}_C_{control}.error",

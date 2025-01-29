@@ -17,6 +17,7 @@ rule f5c_eventalign_with_readname:
         completion=KEEP_OR_NOT(
             "{project}/results/eventalign/{sample}_full.tsv.completed"
         ),
+    priority: 20
     log:
         "logs/{project}/eventalign/{sample}_full.log",
     params:
@@ -27,7 +28,7 @@ rule f5c_eventalign_with_readname:
     conda:
         "../envs/f5c.yaml"
     resources:
-        mem_mb = 1024 * 50
+        mem_mb=1024 * 50,
     threads: config["threads"]["f5c"]
     shell:
         "f5c eventalign -r {input.fastq} "
@@ -66,7 +67,7 @@ rule f5c_eventalign_simple:
     benchmark:
         "benchmarks/{project}/{sample}.eventalign_simple.benchmark.txt"
     resources:
-        mem_mb = 1024 * 50
+        mem_mb=1024 * 50,
     conda:
         "../envs/f5c.yaml"
     threads: config["threads"]["f5c"]
