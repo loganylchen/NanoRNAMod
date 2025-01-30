@@ -45,6 +45,7 @@ def get_raw_fastq(wildcards):
     else:
         return f"data/{wildcards.sample}/fastq/pass.fastq.gz"
 
+
 def get_raw_blow5(wildcards):
     if os.path.exists(f"data/{wildcards.sample}/blow5/nanopore.blow5"):
         return f"data/{wildcards.sample}/blow5/nanopore.blow5"
@@ -78,6 +79,12 @@ def get_final_output():
         sample=list(samples.index),
         RESULT_ROOT=RESULT_ROOT,
     )
+    if config["qc"]:
+        final_output += expand(
+            "{RESULT_ROOT}/qc/{sample}/{sample}_rnaseq.pdf",
+            sample=list(samples.index),
+            RESULT_ROOT=RESULT_ROOT,
+        )
     # For some small dataset (on limited transcripts), sampling may be a good choice, while for other big datasets, it may not be necessary
 
     if "baleen" in tools:
