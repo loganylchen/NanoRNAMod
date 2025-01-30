@@ -85,6 +85,11 @@ def get_final_output():
             sample=list(samples.index),
             RESULT_ROOT=RESULT_ROOT,
         )
+        final_output += expand(
+            "{RESULT_ROOT}/qc/{sample}/NanoStats.txt",
+            sample=list(samples.index),
+            RESULT_ROOT=RESULT_ROOT,
+        )
     # For some small dataset (on limited transcripts), sampling may be a good choice, while for other big datasets, it may not be necessary
 
     if "baleen" in tools:
