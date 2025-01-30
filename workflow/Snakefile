@@ -46,6 +46,8 @@ include: "rules/modetect_eligos2.smk"
 include: "rules/modetect_epinano.smk"
 include: "rules/post_format.smk"
 include: "rules/qc_quantification_nanocount.smk"
+include: "rules/qc_coverage_qualimap.smk"
+include: "rules/qc_fastq_nanoplot.smk"
 include: "rules/polya_estimate_nanopolish.smk"
 
 
