@@ -1,8 +1,8 @@
 
 rule qc_samtools:
     input:
-        bam="{project}/results/alignments/{sample}.splice.bam",
-        bai="{project}/results/alignments/{sample}.splice.bam.bai",
+        bam1="{project}/results/alignments/{sample}.splice.bam",
+        bai1="{project}/results/alignments/{sample}.splice.bam.bai",
         bam2="{project}/results/alignments/{sample}.bam",
         bai2="{project}/results/alignments/{sample}.bam.bai",
     output:
