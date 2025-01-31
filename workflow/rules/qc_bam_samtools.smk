@@ -8,8 +8,6 @@ rule qc_samtools:
     output:
         report1="{project}/results/qc/{sample}/{sample}_samtools_transcriptome_stats.txt",
         report2="{project}/results/qc/{sample}/{sample}_samtools_genome_stats.txt",
-    params:
-        output_dir=directory("{project}/results/qc/{sample}"),
     benchmark:
         "benchmarks/{project}/{sample}.samtools_rnaseq.benchmark.txt"
     log:
