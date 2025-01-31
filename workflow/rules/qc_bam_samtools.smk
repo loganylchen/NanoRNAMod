@@ -20,6 +20,6 @@ rule qc_samtools:
         mem_mb=1024 * 20,
     shell:
         "samtools stats -@ {threads} "
-        "{intput.bam1} > {otuput.report1} 2>>{log} "
+        "{input.bam1} > {output.report1} 2>>{log} "
         "samtools stats -@ {threads} "
-        "{intput.bam2} > {otuput.report2} 2>>{log} "
+        "{input.bam2} > {output.report2} 2>>{log} "
