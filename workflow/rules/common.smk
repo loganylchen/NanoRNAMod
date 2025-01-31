@@ -90,6 +90,17 @@ def get_final_output():
             sample=list(samples.index),
             RESULT_ROOT=RESULT_ROOT,
         )
+        final_output += expand(
+            "{RESULT_ROOT}/qc/{sample}/{sample}_samtools_genome_stats.txt",
+            sample=list(samples.index),
+            RESULT_ROOT=RESULT_ROOT,
+        )
+        final_output += expand(
+            "{RESULT_ROOT}/qc/{sample}/{sample}_samtools_transcriptome_stats.txt",
+            sample=list(samples.index),
+            RESULT_ROOT=RESULT_ROOT,
+        )
+
     # For some small dataset (on limited transcripts), sampling may be a good choice, while for other big datasets, it may not be necessary
 
     if "baleen" in tools:
