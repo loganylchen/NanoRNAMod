@@ -1,7 +1,7 @@
 rule variants_bcftools:
     input:
         bam="{project}/results/alignments/{sample}.bam",
-        reference=config["reference"]["transcriptome.fa"],
+        reference=config["reference"]["transcriptome"],
     output:
         variants_vcf="{project}/results/variants/{sample}.bcf",
     benchmark:
