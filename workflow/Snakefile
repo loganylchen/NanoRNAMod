@@ -50,6 +50,7 @@ include: "rules/qc_coverage_qualimap.smk"
 include: "rules/qc_fastq_nanoplot.smk"
 include: "rules/qc_bam_samtools.smk"
 include: "rules/polya_estimate_nanopolish.smk"
+include: "rules/qc_variants_bcftools.smk"
 
 
 ##### target rules #####
