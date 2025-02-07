@@ -101,7 +101,7 @@ def get_final_output():
             RESULT_ROOT=RESULT_ROOT,
         )
         final_output += expand(
-            "{RESULT_ROOT}/variants/{sample}.vcf",
+            "{RESULT_ROOT}/variants/{sample}.bcf",
             sample=list(samples.index),
             RESULT_ROOT=RESULT_ROOT,
         )

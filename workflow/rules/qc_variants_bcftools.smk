@@ -3,7 +3,7 @@ rule variants_bcftools:
         bam="{project}/results/alignments/{sample}.bam",
         reference=config["reference"]["transcriptome.fa"],
     output:
-        variants_vcf="{project}/results/variants/{sample}.vcf",
+        variants_vcf="{project}/results/variants/{sample}.bcf",
     benchmark:
         "benchmarks/{project}/{sample}.variants_bcftools.benchmark.txt"
     log:
@@ -11,9 +11,10 @@ rule variants_bcftools:
     conda:
         "../envs/minimap2.yaml"
     priority: 20
+    threads: config["threads"]["minimap2"]
     resources:
         mem_mb=1024 * 10,
         disk_mb=1024 * 10,
     shell:
-        "bcftools mpileup -f {input.reference} "
-        "{input.bam} |bcftools call -Ov -o {output.variants_vcf} -c 2>{log}"
+        "bcftools mpileup --threads {threads} -f {input.reference} "
+        "{input.bam} |bcftools call --threads {threads} -Ob -o {output.variants_vcf} -c 2>{log}"
