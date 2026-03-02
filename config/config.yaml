@@ -21,6 +21,10 @@ params:
   epinano: ' -t 1  -c 5 -f sum_err  -d 0.01  '
   epinano_dataprep: ''
   drummer: ' -z 0.1 -p 1 '
+  tandemmod: "--model multi --threshold 0.5"
+  directrm: "--mods all --min-prob 0.7"
+  m6atm: "--stoichiometry --threshold 0.6"
+  rnano: "--model pretrained --gpu False"
 
 threads:
   minimap2: 4
@@ -34,6 +38,10 @@ threads:
   eligos2: 4
   drummer: 4
   epinano: 4
+  tandemmod: 4
+  directrm: 4
+  m6atm: 4
+  rnano: 4
 
 reference:
   genome_fasta: data/ref.fa
@@ -57,5 +65,13 @@ tools:
     activate: True
   epinano:
     activate: True
+  tandemmod:
+    activate: False
+  directrm:
+    activate: False
+  m6atm:
+    activate: False
+  rnano:
+    activate: False
 
 target_region: ''

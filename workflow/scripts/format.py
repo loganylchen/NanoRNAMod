@@ -53,6 +53,42 @@ def format_nanocompore(input_file,output_file):
     df['pos']+=2
     df.to_csv(output_file,sep='\t',index=False)
 
+def format_tandemmod(input_file,output_file):
+    df = pd.read_csv(input_file, sep='\t')
+    if 'transcript' in df.columns and 'position' in df.columns:
+        df = df.sort_values(['transcript', 'position'])
+    elif 'id' in df.columns and 'position' in df.columns:
+        df = df.sort_values(['id', 'position'])
+        df.rename(columns={'id': 'transcript'}, inplace=True)
+    df.to_csv(output_file, sep='\t', index=False)
+
+def format_directrm(input_file,output_file):
+    df = pd.read_csv(input_file, sep='\t')
+    if 'transcript' in df.columns and 'position' in df.columns:
+        df = df.sort_values(['transcript', 'position'])
+    elif 'transcript_id' in df.columns and 'transcript_pos' in df.columns:
+        df = df.sort_values(['transcript_id', 'transcript_pos'])
+        df.rename(columns={'transcript_id': 'transcript', 'transcript_pos': 'position'}, inplace=True)
+    df.to_csv(output_file, sep='\t', index=False)
+
+def format_m6atm(input_file,output_file):
+    df = pd.read_csv(input_file, sep='\t')
+    if 'transcript' in df.columns and 'position' in df.columns:
+        df = df.sort_values(['transcript', 'position'])
+    elif 'transcript_id' in df.columns and 'transcript_pos' in df.columns:
+        df = df.sort_values(['transcript_id', 'transcript_pos'])
+        df.rename(columns={'transcript_id': 'transcript', 'transcript_pos': 'position'}, inplace=True)
+    df.to_csv(output_file, sep='\t', index=False)
+
+def format_rnano(input_file,output_file):
+    df = pd.read_csv(input_file, sep='\t')
+    if 'transcript' in df.columns and 'position' in df.columns:
+        df = df.sort_values(['transcript', 'position'])
+    elif 'transcript_id' in df.columns and 'transcript_pos' in df.columns:
+        df = df.sort_values(['transcript_id', 'transcript_pos'])
+        df.rename(columns={'transcript_id': 'transcript', 'transcript_pos': 'position'}, inplace=True)
+    df.to_csv(output_file, sep='\t', index=False)
+
 if snakemake.params.tool == 'xpore':
     format_xpore(snakemake.input[0],snakemake.output[0])
 elif snakemake.params.tool == 'baleen':
@@ -67,3 +103,11 @@ elif snakemake.params.tool == 'drummer':
     format_drummer(snakemake.input[0],snakemake.output[0])
 elif snakemake.params.tool == 'nanocompore':
     format_nanocompore(snakemake.input[0],snakemake.output[0])
+elif snakemake.params.tool == 'tandemmod':
+    format_tandemmod(snakemake.input[0],snakemake.output[0])
+elif snakemake.params.tool == 'directrm':
+    format_directrm(snakemake.input[0],snakemake.output[0])
+elif snakemake.params.tool == 'm6atm':
+    format_m6atm(snakemake.input[0],snakemake.output[0])
+elif snakemake.params.tool == 'rnano':
+    format_rnano(snakemake.input[0],snakemake.output[0])
