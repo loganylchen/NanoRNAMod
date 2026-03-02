@@ -1,0 +1,14 @@
+name: directrm
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - python=3.9
+  - pytorch
+  - torchvision
+  - pandas
+  - numpy
+  - scikit-learn
+  - pyyaml
+  - tqdm

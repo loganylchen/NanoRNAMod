@@ -192,4 +192,52 @@ def get_final_output():
                 comp=comparisons,
                 RESULT_ROOT=RESULT_ROOT,
             )
+    if "tandemmod" in tools:
+        final_output += expand(
+            "{RESULT_ROOT}/modifications/tandemmod/{sample}/tandemmod_results.tsv",
+            sample=list(samples.index),
+            RESULT_ROOT=RESULT_ROOT,
+        )
+        if os.path.exists(config["reference"]["transcriptome_gtf"]):
+            final_output += expand(
+                "{RESULT_ROOT}/modifications/tandemmod/{sample}/tandemmod_annotated_results.tsv",
+                sample=list(samples.index),
+                RESULT_ROOT=RESULT_ROOT,
+            )
+    if "directrm" in tools:
+        final_output += expand(
+            "{RESULT_ROOT}/modifications/directrm/{sample}/directrm_results.tsv",
+            sample=list(samples.index),
+            RESULT_ROOT=RESULT_ROOT,
+        )
+        if os.path.exists(config["reference"]["transcriptome_gtf"]):
+            final_output += expand(
+                "{RESULT_ROOT}/modifications/directrm/{sample}/directrm_annotated_results.tsv",
+                sample=list(samples.index),
+                RESULT_ROOT=RESULT_ROOT,
+            )
+    if "m6atm" in tools:
+        final_output += expand(
+            "{RESULT_ROOT}/modifications/m6atm/{sample}/m6atm_results.tsv",
+            sample=list(samples.index),
+            RESULT_ROOT=RESULT_ROOT,
+        )
+        if os.path.exists(config["reference"]["transcriptome_gtf"]):
+            final_output += expand(
+                "{RESULT_ROOT}/modifications/m6atm/{sample}/m6atm_annotated_results.tsv",
+                sample=list(samples.index),
+                RESULT_ROOT=RESULT_ROOT,
+            )
+    if "rnano" in tools:
+        final_output += expand(
+            "{RESULT_ROOT}/modifications/rnano/{sample}/rnano_results.tsv",
+            sample=list(samples.index),
+            RESULT_ROOT=RESULT_ROOT,
+        )
+        if os.path.exists(config["reference"]["transcriptome_gtf"]):
+            final_output += expand(
+                "{RESULT_ROOT}/modifications/rnano/{sample}/rnano_annotated_results.tsv",
+                sample=list(samples.index),
+                RESULT_ROOT=RESULT_ROOT,
+            )
     return final_output

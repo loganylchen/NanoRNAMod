@@ -1,3 +1,207 @@
+rule post_tandemmod:
+    input:
+        predictions="{project}/results/dataprep/{sample}_tandemmod_dataprep/predictions.tsv",
+        directory="{project}/results/dataprep/{sample}_tandemmod_dataprep"
+    output:
+        "{project}/results/modifications/tandemmod/{sample}/tandemmod_results.tsv",
+    params:
+        tool="tandemmod",
+    log:
+        "logs/{project}/post_tandemmod_sampled_format/{sample}.log",
+    benchmark:
+        "benchmarks/{project}/{sample}.post_tandemmod_sampled_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    priority: 20
+    threads: 1
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+
+rule tandemmod_annotate:
+    input:
+        transcripts="{project}/results/modifications/tandemmod/{sample}/tandemmod_results.tsv",
+    output:
+        result="{project}/results/modifications/tandemmod/{sample}/tandemmod_annotated_results.tsv",
+    container:
+        "docker://btrspg/baleen:clean"
+    params:
+        gtf=config["reference"]["transcriptome_gtf"],
+    priority: 20
+    benchmark:
+        "benchmarks/{project}/{sample}.tandemmod_annotate.txt"
+    resources:
+        mem_mb=1024 * 50,
+    threads: 1
+    log:
+        out="logs/{project}/tandemmod_annotate/{sample}.log",
+        err="logs/{project}/tandemmod_annotate/{sample}.error",
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column transcript "
+        "--loc-column position "
+        "--gtf {params.gtf} "
+        "--output {output.result} "
+        "2> {log.err} 1> {log.out}"
+
+
+rule post_directrm:
+    input:
+        predictions="{project}/results/dataprep/{sample}_directrm_dataprep/predictions.tsv",
+        directory="{project}/results/dataprep/{sample}_directrm_dataprep"
+    output:
+        "{project}/results/modifications/directrm/{sample}/directrm_results.tsv",
+    params:
+        tool="directrm",
+    log:
+        "logs/{project}/post_directrm_sampled_format/{sample}.log",
+    benchmark:
+        "benchmarks/{project}/{sample}.post_directrm_sampled_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    priority: 20
+    threads: 1
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+
+rule directrm_annotate:
+    input:
+        transcripts="{project}/results/modifications/directrm/{sample}/directrm_results.tsv",
+    output:
+        result="{project}/results/modifications/directrm/{sample}/directrm_annotated_results.tsv",
+    container:
+        "docker://btrspg/baleen:clean"
+    params:
+        gtf=config["reference"]["transcriptome_gtf"],
+    priority: 20
+    benchmark:
+        "benchmarks/{project}/{sample}.directrm_annotate.txt"
+    resources:
+        mem_mb=1024 * 50,
+    threads: 1
+    log:
+        out="logs/{project}/directrm_annotate/{sample}.log",
+        err="logs/{project}/directrm_annotate/{sample}.error",
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column transcript "
+        "--loc-column position "
+        "--gtf {params.gtf} "
+        "--output {output.result} "
+        "2> {log.err} 1> {log.out}"
+
+
+rule post_m6atm:
+    input:
+        predictions="{project}/results/dataprep/{sample}_m6atm_dataprep/predictions.tsv",
+        directory="{project}/results/dataprep/{sample}_m6atm_dataprep"
+    output:
+        "{project}/results/modifications/m6atm/{sample}/m6atm_results.tsv",
+    params:
+        tool="m6atm",
+    log:
+        "logs/{project}/post_m6atm_sampled_format/{sample}.log",
+    benchmark:
+        "benchmarks/{project}/{sample}.post_m6atm_sampled_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    priority: 20
+    threads: 1
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+
+rule m6atm_annotate:
+    input:
+        transcripts="{project}/results/modifications/m6atm/{sample}/m6atm_results.tsv",
+    output:
+        result="{project}/results/modifications/m6atm/{sample}/m6atm_annotated_results.tsv",
+    container:
+        "docker://btrspg/baleen:clean"
+    params:
+        gtf=config["reference"]["transcriptome_gtf"],
+    priority: 20
+    benchmark:
+        "benchmarks/{project}/{sample}.m6atm_annotate.txt"
+    resources:
+        mem_mb=1024 * 50,
+    threads: 1
+    log:
+        out="logs/{project}/m6atm_annotate/{sample}.log",
+        err="logs/{project}/m6atm_annotate/{sample}.error",
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column transcript "
+        "--loc-column position "
+        "--gtf {params.gtf} "
+        "--output {output.result} "
+        "2> {log.err} 1> {log.out}"
+
+
+rule post_rnano:
+    input:
+        predictions="{project}/results/dataprep/{sample}_rnano_dataprep/predictions.tsv",
+        directory="{project}/results/dataprep/{sample}_rnano_dataprep"
+    output:
+        "{project}/results/modifications/rnano/{sample}/rnano_results.tsv",
+    params:
+        tool="rnano",
+    log:
+        "logs/{project}/post_rnano_sampled_format/{sample}.log",
+    benchmark:
+        "benchmarks/{project}/{sample}.post_rnano_sampled_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    priority: 20
+    threads: 1
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+
+rule rnano_annotate:
+    input:
+        transcripts="{project}/results/modifications/rnano/{sample}/rnano_results.tsv",
+    output:
+        result="{project}/results/modifications/rnano/{sample}/rnano_annotated_results.tsv",
+    container:
+        "docker://btrspg/baleen:clean"
+    params:
+        gtf=config["reference"]["transcriptome_gtf"],
+    priority: 20
+    benchmark:
+        "benchmarks/{project}/{sample}.rnano_annotate.txt"
+    resources:
+        mem_mb=1024 * 50,
+    threads: 1
+    log:
+        out="logs/{project}/rnano_annotate/{sample}.log",
+        err="logs/{project}/rnano_annotate/{sample}.error",
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column transcript "
+        "--loc-column position "
+        "--gtf {params.gtf} "
+        "--output {output.result} "
+        "2> {log.err} 1> {log.out}"
+
+
 rule post_xpore:
     input:
         "{project}/results/xpore/{native}_{control}/diffmod.table",
