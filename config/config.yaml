@@ -67,12 +67,12 @@ threads:
 #     nanocompore: ""                                   # 空字符串，使用default容器
 containers:
   default: "docker://condaforge/mambaforge:22.11.1-4"
-  minimap2: ""
-  slow5tools: ""
-  f5c: "docker://btrspg/f5c:dev"
-  nanocompore: ""
+  minimap2: "docker://btrspg/minimap2:2.28"
+  slow5tools: "docker://btrspg/slow5tools:1.3.0"
+  f5c: "docker://btrspg/f5c:1.5"
+  nanocompore: "docker://btrspg/nanocompore:1.0.4"
   baleen: "docker://btrspg/baleen:clean"
-  xpore: ""
+  xpore: "docker://btrspg/xpore:2.1"
   differr: "docker://btrspg/differr:latest"
   eligos2: "docker://piroonj/eligos2:latest"
   drummer: "docker://btrspg/drummer:latest"
