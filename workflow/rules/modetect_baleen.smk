@@ -8,10 +8,10 @@ rule baleen_dataprep:
             directory("{project}/results/dataprep/{sample}_baleen_dataprep")
         ),
     container:
-        "docker://btrspg/baleen:clean"
+        get_container("baleen")
     benchmark:
         "benchmarks/{project}/{sample}.baleen_dataprep.txt"
-    threads: config["threads"]["baleen"]
+    threads: get_threads("baleen", 4)
     resources:
         mem_mb=1024 * 450,
     priority: 10
@@ -40,10 +40,10 @@ rule baleen_modcall:
         params=config["params"]["baleen_modcall"],
         output_dir="{project}/results/baleen/{native}_{control}/",
     container:
-        "docker://btrspg/baleen:clean"
+        get_container("baleen")
     benchmark:
         "benchmarks/{project}/{native}_{control}.baleen_modcall.txt"
-    threads: config["threads"]["baleen"]
+    threads: get_threads("baleen", 4)
     resources:
         mem_mb=1024 * 650,
     priority: 5
@@ -67,10 +67,10 @@ rule baleen_postcall:
         params=config["params"]["baleen_postcall"],
         dir="{project}/results/baleen/{native}_{control}/",
     container:
-        "docker://btrspg/baleen:clean"
+        get_container("baleen")
     benchmark:
         "benchmarks/{project}/{native}_{control}.baleen_postcall.txt"
-    threads: config["threads"]["baleen"]
+    threads: get_threads("baleen", 4)
     resources:
         mem_mb=1024 * 250,
     log:

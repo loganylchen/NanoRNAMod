@@ -3,6 +3,8 @@ rule create_dict:
         config['reference']['transcriptome_fasta']
     output:
         config['reference']['transcriptome_fasta']+'.dict'
+    container:
+        get_container("default")
     log:
         "logs/picard/create_dict.log",
     params:

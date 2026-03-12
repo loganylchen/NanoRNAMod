@@ -4,7 +4,9 @@ rule rnano_config:
         reference=config["reference"]["transcriptome_fasta"]
     output:
         config="{project}/results/rnano/{sample}_rnano_config.yaml"
-    threads: 1
+    container:
+        get_container("rnano")
+    threads: get_threads("rnano", 1)
     resources:
         mem_mb = 1024
     params:
@@ -24,7 +26,9 @@ rule rnano_predict:
     output:
         predictions=temp("{project}/results/rnano/{sample}_predictions.tsv"),
         completion=touch("{project}/results/rnano/{sample}_predictions.completed")
-    threads: config["threads"]["rnano"]
+    container:
+        get_container("rnano")
+    threads: get_threads("rnano", 4)
     resources:
         mem_mb = 1024 * 100
     priority: 10
@@ -53,7 +57,9 @@ rule rnano_postprocess:
         pred_file="{project}/results/rnano/{sample}_predictions.tsv"
     output:
         directory="{project}/results/dataprep/{sample}_rnano_dataprep")
-    threads: 1
+    container:
+        get_container("rnano")
+    threads: get_threads("rnano", 1)
     resources:
         mem_mb = 1024 * 20
     priority: 10

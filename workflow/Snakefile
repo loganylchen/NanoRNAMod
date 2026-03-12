@@ -22,11 +22,6 @@ configfile: "config/config.yaml"
 ##### setup singularity #####
 
 
-# this container defines the underlying OS for each job when using the workflow
-# with --use-conda --use-singularity
-container: "docker://condaforge/mambaforge:22.11.1-4"
-
-
 report: "report/workflow.rst"
 
 

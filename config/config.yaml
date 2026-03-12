@@ -2,6 +2,7 @@
 samples: config/samples.tsv
 project: RNAModProject
 only_final_results: True
+qc: True
 params:
   minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 10 -p 0 "
   minimap2_genome: " -ax splice -u f -k 14 -G 500000 --secondary=no "
@@ -26,7 +27,12 @@ params:
   m6atm: "--stoichiometry --threshold 0.6"
   rnano: "--model pretrained --gpu False"
 
+# Thread configuration for each tool
+# 每个工具的线程数配置
+# - default: 默认线程数，当工具没有特定配置时使用
+# - 其他工具: 指定该工具运行时使用的线程数
 threads:
+  default: 1
   minimap2: 4
   slow5tools: 4
   f5c: 4
@@ -42,6 +48,45 @@ threads:
   directrm: 4
   m6atm: 4
   rnano: 4
+
+# Container images for each tool
+# 每个工具的容器镜像配置
+# 使用方法:
+#   1. 所有规则都会使用容器来运行 (when using --use-singularity or --use-conda --use-singularity)
+#   2. default: 默认容器镜像，当工具没有指定容器或容器为空字符串时使用
+#   3. 为特定工具指定容器: 将对应工具的值改为容器镜像地址
+#      例如: xpore: "docker://biocontainers/xpore:1.0"
+#   4. 如果某个工具的值为空字符串 ""，则会使用 default 容器
+#   5. 容器镜像格式: "docker://registry/image:tag" 或 "shub://user/repo:tag"
+# 
+# 示例:
+#   containers:
+#     default: "docker://condaforge/mambaforge:22.11.1-4"
+#     xpore: "docker://myregistry/xpore:latest"        # 为xpore指定特定容器
+#     minimap2: "docker://biocontainers/minimap2:2.24" # 为minimap2指定特定容器
+#     nanocompore: ""                                   # 空字符串，使用default容器
+containers:
+  default: "docker://condaforge/mambaforge:22.11.1-4"
+  minimap2: ""
+  slow5tools: ""
+  f5c: "docker://btrspg/f5c:dev"
+  nanocompore: ""
+  baleen: "docker://btrspg/baleen:clean"
+  xpore: ""
+  differr: "docker://btrspg/differr:latest"
+  eligos2: "docker://piroonj/eligos2:latest"
+  drummer: "docker://btrspg/drummer:latest"
+  epinano: "docker://btrspg/epinano:latest"
+  tandemmod: ""
+  directrm: ""
+  m6atm: ""
+  rnano: ""
+  samtools: ""
+  nanopolish: "docker://btrspg/nanopolish:latest"
+  nanocount: "docker://btrspg/nanocount:latest"
+  qualimap: ""
+  nanoplot: ""
+  bcftools: ""
 
 reference:
   genome_fasta: data/ref.fa

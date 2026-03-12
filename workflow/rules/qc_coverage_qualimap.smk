@@ -9,6 +9,8 @@ rule qc_qualimap:
         output_dir=directory("{project}/results/qc/{sample}"),
         reference_gtf=config["reference"]["transcriptome_gtf"],
         output_file="{sample}_rnaseq.pdf",
+    container:
+        get_container("qualimap")
     benchmark:
         "benchmarks/{project}/{sample}.qualimap_rnaseq.benchmark.txt"
     log:

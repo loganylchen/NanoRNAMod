@@ -12,14 +12,16 @@ rule eligos2:
     params:
         prefix="{native}_{control}",
         extra=config["params"]["eligos2"],
+    container:
+        get_container("eligos2")
     log:
         stdout="logs/{project}/eligos2/{native}_{control}.log",
         stderr="logs/{project}/eligos2/{native}_{control}.log",
-    threads: config["threads"]["eligos2"]
+    threads: get_threads("eligos2", 4)
     benchmark:
         "benchmarks/{project}/{native}_{control}.eligos2.benchmark.txt"
     container:
-        "docker://piroonj/eligos2:latest"
+        get_container("eligos2")
     resources:
         mem_mb = 1024 * 50
     priority: 10
@@ -41,7 +43,9 @@ rule eligos2_prep:
         native_bai="{project}/results/alignments/{native}_filtered.bam.bai",
     output:
         region=temp("{project}/results/eligos2/{native}_{control}.bed"),
-    threads: 1
+    container:
+        get_container("default")
+    threads: get_threads("default", 1)
     resources:
         mem_mb = 1024 * 50
     priority: 10

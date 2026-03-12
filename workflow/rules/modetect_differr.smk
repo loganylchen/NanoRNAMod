@@ -10,17 +10,19 @@ rule differr:
     params:
         prefix="",
         extra=config["params"]["differr"],
+    container:
+        get_container("differr")
     log:
         stdout="logs/{project}/differr/{native}_{control}.log",
         stderr="logs/{project}/differr/{native}_{control}.err",
-    threads: config["threads"]["differr"]
+    threads: get_threads("differr", 4)
     resources:
         mem_mb = 1024 *50
     priority: 10
     benchmark:
         "benchmarks/{project}/{native}_{control}.differr.benchmark.txt"
     container:
-        "docker://btrspg/differr:latest"
+        get_container("differr")
     shell:
         "differr "
         " -a {input.control_bam} "

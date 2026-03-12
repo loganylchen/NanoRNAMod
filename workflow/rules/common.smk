@@ -21,6 +21,24 @@ def KEEP_OR_NOT(output_file, delete=ONLY_FINAL_RESULTS):
         return output_file
 
 
+def get_container(tool_name):
+    if "containers" in config and tool_name in config["containers"]:
+        container_image = config["containers"][tool_name]
+        if container_image and container_image.strip():
+            return container_image
+    if "containers" in config and "default" in config["containers"]:
+        return config["containers"]["default"]
+    return "docker://condaforge/mambaforge:22.11.1-4"
+
+
+def get_threads(tool_name, default=1):
+    if "threads" in config and tool_name in config["threads"]:
+        return config["threads"][tool_name]
+    if "threads" in config and "default" in config["threads"]:
+        return config["threads"]["default"]
+    return default
+
+
 # loading samples
 samples = (
     pd.read_csv(config["samples"], sep="\t", dtype={"SampleName": str}, comment="#")

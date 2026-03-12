@@ -11,7 +11,9 @@ rule uncompress_eventalign_full:
         "logs/{project}/uncompress_eventalign_full/{sample}.log",
     benchmark:
         "benchmarks/{project}/{sample}.full_uncompress_eventalign.benchmark.txt"
-    threads: 1
+    container:
+        get_container("default")
+    threads: get_threads("default", 1)
     resources:
         mem_mb = 1024 
     priority: 10
@@ -35,12 +37,14 @@ rule nanocompore_collapse:
         stderr="logs/{project}/nanocompore_collapse/{sample}.err",
     benchmark:
         "benchmarks/{project}/{sample}.nanocompore_collapse.benchmark.txt"
+    container:
+        get_container("nanocompore")
     resources:
         mem_mb = 1024 * 50
     priority: 10
     conda:
         "../envs/nanocompore.yaml"
-    threads: config["threads"]["nanocompore"]
+    threads: get_threads("nanocompore", 4)
     shell:
         "nanocompore eventalign_collapse "
         "-i {input.eventalign} "
@@ -63,10 +67,12 @@ rule nanocompore:
     params:
         prefix="{native}_{control}",
         extra=config["params"]["nanocompore"],
+    container:
+        get_container("nanocompore")
     priority: 10
     resources:
         mem_mb = 1024 * 50
-    threads: config["threads"]["nanocompore"]
+    threads: get_threads("nanocompore", 4)
     log:
         stdout="logs/{project}/nanocompore/{native}_{control}.log",
         stderr="logs/{project}/nanocompore/{native}_{control}.err",

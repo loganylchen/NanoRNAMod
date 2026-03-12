@@ -6,6 +6,8 @@ rule samtools_filter_mapped:
         bam="{project}/results/alignments/{sample}_filtered.bam",
         bai="{project}/results/alignments/{sample}_filtered.bam.bai",
         csi="{project}/results/alignments/{sample}_filtered.bam.csi",
+    container:
+        get_container("samtools")
     log:
         "logs/{project}/readfiltering/{sample}.log",
     conda:
@@ -31,6 +33,8 @@ rule samtools_depth:
         ),
     output:
         temp("{project}/results/bams.depth"),
+    container:
+        get_container("samtools")
     log:
         "logs/{project}/depth.log",
     conda:
@@ -46,6 +50,8 @@ rule make_depth_table:
         "{project}/results/depth_table.tsv",
     params:
         samples=list(samples.index),
+    container:
+        get_container("default")
     conda:
         "../envs/pandas.yaml"
     script:
@@ -60,6 +66,8 @@ rule samtools_filter_mapped_epi:
         bam="{project}/results/alignments/{sample}_of.bam",
         bai="{project}/results/alignments/{sample}_of.bam.bai",
         csi="{project}/results/alignments/{sample}_of.bam.csi",
+    container:
+        get_container("samtools")
     log:
         "logs/{project}/readfiltering_3.2.4/{sample}.log",
     conda:

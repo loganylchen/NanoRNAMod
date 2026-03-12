@@ -4,7 +4,9 @@ rule tandemmod_config:
         reference=config["reference"]["transcriptome_fasta"]
     output:
         config="{project}/results/tandemmod/{sample}_tandemmod_config.yaml"
-    threads: 1
+    container:
+        get_container("tandemmod")
+    threads: get_threads("tandemmod", 1)
     resources:
         mem_mb = 1024
     params:
@@ -24,7 +26,9 @@ rule tandemmod_predict:
     output:
         predictions=temp("{project}/results/tandemmod/{sample}_predictions.tsv"),
         completion=touch("{project}/results/tandemmod/{sample}_predictions.completed")
-    threads: config["threads"]["tandemmod"]
+    container:
+        get_container("tandemmod")
+    threads: get_threads("tandemmod", 4)
     resources:
         mem_mb = 1024 * 100
     priority: 10
@@ -53,7 +57,9 @@ rule tandemmod_postprocess:
         pred_file="{project}/results/tandemmod/{sample}_predictions.tsv"
     output:
         directory="{project}/results/dataprep/{sample}_tandemmod_dataprep")
-    threads: 1
+    container:
+        get_container("tandemmod")
+    threads: get_threads("tandemmod", 1)
     resources:
         mem_mb = 1024 * 20
     priority: 10

@@ -6,6 +6,8 @@ rule qc_nanoplot:
         report="{project}/results/qc/{sample}/NanoStats.txt",
     params:
         output_dir=directory("{project}/results/qc/{sample}"),
+    container:
+        get_container("nanoplot")
     benchmark:
         "benchmarks/{project}/{sample}.nanoplot.benchmark.txt"
     log:
@@ -15,7 +17,7 @@ rule qc_nanoplot:
     resources:
         mem_mb=1024 * 20,
     priority: 50
-    threads: config["threads"]["nanoplot"]
+    threads: get_threads("nanoplot", 4)
     shell:
         "NanoPlot --raw "
         "--outdir {params.output_dir} "

@@ -4,7 +4,9 @@ rule m6atm_config:
         reference=config["reference"]["transcriptome_fasta"]
     output:
         config="{project}/results/m6atm/{sample}_m6atm_config.yaml"
-    threads: 1
+    container:
+        get_container("m6atm")
+    threads: get_threads("m6atm", 1)
     resources:
         mem_mb = 1024
     params:
@@ -24,7 +26,9 @@ rule m6atm_predict:
     output:
         predictions=temp("{project}/results/m6atm/{sample}_predictions.tsv"),
         completion=touch("{project}/results/m6atm/{sample}_predictions.completed")
-    threads: config["threads"]["m6atm"]
+    container:
+        get_container("m6atm")
+    threads: get_threads("m6atm", 4)
     resources:
         mem_mb = 1024 * 80
     priority: 10
@@ -53,7 +57,9 @@ rule m6atm_postprocess:
         pred_file="{project}/results/m6atm/{sample}_predictions.tsv"
     output:
         directory="{project}/results/dataprep/{sample}_m6atm_dataprep")
-    threads: 1
+    container:
+        get_container("m6atm")
+    threads: get_threads("m6atm", 1)
     resources:
         mem_mb = 1024 * 20
     priority: 10

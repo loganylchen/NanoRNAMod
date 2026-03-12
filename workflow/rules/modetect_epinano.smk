@@ -16,7 +16,9 @@ rule epinano_prep:
     params:
         extra=config["params"]["epinano_dataprep"],
         prefix="{project}/results/alignments/{sample}_filtered",
-    threads: config["threads"]["epinano"]
+    container:
+        get_container("epinano")
+    threads: get_threads("epinano", 4)
     resources:
         mem_mb = 1024 * 50
     priority: 10
@@ -25,7 +27,7 @@ rule epinano_prep:
     benchmark:
         "benchmarks/{project}/{sample}.epinano_prep.benchmark.txt"
     container:
-        "docker://btrspg/epinano:latest"
+        get_container("epinano")
     script:
         "../scripts/epinano_prep.sh"
 
@@ -42,8 +44,10 @@ rule epinano:
     params:
         extra=config["params"]["epinano"],
         prefix="{project}/results/epinano/{native}_{control}/epinano",
+    container:
+        get_container("epinano")
     priority: 10
-    threads: config["threads"]["epinano"]
+    threads: get_threads("epinano", 4)
     resources:
         mem_mb = 1024 * 50
     log:
@@ -52,7 +56,7 @@ rule epinano:
     benchmark:
         "benchmarks/{project}/{native}_{control}.epinano.benchmark.txt"
     container:
-        "docker://btrspg/epinano:latest"
+        get_container("epinano")
     shell:
         "Rscript /opt/Epinano/Epinano_DiffErr.R "
         "-k {input.control} "
