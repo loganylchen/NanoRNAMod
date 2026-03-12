@@ -6,12 +6,12 @@ rule prep_drummer_region:
         native_bai="{project}/results/alignments/{native}_filtered.bam.bai",
     output:
         region=temp("{project}/results/drummer/{native}_{control}_regions.bed"),
-    threads: 1
+    container:
+        get_container("drummer")
+    threads: get_threads("drummer", 1)
     resources:
         mem_mb = 1024 
     priority: 10
-    container:
-        "docker://btrspg/drummer:latest"
     shell:
         "bedtools bamtobed -bed12 -i {input.control_bam} | cut -f1 | sort > {output.region}.tmp && "
         "bedtools bamtobed -bed12 -i {input.native_bam} | cut -f1 | sort >> {output.region}.tmp && "
@@ -29,6 +29,8 @@ rule drummer:
     params:
         reference=config["reference"]["transcriptome_fasta"],
         extra=config["params"]["drummer"],
+    container:
+        get_container("drummer")
     priority: 10
     log:
         "logs/{project}/drummer/{native}_{control}.log",
@@ -40,6 +42,6 @@ rule drummer:
     benchmark:
         "benchmarks/{project}/{native}_{control}.drummer.benchmark.txt"
     container:
-        "docker://btrspg/drummer:latest"
+        get_container("drummer")
     script:
         "../scripts/drummer.py"

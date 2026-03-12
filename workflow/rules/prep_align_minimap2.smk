@@ -9,6 +9,8 @@ rule minimap2_transcriptome_align:
         "logs/{project}/minimap2_transcriptome_alignment/{sample}.log",
     benchmark:
         "benchmarks/{project}/{sample}.minimap2_transcriptome_alignment.benchmark.txt"
+    container:
+        get_container("minimap2")
     conda:
         "../envs/minimap2.yaml"
     params:
@@ -16,7 +18,7 @@ rule minimap2_transcriptome_align:
         reference=config["reference"]["transcriptome_fasta"],
     resources:
         mem_mb = 1024 * 30
-    threads: config["threads"]["minimap2"]
+    threads: get_threads("minimap2", 4)
     shell:
         "minimap2 -t {threads} {params.extra} {params.reference} {input.fastq} 2>> {log} "
         "| samtools view -Sbh "
@@ -35,6 +37,8 @@ rule minimap2_genome_align:
         "logs/{project}/minimap2_genome_alignment/{sample}.log",
     benchmark:
         "benchmarks/{project}/{sample}.minimap2_genome_alignment.benchmark.txt"
+    container:
+        get_container("minimap2")
     conda:
         "../envs/minimap2.yaml"
     params:
@@ -42,7 +46,7 @@ rule minimap2_genome_align:
         reference=config["reference"]["genome_fasta"],
     resources:
         mem_mb = 1024 * 30
-    threads: config["threads"]["minimap2"]
+    threads: get_threads("minimap2", 4)
     shell:
         "minimap2 -t {threads} {params.extra} {params.reference} {input.fastq} 2>> {log} "
         "| samtools view -Sbh "
@@ -63,12 +67,14 @@ rule minimap2_transcriptome_align_epi:
         "logs/{project}/minimap2_transcriptome_alignment_3.2.4/{sample}.log",
     benchmark:
         "benchmarks/{project}/{sample}.minimap2_transcriptome_alignment_3.2.4.benchmark.txt"
+    container:
+        get_container("minimap2")
     conda:
         "../envs/minimap2.yaml"
     params:
         extra=config["params"]["minimap2_transcriptome"],
         reference=config["reference"]["transcriptome_fasta"],
-    threads: config["threads"]["minimap2"]
+    threads: get_threads("minimap2", 4)
     resources:
         mem_mb = 1024 * 30
     shell:

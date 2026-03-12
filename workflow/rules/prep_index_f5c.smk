@@ -11,13 +11,13 @@ rule f5c_index:
             ".index.gzi",
             ".index.readdb",
         ),
+    container:
+        get_container("f5c")
     log:
         "logs/{project}/f5c_index/{sample}.log",
     benchmark:
         "benchmarks/{project}/{sample}.f5c_index.benchmark.txt"
-    container:
-        "docker://btrspg/f5c:dev"
-    threads: config["threads"]["f5c"]
+    threads: get_threads("f5c", 4)
     resources:
         mem_mb = 1024 * 50,
     shell:

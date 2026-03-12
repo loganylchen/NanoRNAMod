@@ -4,7 +4,9 @@ rule directrm_config:
         reference=config["reference"]["transcriptome_fasta"]
     output:
         config="{project}/results/directrm/{sample}_directrm_config.yaml"
-    threads: 1
+    container:
+        get_container("directrm")
+    threads: get_threads("directrm", 1)
     resources:
         mem_mb = 1024
     params:
@@ -24,7 +26,9 @@ rule directrm_predict:
     output:
         predictions=temp("{project}/results/directrm/{sample}_predictions.tsv"),
         completion=touch("{project}/results/directrm/{sample}_predictions.completed")
-    threads: config["threads"]["directrm"]
+    container:
+        get_container("directrm")
+    threads: get_threads("directrm", 4)
     resources:
         mem_mb = 1024 * 100
     priority: 10
@@ -53,7 +57,9 @@ rule directrm_postprocess:
         pred_file="{project}/results/directrm/{sample}_predictions.tsv"
     output:
         directory="{project}/results/dataprep/{sample}_directrm_dataprep")
-    threads: 1
+    container:
+        get_container("directrm")
+    threads: get_threads("directrm", 1)
     resources:
         mem_mb = 1024 * 20
     priority: 10

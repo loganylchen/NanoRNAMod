@@ -5,9 +5,11 @@ rule link_fastq:
         fastq="{project}/results/fastq/{sample}.fq.gz",
     params:
         relative_path=lambda w: "../../../" + get_raw_fastq(w),
+    container:
+        get_container("default")
     log:
         "logs/{project}/link_fastq/{sample}.log",
-    threads: 1
+    threads: get_threads("default", 1)
     resources:
         mem_mb=1024,
     shell:
@@ -36,9 +38,11 @@ rule link_blow5:
         blow5="{project}/results/blow5/{sample}.blow5",
     params:
         relative_path=lambda w: "../../../"+ get_raw_blow5(w),
+    container:
+        get_container("default")
     log:
         "logs/{project}/link_blow5/{sample}.log",
-    threads: 1
+    threads: get_threads("default", 1)
     resources:
         mem_mb=1024,
     shell:

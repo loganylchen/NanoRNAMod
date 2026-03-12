@@ -13,17 +13,17 @@ rule nanopolish_transcriptome_polya:
         fastq="{project}/results/fastq/{sample}.fq.gz",
     output:
         polya_estimate=KEEP_OR_NOT("{project}/results/polya/{sample}.transcriptome.nanopolish.polya.tsv.gz"),
+    container:
+        get_container("nanopolish")
     log:
         "logs/{project}/nanopolish_transcriptome_polya/{sample}.log",
     benchmark:
         "benchmarks/{project}/{sample}.nanopolish_transcriptome_polya.benchmark.txt"
-    container:
-        "docker://btrspg/nanopolish:latest"
     params:
         reference=config["reference"]["transcriptome_fasta"],
     resources:
         mem_mb = 1024 * 30
-    threads: config["threads"]["nanopolish"]
+    threads: get_threads("nanopolish", 4)
     shell:
         "nanopolish polya "
         "--reads {input.fastq} "
@@ -46,17 +46,17 @@ rule nanopolish_genome_polya:
         fastq="{project}/results/fastq/{sample}.fq.gz",
     output:
         polya_estimate=KEEP_OR_NOT("{project}/results/polya/{sample}.genome.nanopolish.polya.tsv.gz"),
+    container:
+        get_container("nanopolish")
     log:
         "logs/{project}/nanopolish_genome_polya/{sample}.log",
     benchmark:
         "benchmarks/{project}/{sample}.nanopolish_genome_polya.benchmark.txt"
-    container:
-        "docker://btrspg/nanopolish:latest"
     params:
         reference=config["reference"]["genome_fasta"],
     resources:
         mem_mb = 1024 * 30
-    threads: config["threads"]["nanopolish"]
+    threads: get_threads("nanopolish", 4)
     shell:
         "nanopolish polya "
         "--reads {input.fastq} "

@@ -8,6 +8,8 @@ rule qc_samtools:
     output:
         report1="{project}/results/qc/{sample}/{sample}_samtools_transcriptome_stats.txt",
         report2="{project}/results/qc/{sample}/{sample}_samtools_genome_stats.txt",
+    container:
+        get_container("samtools")
     benchmark:
         "benchmarks/{project}/{sample}.samtools_rnaseq.benchmark.txt"
     log:
@@ -15,7 +17,7 @@ rule qc_samtools:
     conda:
         "../envs/minimap2.yaml"
     priority: 50
-    threads: config["threads"]["minimap2"]
+    threads: get_threads("samtools", 4)
     resources:
         mem_mb=1024 * 20,
     shell:

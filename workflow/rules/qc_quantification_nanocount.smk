@@ -3,13 +3,13 @@ rule quant_nanocount:
         bam="{project}/results/alignments/{sample}.bam",
     output:
         count_tsv="{project}/results/quantification/{sample}.tx_counts.tsv",
+    container:
+        get_container("nanocount")
     benchmark:
         "benchmarks/{project}/{sample}.quantification_nanocount.benchmark.txt"
     log:
         stdout="logs/{project}/qc/{sample}_quantification_nanocount.log",
         stderr="logs/{project}/qc/{sample}_quantification_nanocount.err",
-    container:
-        "docker://btrspg/nanocount:latest"
     priority: 20
     resources:
         mem_mb=1024 * 10,
