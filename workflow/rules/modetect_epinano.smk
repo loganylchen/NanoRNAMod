@@ -8,9 +8,9 @@ rule epinano_prep:
         per_site=temp(
             "{project}/results/alignments/{sample}_filtered.plus_strand.per.site.csv"
         ),
-        sum_err=temp(
-            "{project}/results/alignments/{sample}_filtered.plus.sumErrOut.csv"
-        ),
+        # sum_err=temp(
+        #     "{project}/results/alignments/{sample}_filtered.plus.sumErrOut.csv"
+        # ),
         # kmer_5_site = "results/alignments/{sample}_filtered.plus_strand.per.site.5mer.csv",
         # dump_csv = "results/alignments/{sample}_filtered.q3.mis3.del3.MODEL.rrach.q3.mis3.del3.linear.dump.csv"
     params:
