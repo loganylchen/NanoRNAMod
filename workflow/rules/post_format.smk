@@ -218,7 +218,7 @@ rule post_xpore:
     params:
         tool="xpore",
     container:
-        get_container("default")
+        get_container("python3")
     log:
         "logs/{project}/post_xpore_sampled_format/{native}_{control}.log",
     benchmark:
@@ -226,9 +226,7 @@ rule post_xpore:
     resources:
         mem_mb=1024 * 50,
     priority: 20
-    threads: get_threads("default", 1)
-    conda:
-        "../envs/pandas.yaml"
+    threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
 
