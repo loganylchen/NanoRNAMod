@@ -268,7 +268,7 @@ rule post_nanocompore:
     params:
         tool="nanocompore",
     container:
-        get_container("default")
+        get_container("python3")
     priority: 20
     log:
         "logs/{project}/post_nanocompore_sampled_format/{native}_{control}.log",
@@ -276,7 +276,7 @@ rule post_nanocompore:
         "benchmarks/{project}/{native}_{control}.post_nanocompore_sampled_format.benchmark.txt"
     resources:
         mem_mb=1024 * 50,
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     conda:
         "../envs/pandas.yaml"
     script:
