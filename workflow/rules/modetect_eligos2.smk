@@ -44,8 +44,8 @@ rule eligos2_prep:
     output:
         region=temp("{project}/results/eligos2/{native}_{control}.bed"),
     container:
-        get_container("default")
-    threads: get_threads("default", 1)
+        get_container("bedtools")
+    threads: get_threads("bedtools", 1)
     resources:
         mem_mb = 1024 * 50
     priority: 10
