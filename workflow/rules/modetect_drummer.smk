@@ -7,7 +7,7 @@ rule prep_drummer_region:
     output:
         region=temp("{project}/results/drummer/{native}_{control}_regions.bed"),
     container:
-        get_container("drummer")
+        get_container("bedtools")
     threads: get_threads("drummer", 1)
     resources:
         mem_mb = 1024 
