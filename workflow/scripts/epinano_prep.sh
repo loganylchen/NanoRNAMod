@@ -5,10 +5,13 @@
 set -x
 set -e
 
-python /opt/epinano/Epinano_Variants.py   -r "${snakemake_input[reference]}" \
--b "${snakemake_input[sample_bam]}" -c ${snakemake[threads]} -o "${snakemake_output[per_site]}" 2>"${snakemake_log[0]}"
+directory=$(dirname "${snakemake_output[per_site]}")
 
-ls -lh "$(dirname "${snakemake_output[per_site]}")"
+
+python /opt/epinano/Epinano_Variants.py   -r "${snakemake_input[reference]}" \
+-b "${snakemake_input[sample_bam]}" -c ${snakemake[threads]} -o ${directory} 2>"${snakemake_log[0]}"
+
+ls -lh ${directory}/*
 
 
 # python /opt/epinano/misc/Epinano_sumErr.py --kmer 0 --file "${snakemake_output[per_site]}" \

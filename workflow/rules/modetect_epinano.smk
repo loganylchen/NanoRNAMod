@@ -6,12 +6,12 @@ rule epinano_prep:
         reference_dict=config["reference"]["transcriptome_fasta"] + ".dict",
     output:
         per_site=temp(
-            "{project}/results/alignments/{sample}_filtered.plus_strand.per.site.csv"
+            "{project}/results/alignments/{sample}_filtered.fwd.per.site.csv"
         ),
         # sum_err=temp(
-        #     "{project}/results/alignments/{sample}_filtered.plus.sumErrOut.csv"
+        #     "{project}/results/alignments/{sample}_filtered.fwd.sumErrOut.csv"
         # ),
-        # kmer_5_site = "results/alignments/{sample}_filtered.plus_strand.per.site.5mer.csv",
+        # kmer_5_site = "results/alignments/{sample}_filtered.fwd.per.site.5mer.csv",
         # dump_csv = "results/alignments/{sample}_filtered.q3.mis3.del3.MODEL.rrach.q3.mis3.del3.linear.dump.csv"
     params:
         extra=config["params"]["epinano_dataprep"],
@@ -34,8 +34,8 @@ rule epinano_prep:
 
 rule epinano:
     input:
-        control="{project}/results/alignments/{control}_filtered.plus_strand.per.site.csv",
-        native="{project}/results/alignments/{native}_filtered.plus_strand.per.site.csv",
+        control="{project}/results/alignments/{control}_filtered.fwd.per.site.csv",
+        native="{project}/results/alignments/{native}_filtered.fwd.per.site.csv",
     output:
         results="{project}/results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv",
         output_dir=KEEP_OR_NOT(
