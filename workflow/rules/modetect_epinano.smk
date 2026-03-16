@@ -59,6 +59,7 @@ rule epinano:
         get_container("epinano")
     shell:
         "Rscript /opt/epinano/Epinano_DiffErr.R "
+        "-t {threads} "
         "-k {input.control} "
         "-w {input.native} "
         "-o {params.prefix} "
