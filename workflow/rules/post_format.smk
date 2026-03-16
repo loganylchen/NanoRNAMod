@@ -319,7 +319,7 @@ rule post_baleen:
     params:
         tool="baleen",
     container:
-        get_container("default")
+        get_container("python3")
     priority: 20
     log:
         "logs/{project}/post_baleen_sampled_format/{native}_{control}.log",
@@ -327,7 +327,7 @@ rule post_baleen:
         "benchmarks/{project}/{native}_{control}.post_baleen_sampled_format.benchmark.txt"
     resources:
         mem_mb=1024 * 50,
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     conda:
         "../envs/pandas.yaml"
     script:
@@ -370,7 +370,7 @@ rule post_differr:
     params:
         tool="differr",
     container:
-        get_container("default")
+        get_container("python3")
     priority: 20
     log:
         "logs/{project}/post_differr_sampled_format/{native}_{control}.log",
@@ -378,7 +378,7 @@ rule post_differr:
         "benchmarks/{project}/{native}_{control}.post_differr_sampled_format.benchmark.txt"
     resources:
         mem_mb=1024 * 50,
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     conda:
         "../envs/pandas.yaml"
     script:
@@ -422,11 +422,11 @@ rule post_epinano:
     params:
         tool="epinano",
     container:
-        get_container("default")
+        get_container("python3")
     resources:
         mem_mb=1024 * 50,
     priority: 20
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     log:
         "logs/{project}/post_epinano_sampled_format/{native}_{control}.log",
     benchmark:
@@ -474,10 +474,10 @@ rule post_eligos2:
     params:
         tool="eligos2",
     container:
-        get_container("default")
+        get_container("python3")
     resources:
         mem_mb=1024 * 50,
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     priority: 20
     log:
         "logs/{project}/post_eligos2_sampled_format/{native}_{control}.log",
@@ -525,10 +525,10 @@ rule post_drummer:
     params:
         tool="drummer",
     container:
-        get_container("default")
+        get_container("python3")
     resources:
         mem_mb=1024 * 50,
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     priority: 20
     log:
         "logs/{project}/post_drummer_sampled_format/{native}_{control}.log",
