@@ -58,7 +58,7 @@ rule epinano:
     container:
         get_container("epinano")
     shell:
-        "Rscript /opt/Epinano/Epinano_DiffErr.R "
+        "Rscript /opt/epinano/Epinano_DiffErr.R "
         "-k {input.control} "
         "-w {input.native} "
         "-o {params.prefix} "
