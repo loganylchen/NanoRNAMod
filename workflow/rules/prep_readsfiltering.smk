@@ -51,7 +51,7 @@ rule make_depth_table:
     params:
         samples=list(samples.index),
     container:
-        get_container("default")
+        get_container("python3")
     conda:
         "../envs/pandas.yaml"
     script:
