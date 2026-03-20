@@ -107,38 +107,63 @@ def normalize_columns(df):
     return df
 
 # ── Helper: detect score column in dataframe ───────────────────────────────
-def detect_score_column(df):
+def detect_score_column(df, tool_name=None):
     """Detect the most likely score column for ranking predictions."""
-    # Tool-specific score columns
+    # Tool-specific score columns (in order of preference)
     tool_score_map = {
-        'xpore': ['p_value', 'diff_mod'],
-        'nanocompore': ['pvalue', 'logit', 'p_value'],
-        'baleen': ['mod_score', 'score'],
-        'differr': ['-log10 P value', 'score', 'pvalue'],
+        'xpore': ['p_value', 'diff_mod', 'diff_mod_frac', 'mod_ratio'],
+        'nanocompore': ['pvalue', 'logit_pvalue', 'logit', 'p_value', 'coverage'],
+        'baleen': ['mod_score', 'score', 'kmer_score'],
+        'differr': ['-log10 P value', '-log10_pvalue', 'score', 'pvalue'],
+        'eligos2': ['pvalue', 'p_value', 'esb', 'oddsR'],
         'epinano': ['z_score_prediction', 'z_scores', 'delta_sum_err'],
+        'drummer': ['p_value', 'pvalue', 'z_score'],
+        'psipore': ['pvalue', 'p_value', 'score'],
+        'tandemmod': ['probability', 'prob', 'score', 'mod_prob'],
+        'directrm': ['probability', 'prob', 'mod_prob'],
+        'm6atm': ['stoichiometry', 'probability', 'prob'],
+        'rnano': ['probability', 'score', 'prob'],
+        'nanopsu': ['pvalue', 'p_value', 'score'],
+        'nanomud': ['probability', 'pvalue', 'score'],
+        'penguin': ['probability', 'score', 'pvalue'],
     }
 
-    # Generic score columns
+    # If tool name is provided, try tool-specific columns first
+    if tool_name and tool_name in tool_score_map:
+        for col in tool_score_map[tool_name]:
+            # Try exact match
+            if col in df.columns:
+                return col
+            # Try case-insensitive match
+            for df_col in df.columns:
+                if df_col.lower() == col.lower():
+                    return df_col
+
+    # Generic score columns (fallback)
     generic_score_cols = [
-        'score', 'pvalue', 'p_value', 'pval', 'probability', 'prob',
-        '-log10_pvalue', '-log10(p)', '-log10_p', 'logit_pvalue',
-        'prob_modified', 'mod_prob', 'posterior_prob', 'mod_score'
+        'p_value', 'pvalue', 'pval', '-log10_pvalue', '-log10 P value',
+        'score', 'probability', 'prob', 'mod_score', 'mod_prob',
+        'logit_pvalue', 'logit', 'z_score', 'z_scores'
     ]
 
-    # First try tool-specific (would need tool name context)
-    # For now, use generic detection
     for col in generic_score_cols:
+        # Try exact match
         if col in df.columns:
             return col
+        # Try case-insensitive match
+        for df_col in df.columns:
+            if df_col.lower().replace(' ', '_') == col.lower().replace(' ', '_'):
+                return df_col
 
     return None
 
 # ── Helper: compute AUPRC and AUROC ───────────────────────────────────────
-def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_col):
+def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_col, window=0):
     """
     Compute AUPRC and AUROC given predictions with scores.
 
-    Uses binary labels based on match with ground truth sites.
+    Uses binary labels based on match with ground truth sites within window.
+    Score is converted to -log10(p-value) if it's a p-value column.
     """
     if score_col is None or pred_df.empty:
         return np.nan, np.nan
@@ -147,6 +172,10 @@ def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_c
     if score_col not in pred_df.columns:
         return np.nan, np.nan
 
+    # Determine if this is a p-value column (needs -log10 transformation)
+    score_col_lower = score_col.lower().replace(' ', '_')
+    is_pvalue_col = any(x in score_col_lower for x in ['p_value', 'pvalue', 'pval'])
+
     # Create labels and scores arrays
     labels = []
     scores = []
@@ -154,23 +183,32 @@ def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_c
     for _, pred_row in pred_df.iterrows():
         tx = pred_row['transcript']
         pos = pred_row['position']
-        score = pred_row[score_col]
+        raw_score = pred_row[score_col]
 
         # Skip if score is NaN
-        if pd.isna(score):
+        if pd.isna(raw_score):
             continue
 
-        # Check if this prediction matches a positive truth site
+        # Convert p-value to -log10(p-value) for ranking (higher = better)
+        if is_pvalue_col:
+            # Clamp p-value to avoid log(0)
+            pval = max(float(raw_score), 1e-300)
+            score = -np.log10(pval)
+        else:
+            score = float(raw_score)
+
+        # Check if this prediction matches a positive truth site (within window)
         is_positive = False
         for _, truth_row in truth_pos_subset.iterrows():
             if (truth_row['transcript'] == tx and
-                abs(truth_row['position'] - pos) <= 0):  # exact match for ranking
+                abs(truth_row['position'] - pos) <= window):
                 is_positive = True
                 break
 
         labels.append(1 if is_positive else 0)
-        scores.append(float(score))
+        scores.append(score)
 
+    # Need at least one positive and one negative sample
     if len(set(labels)) < 2 or len(scores) == 0:
         return np.nan, np.nan
 
@@ -178,8 +216,8 @@ def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_c
         from sklearn.metrics import roc_auc_score, average_precision_score
         auroc = roc_auc_score(labels, scores)
         auprc = average_precision_score(labels, scores)
-        return auprc, auroc  # AUPRC priority over AUROC per requirements
-    except Exception:
+        return auprc, auroc
+    except Exception as e:
         return np.nan, np.nan
 
 # ── Load all tool results (preserving all columns for scores) ────────────────
@@ -193,10 +231,11 @@ for f in result_files:
         df = normalize_columns(df)
 
         if 'transcript' in df.columns and 'position' in df.columns:
-            # Detect score column for this tool
-            score_col = detect_score_column(df)
+            # Detect score column for this tool (pass tool name for better detection)
+            score_col = detect_score_column(df, tool)
             if score_col and tool not in tool_score_cols:
                 tool_score_cols[tool] = score_col
+                print(f"Detected score column for {tool}: {score_col}")
 
             if tool not in tool_dfs:
                 tool_dfs[tool] = []
@@ -337,7 +376,7 @@ for tool, pred_df in tool_dfs.items():
 
             # AUPRC and AUROC (only if score column exists)
             auprc, auroc = compute_ranking_metrics(
-                pred_subset, truth_subset, truth_neg_subset, score_col
+                pred_subset, truth_subset, truth_neg_subset, score_col, window
             )
 
             records.append({
