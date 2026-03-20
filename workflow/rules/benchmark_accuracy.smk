@@ -2,7 +2,7 @@ def get_all_result_tsvs(wildcards):
     """Collect all *_results.tsv paths for activated tools."""
     tools = [t for t in config["tools"] if config["tools"][t]["activate"]]
     result_files = []
-    per_comparison_tools = ["xpore", "nanocompore", "baleen", "differr", "drummer",
+    per_comparison_tools = ["xpore", "nanocompore", "baleen", "differr", "drummer", "pybaleen",
                              "eligos2", "epinano", "psipore"]
     per_sample_tools = ["tandemmod", "directrm", "m6atm", "rnano",
                         "nanopsu", "nanomud", "penguin"]

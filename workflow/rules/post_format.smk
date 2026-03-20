@@ -777,3 +777,54 @@ rule penguin_annotate:
         "--gtf {params.gtf} "
         "--output {output.result} "
         "2> {log.err} 1> {log.out}"
+
+
+# pybaleen post-processing
+rule post_pybaleen:
+    input:
+        result="{project}/results/pybaleen/{native}_{control}/site_results.tsv",
+    output:
+        "{project}/results/modifications/pybaleen/{native}_{control}/pybaleen_results.tsv",
+    container:
+        get_container("default")
+    log:
+        "logs/{project}/post_pybaleen_format/{native}_{control}.log",
+    benchmark:
+        "benchmarks/{project}/{native}_{control}.post_pybaleen_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    priority: 20
+    threads: get_threads("default", 1)
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/pybaleen_postprocess.py"
+
+
+rule pybaleen_annotate:
+    input:
+        transcripts="{project}/results/modifications/pybaleen/{native}_{control}/pybaleen_results.tsv",
+    output:
+        result="{project}/results/modifications/pybaleen/{native}_{control}/pybaleen_annotated_results.tsv",
+    container:
+        get_container("baleen")
+    params:
+        gtf=config["reference"]["transcriptome_gtf"],
+    priority: 20
+    benchmark:
+        "benchmarks/{project}/{native}_{control}.pybaleen_annotate.txt"
+    resources:
+        mem_mb=1024 * 50,
+    threads: get_threads("baleen", 1)
+    log:
+        out="logs/{project}/pybaleen_annotate/{native}_{control}.log",
+        err="logs/{project}/pybaleen_annotate/{native}_{control}.error",
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column transcript "
+        "--loc-column position "
+        "--gtf {params.gtf} "
+        "--output {output.result} "
+        "2> {log.err} 1> {log.out}"

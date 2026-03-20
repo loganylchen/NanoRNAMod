@@ -185,17 +185,21 @@ def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_c
         pos = pred_row['position']
         raw_score = pred_row[score_col]
 
-        # Skip if score is NaN
+        # Skip if score is NaN or non-numeric
         if pd.isna(raw_score):
+            continue
+        try:
+            raw_score = float(raw_score)
+        except (ValueError, TypeError):
             continue
 
         # Convert p-value to -log10(p-value) for ranking (higher = better)
         if is_pvalue_col:
             # Clamp p-value to avoid log(0)
-            pval = max(float(raw_score), 1e-300)
+            pval = max(raw_score, 1e-300)
             score = -np.log10(pval)
         else:
-            score = float(raw_score)
+            score = raw_score
 
         # Check if this prediction matches a positive truth site (within window)
         is_positive = False
