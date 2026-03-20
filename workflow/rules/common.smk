@@ -306,6 +306,18 @@ def get_final_output():
                 sample=list(samples.index),
                 RESULT_ROOT=RESULT_ROOT,
             )
+    if "pybaleen" in tools:
+        final_output += expand(
+            "{RESULT_ROOT}/modifications/pybaleen/{comp}/pybaleen_results.tsv",
+            comp=comparisons,
+            RESULT_ROOT=RESULT_ROOT,
+        )
+        if os.path.exists(config["reference"]["transcriptome_gtf"]):
+            final_output += expand(
+                "{RESULT_ROOT}/modifications/pybaleen/{comp}/pybaleen_annotated_results.tsv",
+                comp=comparisons,
+                RESULT_ROOT=RESULT_ROOT,
+            )
     # Benchmarking outputs
     final_output += [f"{RESULT_ROOT}/benchmarks/resource_summary.tsv"]
     if config.get("benchmark", {}).get("truth_set", ""):
