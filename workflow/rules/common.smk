@@ -258,4 +258,56 @@ def get_final_output():
                 sample=list(samples.index),
                 RESULT_ROOT=RESULT_ROOT,
             )
+    if "psipore" in tools:
+        final_output += expand(
+            "{RESULT_ROOT}/modifications/psipore/{comp}/psipore_results.tsv",
+            comp=comparisons,
+            RESULT_ROOT=RESULT_ROOT,
+        )
+        if os.path.exists(config["reference"]["transcriptome_gtf"]):
+            final_output += expand(
+                "{RESULT_ROOT}/modifications/psipore/{comp}/psipore_annotated_results.tsv",
+                comp=comparisons,
+                RESULT_ROOT=RESULT_ROOT,
+            )
+    if "nanopsu" in tools:
+        final_output += expand(
+            "{RESULT_ROOT}/modifications/nanopsu/{sample}/nanopsu_results.tsv",
+            sample=list(samples.index),
+            RESULT_ROOT=RESULT_ROOT,
+        )
+        if os.path.exists(config["reference"]["transcriptome_gtf"]):
+            final_output += expand(
+                "{RESULT_ROOT}/modifications/nanopsu/{sample}/nanopsu_annotated_results.tsv",
+                sample=list(samples.index),
+                RESULT_ROOT=RESULT_ROOT,
+            )
+    if "nanomud" in tools:
+        final_output += expand(
+            "{RESULT_ROOT}/modifications/nanomud/{sample}/nanomud_results.tsv",
+            sample=list(samples.index),
+            RESULT_ROOT=RESULT_ROOT,
+        )
+        if os.path.exists(config["reference"]["transcriptome_gtf"]):
+            final_output += expand(
+                "{RESULT_ROOT}/modifications/nanomud/{sample}/nanomud_annotated_results.tsv",
+                sample=list(samples.index),
+                RESULT_ROOT=RESULT_ROOT,
+            )
+    if "penguin" in tools:
+        final_output += expand(
+            "{RESULT_ROOT}/modifications/penguin/{sample}/penguin_results.tsv",
+            sample=list(samples.index),
+            RESULT_ROOT=RESULT_ROOT,
+        )
+        if os.path.exists(config["reference"]["transcriptome_gtf"]):
+            final_output += expand(
+                "{RESULT_ROOT}/modifications/penguin/{sample}/penguin_annotated_results.tsv",
+                sample=list(samples.index),
+                RESULT_ROOT=RESULT_ROOT,
+            )
+    # Benchmarking outputs
+    final_output += [f"{RESULT_ROOT}/benchmarks/resource_summary.tsv"]
+    if config.get("benchmark", {}).get("truth_set", ""):
+        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary.tsv"]
     return final_output

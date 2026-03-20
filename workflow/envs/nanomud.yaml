@@ -1,0 +1,11 @@
+name: nanomud
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - python
+  - pytorch
+  - pandas
+  - numpy
+  - pysam

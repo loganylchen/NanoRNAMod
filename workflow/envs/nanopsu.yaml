@@ -1,0 +1,11 @@
+name: nanopsu
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - python
+  - tensorflow
+  - pandas
+  - numpy
+  - pysam

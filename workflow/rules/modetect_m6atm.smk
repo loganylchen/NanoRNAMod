@@ -1,6 +1,7 @@
 rule m6atm_config:
     input:
-        bam="{project}/results/bam/{sample}.bam",
+        bam="{project}/results/alignments/{sample}_filtered.bam",
+        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
         reference=config["reference"]["transcriptome_fasta"]
     output:
         config="{project}/results/m6atm/{sample}_m6atm_config.yaml"
@@ -10,7 +11,7 @@ rule m6atm_config:
     resources:
         mem_mb = 1024
     params:
-        threshold=0.6
+        threshold=0.6,
         stoichiometry=True
     log:
         "logs/{project}/m6atm_config/{sample}.log"
@@ -20,7 +21,8 @@ rule m6atm_config:
 
 rule m6atm_predict:
     input:
-        bam="{project}/results/bam/{sample}.bam",
+        bam="{project}/results/alignments/{sample}_filtered.bam",
+        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
         config="{project}/results/m6atm/{sample}_m6atm_config.yaml"
     output:
@@ -56,7 +58,7 @@ rule m6atm_postprocess:
         predictions="{project}/results/m6atm/{sample}_predictions.completed",
         pred_file="{project}/results/m6atm/{sample}_predictions.tsv"
     output:
-        directory="{project}/results/dataprep/{sample}_m6atm_dataprep")
+        directory("{project}/results/dataprep/{sample}_m6atm_dataprep")
     container:
         get_container("m6atm")
     threads: get_threads("m6atm", 1)

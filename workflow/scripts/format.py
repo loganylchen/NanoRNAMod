@@ -89,6 +89,33 @@ def format_rnano(input_file,output_file):
         df.rename(columns={'transcript_id': 'transcript', 'transcript_pos': 'position'}, inplace=True)
     df.to_csv(output_file, sep='\t', index=False)
 
+def format_psipore(input_file, output_file):
+    df = pd.read_csv(input_file, sep='\t')
+    if 'transcript' in df.columns and 'position' in df.columns:
+        df = df.sort_values(['transcript', 'position'])
+    df.to_csv(output_file, sep='\t', index=False)
+
+def format_nanopsu(input_file, output_file):
+    df = pd.read_csv(input_file, sep='\t')
+    if 'transcript' in df.columns and 'position' in df.columns:
+        df = df.sort_values(['transcript', 'position'])
+    df.to_csv(output_file, sep='\t', index=False)
+
+def format_nanomud(input_file, output_file):
+    df = pd.read_csv(input_file, sep='\t')
+    if 'transcript' in df.columns and 'position' in df.columns:
+        sort_cols = ['transcript', 'position']
+        if 'modification' in df.columns:
+            sort_cols.append('modification')
+        df = df.sort_values(sort_cols)
+    df.to_csv(output_file, sep='\t', index=False)
+
+def format_penguin(input_file, output_file):
+    df = pd.read_csv(input_file, sep='\t')
+    if 'transcript' in df.columns and 'position' in df.columns:
+        df = df.sort_values(['transcript', 'position'])
+    df.to_csv(output_file, sep='\t', index=False)
+
 if snakemake.params.tool == 'xpore':
     format_xpore(snakemake.input[0],snakemake.output[0])
 elif snakemake.params.tool == 'baleen':
@@ -111,3 +138,11 @@ elif snakemake.params.tool == 'm6atm':
     format_m6atm(snakemake.input[0],snakemake.output[0])
 elif snakemake.params.tool == 'rnano':
     format_rnano(snakemake.input[0],snakemake.output[0])
+elif snakemake.params.tool == 'psipore':
+    format_psipore(snakemake.input[0],snakemake.output[0])
+elif snakemake.params.tool == 'nanopsu':
+    format_nanopsu(snakemake.input[0],snakemake.output[0])
+elif snakemake.params.tool == 'nanomud':
+    format_nanomud(snakemake.input[0],snakemake.output[0])
+elif snakemake.params.tool == 'penguin':
+    format_penguin(snakemake.input[0],snakemake.output[0])

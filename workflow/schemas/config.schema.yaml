@@ -70,6 +70,14 @@ properties:
 
 
 
+  benchmark:
+    type: object
+    properties:
+      truth_set:
+        type: string
+      window:
+        type: integer
+
 required:
   - samples
   - project

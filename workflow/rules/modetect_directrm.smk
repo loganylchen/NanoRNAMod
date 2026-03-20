@@ -1,6 +1,7 @@
 rule directrm_config:
     input:
-        bam="{project}/results/bam/{sample}.bam",
+        bam="{project}/results/alignments/{sample}_filtered.bam",
+        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
         reference=config["reference"]["transcriptome_fasta"]
     output:
         config="{project}/results/directrm/{sample}_directrm_config.yaml"
@@ -10,7 +11,7 @@ rule directrm_config:
     resources:
         mem_mb = 1024
     params:
-        modifications="all"
+        modifications="all",
         min_prob=0.7
     log:
         "logs/{project}/directrm_config/{sample}.log"
@@ -20,7 +21,8 @@ rule directrm_config:
 
 rule directrm_predict:
     input:
-        bam="{project}/results/bam/{sample}.bam",
+        bam="{project}/results/alignments/{sample}_filtered.bam",
+        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
         config="{project}/results/directrm/{sample}_directrm_config.yaml"
     output:
@@ -56,7 +58,7 @@ rule directrm_postprocess:
         predictions="{project}/results/directrm/{sample}_predictions.completed",
         pred_file="{project}/results/directrm/{sample}_predictions.tsv"
     output:
-        directory="{project}/results/dataprep/{sample}_directrm_dataprep")
+        directory("{project}/results/dataprep/{sample}_directrm_dataprep")
     container:
         get_container("directrm")
     threads: get_threads("directrm", 1)

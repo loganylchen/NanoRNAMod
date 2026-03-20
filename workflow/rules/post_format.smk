@@ -566,3 +566,214 @@ rule drummer_annotate:
         "--loc-column transcript_pos "
         "--gtf {params.gtf} "
         "--output {output.result} 2> {log.err} 1> {log.out}"
+
+
+rule post_psipore:
+    input:
+        "{project}/results/psipore/{native}_{control}/psipore_results.tsv",
+    output:
+        "{project}/results/modifications/psipore/{native}_{control}/psipore_results.tsv",
+    params:
+        tool="psipore",
+    container:
+        get_container("default")
+    log:
+        "logs/{project}/post_psipore_format/{native}_{control}.log",
+    benchmark:
+        "benchmarks/{project}/{native}_{control}.post_psipore_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    priority: 20
+    threads: get_threads("default", 1)
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+
+rule psipore_annotate:
+    input:
+        transcripts="{project}/results/modifications/psipore/{native}_{control}/psipore_results.tsv",
+    output:
+        result="{project}/results/modifications/psipore/{native}_{control}/psipore_annotated_results.tsv",
+    container:
+        get_container("baleen")
+    params:
+        gtf=config["reference"]["transcriptome_gtf"],
+    priority: 20
+    benchmark:
+        "benchmarks/{project}/{native}_{control}.psipore_annotate.txt"
+    resources:
+        mem_mb=1024 * 50,
+    threads: get_threads("baleen", 1)
+    log:
+        out="logs/{project}/psipore_annotate/N_{native}_C_{control}.log",
+        err="logs/{project}/psipore_annotate/N_{native}_C_{control}.error",
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column transcript "
+        "--loc-column position "
+        "--gtf {params.gtf} "
+        "--output {output.result} "
+        "2> {log.err} 1> {log.out}"
+
+
+rule post_nanopsu:
+    input:
+        predictions="{project}/results/dataprep/{sample}_nanopsu_dataprep/predictions.tsv",
+        directory="{project}/results/dataprep/{sample}_nanopsu_dataprep",
+    output:
+        "{project}/results/modifications/nanopsu/{sample}/nanopsu_results.tsv",
+    params:
+        tool="nanopsu",
+    container:
+        get_container("default")
+    log:
+        "logs/{project}/post_nanopsu_format/{sample}.log",
+    benchmark:
+        "benchmarks/{project}/{sample}.post_nanopsu_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    priority: 20
+    threads: get_threads("default", 1)
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+
+rule nanopsu_annotate:
+    input:
+        transcripts="{project}/results/modifications/nanopsu/{sample}/nanopsu_results.tsv",
+    output:
+        result="{project}/results/modifications/nanopsu/{sample}/nanopsu_annotated_results.tsv",
+    container:
+        get_container("baleen")
+    params:
+        gtf=config["reference"]["transcriptome_gtf"],
+    priority: 20
+    benchmark:
+        "benchmarks/{project}/{sample}.nanopsu_annotate.txt"
+    resources:
+        mem_mb=1024 * 50,
+    threads: get_threads("baleen", 1)
+    log:
+        out="logs/{project}/nanopsu_annotate/{sample}.log",
+        err="logs/{project}/nanopsu_annotate/{sample}.error",
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column transcript "
+        "--loc-column position "
+        "--gtf {params.gtf} "
+        "--output {output.result} "
+        "2> {log.err} 1> {log.out}"
+
+
+rule post_nanomud:
+    input:
+        predictions="{project}/results/dataprep/{sample}_nanomud_dataprep/predictions.tsv",
+        directory="{project}/results/dataprep/{sample}_nanomud_dataprep",
+    output:
+        "{project}/results/modifications/nanomud/{sample}/nanomud_results.tsv",
+    params:
+        tool="nanomud",
+    container:
+        get_container("default")
+    log:
+        "logs/{project}/post_nanomud_format/{sample}.log",
+    benchmark:
+        "benchmarks/{project}/{sample}.post_nanomud_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    priority: 20
+    threads: get_threads("default", 1)
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+
+rule nanomud_annotate:
+    input:
+        transcripts="{project}/results/modifications/nanomud/{sample}/nanomud_results.tsv",
+    output:
+        result="{project}/results/modifications/nanomud/{sample}/nanomud_annotated_results.tsv",
+    container:
+        get_container("baleen")
+    params:
+        gtf=config["reference"]["transcriptome_gtf"],
+    priority: 20
+    benchmark:
+        "benchmarks/{project}/{sample}.nanomud_annotate.txt"
+    resources:
+        mem_mb=1024 * 50,
+    threads: get_threads("baleen", 1)
+    log:
+        out="logs/{project}/nanomud_annotate/{sample}.log",
+        err="logs/{project}/nanomud_annotate/{sample}.error",
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column transcript "
+        "--loc-column position "
+        "--gtf {params.gtf} "
+        "--output {output.result} "
+        "2> {log.err} 1> {log.out}"
+
+
+rule post_penguin:
+    input:
+        predictions="{project}/results/dataprep/{sample}_penguin_dataprep/predictions.tsv",
+        directory="{project}/results/dataprep/{sample}_penguin_dataprep",
+    output:
+        "{project}/results/modifications/penguin/{sample}/penguin_results.tsv",
+    params:
+        tool="penguin",
+    container:
+        get_container("default")
+    log:
+        "logs/{project}/post_penguin_format/{sample}.log",
+    benchmark:
+        "benchmarks/{project}/{sample}.post_penguin_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    priority: 20
+    threads: get_threads("default", 1)
+    conda:
+        "../envs/pandas.yaml"
+    script:
+        "../scripts/format.py"
+
+
+rule penguin_annotate:
+    input:
+        transcripts="{project}/results/modifications/penguin/{sample}/penguin_results.tsv",
+    output:
+        result="{project}/results/modifications/penguin/{sample}/penguin_annotated_results.tsv",
+    container:
+        get_container("baleen")
+    params:
+        gtf=config["reference"]["transcriptome_gtf"],
+    priority: 20
+    benchmark:
+        "benchmarks/{project}/{sample}.penguin_annotate.txt"
+    resources:
+        mem_mb=1024 * 50,
+    threads: get_threads("baleen", 1)
+    log:
+        out="logs/{project}/penguin_annotate/{sample}.log",
+        err="logs/{project}/penguin_annotate/{sample}.error",
+    shell:
+        "Baleen.py annotate "
+        "--transcript-mod-file {input.transcripts} "
+        "--sep tab "
+        "--transcript-column transcript "
+        "--loc-column position "
+        "--gtf {params.gtf} "
+        "--output {output.result} "
+        "2> {log.err} 1> {log.out}"

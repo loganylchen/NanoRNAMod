@@ -1,0 +1,11 @@
+name: penguin
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - python
+  - xgboost
+  - pandas
+  - numpy
+  - pysam
