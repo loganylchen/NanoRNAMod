@@ -1,3 +1,4 @@
+name: m6anet
 channels:
   - conda-forge
   - bioconda

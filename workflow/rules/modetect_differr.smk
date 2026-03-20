@@ -17,12 +17,10 @@ rule differr:
         stderr="logs/{project}/differr/{native}_{control}.err",
     threads: get_threads("differr", 4)
     resources:
-        mem_mb = 1024 *50
+        mem_mb = 1024 * 50
     priority: 10
     benchmark:
         "benchmarks/{project}/{native}_{control}.differr.benchmark.txt"
-    container:
-        get_container("differr")
     shell:
         "differr "
         " -a {input.control_bam} "

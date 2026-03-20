@@ -11,3 +11,6 @@ dependencies:
   - numpy
   - scikit-learn
   - pyyaml
+  - pip
+  - pip:
+    - tandemmod

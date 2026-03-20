@@ -9,3 +9,6 @@ dependencies:
   - pandas
   - numpy
   - pysam
+  - pip
+  - pip:
+    - penguin-ont

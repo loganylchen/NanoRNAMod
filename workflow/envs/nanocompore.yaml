@@ -1,3 +1,4 @@
+name: nanocompore
 channels:
   - conda-forge
   - bioconda

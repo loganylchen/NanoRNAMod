@@ -12,6 +12,8 @@ rule psipore_prep:
     resources:
         mem_mb = 1024
     priority: 10
+    conda:
+        "../envs/bedtools.yaml"
     shell:
         "bedtools bamtobed -bed12 -i {input.control_bam} | cut -f1 | sort > {output.region}.tmp && "
         "bedtools bamtobed -bed12 -i {input.native_bam} | cut -f1 | sort >> {output.region}.tmp && "

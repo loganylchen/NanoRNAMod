@@ -13,3 +13,6 @@ dependencies:
   - tqdm
   - huggingface_hub
   - pyyaml
+  - pip
+  - pip:
+    - rnano
