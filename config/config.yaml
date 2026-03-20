@@ -143,8 +143,7 @@ tools:
     activate: True
 
 benchmark:
-  truth_set: ""   # path to ground truth TSV (leave empty to skip accuracy benchmarking)
-  # window: 0     # single window (integer)
+  truth_set: "config/benchmark_ecoli_rRNA.tsv"  # path to ground truth TSV (leave empty to skip accuracy benchmarking)
   window: [0, 1, 2, 5]  # multiple windows for evaluation (list of integers)
   # Truth set TSV format:
   #   transcript  position  modification_type  label
