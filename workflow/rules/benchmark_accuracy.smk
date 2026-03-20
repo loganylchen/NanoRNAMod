@@ -20,21 +20,22 @@ def get_all_result_tsvs(wildcards):
     return result_files
 
 
-rule accuracy_benchmark:
-    input:
-        results=get_all_result_tsvs,
-        truth_set=config["benchmark"]["truth_set"],
-    output:
-        "{project}/results/benchmarks/accuracy_summary.tsv",
-    params:
-        window=config["benchmark"]["window"],
-    resources:
-        mem_mb=1024 * 8,
-    threads: 1
-    priority: 30
-    log:
-        "logs/{project}/accuracy_benchmark/accuracy.log",
-    conda:
-        "../envs/pandas.yaml"
-    script:
-        "../scripts/accuracy_benchmark.py"
+if config.get("benchmark", {}).get("truth_set", ""):
+    rule accuracy_benchmark:
+        input:
+            results=get_all_result_tsvs,
+            truth_set=config["benchmark"]["truth_set"],
+        output:
+            "{project}/results/benchmarks/accuracy_summary.tsv",
+        params:
+            window=config["benchmark"]["window"],
+        resources:
+            mem_mb=1024 * 8,
+        threads: 1
+        priority: 30
+        log:
+            "logs/{project}/accuracy_benchmark/accuracy.log",
+        conda:
+            "../envs/pandas.yaml"
+        script:
+            "../scripts/accuracy_benchmark.py"

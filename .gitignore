@@ -19,3 +19,4 @@ logs/**
 .test/logs/
 .test/results/
 .DS_Store
+.claude/
