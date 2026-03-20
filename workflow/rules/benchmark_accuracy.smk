@@ -26,7 +26,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
             results=get_all_result_tsvs,
             truth_set=config["benchmark"]["truth_set"],
         output:
-            "{project}/results/benchmarks/accuracy_summary.tsv",
+            expand("{project}/results/benchmarks/accuracy_summary{suffix}.tsv", suffix=["", "_overall"]),
         params:
             window=config["benchmark"]["window"],
         resources:

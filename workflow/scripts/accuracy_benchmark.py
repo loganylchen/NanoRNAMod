@@ -32,7 +32,9 @@ import numpy as np
 
 result_files = snakemake.input.results
 truth_set_path = snakemake.input.truth_set
-output_file = snakemake.output[0]
+output_files = snakemake.output  # Now expects 2 files
+output_file = output_files[0]  # accuracy_summary.tsv (by modification_type)
+output_overall = output_files[1]  # accuracy_summary_overall.tsv
 window_param = snakemake.params.window
 
 # Support both single int and list of windows
@@ -356,7 +358,7 @@ for tool, pred_df in tool_dfs.items():
                 "total_negative": total_negative,
             })
 
-# Write output
+# ── Write output: by modification_type ───────────────────────────────────────
 if records:
     out_df = pd.DataFrame(records).sort_values(
         ["modification_type", "window", "f1"],
@@ -370,3 +372,80 @@ else:
         "total_truth", "total_predicted", "total_negative"
     ])
 out_df.to_csv(output_file, sep='\t', index=False)
+
+# ── Write output: overall (aggregated across all modification_types) ──────────
+# Group by tool and window, summing TP/FP/FN/TN across modification types
+overall_records = []
+for tool in set(r["tool"] for r in records):
+    for window in windows:
+        tool_window_records = [r for r in records if r["tool"] == tool and r["window"] == window]
+        if not tool_window_records:
+            continue
+
+        # Sum confusion matrix values
+        tp_sum = sum(r["tp"] for r in tool_window_records)
+        fp_sum = sum(r["fp"] for r in tool_window_records)
+        fn_sum = sum(r["fn"] for r in tool_window_records)
+        tn_sum = sum(r["tn"] for r in tool_window_records if not pd.isna(r["tn"]))
+        tn_sum = tn_sum if tn_sum > 0 else 0
+
+        total_truth_sum = sum(r["total_truth"] for r in tool_window_records)
+        total_predicted_sum = sum(r["total_predicted"] for r in tool_window_records)
+        total_negative_sum = sum(r["total_negative"] for r in tool_window_records)
+        called_sites_sum = sum(r["called_sites"] for r in tool_window_records)
+
+        # Check if any record has inferred negatives
+        any_inferred = any(pd.isna(r.get("specificity")) for r in tool_window_records)
+
+        # Calculate metrics
+        precision = tp_sum / (tp_sum + fp_sum) if (tp_sum + fp_sum) > 0 else 0
+        recall = tp_sum / (tp_sum + fn_sum) if (tp_sum + fn_sum) > 0 else 0
+        f1 = (2 * precision * recall / (precision + recall)
+              if (precision + recall) > 0 else 0)
+
+        # Specificity and MCC
+        if any_inferred or total_negative_sum == 0:
+            specificity = np.nan
+            mcc = np.nan
+        else:
+            specificity = tn_sum / total_negative_sum if total_negative_sum > 0 else np.nan
+            mcc = compute_mcc(tp_sum, fp_sum, fn_sum, tn_sum)
+
+        # AUPRC/AUROC: weighted average across modification types
+        auprc_vals = [r["auprc"] for r in tool_window_records if not pd.isna(r["auprc"])]
+        auroc_vals = [r["auroc"] for r in tool_window_records if not pd.isna(r["auroc"])]
+        auprc_avg = np.mean(auprc_vals) if auprc_vals else np.nan
+        auroc_avg = np.mean(auroc_vals) if auroc_vals else np.nan
+
+        overall_records.append({
+            "tool": tool,
+            "window": window,
+            "precision": precision,
+            "recall": recall,
+            "f1": f1,
+            "tp": tp_sum, "fp": fp_sum, "fn": fn_sum, "tn": tn_sum,
+            "specificity": specificity,
+            "mcc": mcc,
+            "auprc": auprc_avg,
+            "auroc": auroc_avg,
+            "called_sites": called_sites_sum,
+            "total_truth": total_truth_sum,
+            "total_predicted": total_predicted_sum,
+            "total_negative": total_negative_sum,
+        })
+
+# Write overall output
+if overall_records:
+    overall_df = pd.DataFrame(overall_records).sort_values(
+        ["window", "f1"],
+        ascending=[True, False]
+    )
+else:
+    overall_df = pd.DataFrame(columns=[
+        "tool", "window", "precision", "recall",
+        "f1", "tp", "fp", "fn", "tn", "specificity", "mcc",
+        "auprc", "auroc", "called_sites",
+        "total_truth", "total_predicted", "total_negative"
+    ])
+overall_df.to_csv(output_overall, sep='\t', index=False)
+
