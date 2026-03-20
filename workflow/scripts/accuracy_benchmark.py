@@ -241,6 +241,7 @@ for tool, pred_df in tool_dfs.items():
         # Negative sites = all positions that are NOT positive sites
         # (using the prediction set as the universe of possible positions)
         truth_neg_subset = truth_neg[truth_neg['modification_type'] == mod_type].copy()
+        is_inferred_negative = False  # Track if negatives are explicit or inferred
 
         if truth_neg_subset.empty and not pred_subset.empty:
             # Create inferred negative sites from predictions that don't match truth
@@ -263,6 +264,7 @@ for tool, pred_df in tool_dfs.items():
                     })
             if neg_sites:
                 truth_neg_subset = pd.DataFrame(neg_sites)
+                is_inferred_negative = True  # Mark as inferred
 
         score_col = tool_score_cols.get(tool)
 
@@ -294,8 +296,10 @@ for tool, pred_df in tool_dfs.items():
 
             # Calculate TN (true negatives)
             # TN = negative sites where there is NO prediction within window
+            # Note: For inferred negatives, TN is not meaningful (negatives are derived from predictions)
             tn = 0
-            if not truth_neg_subset.empty:
+            if not truth_neg_subset.empty and not is_inferred_negative:
+                # Only calculate TN for explicit negative sites
                 for _, neg_row in truth_neg_subset.iterrows():
                     tx = neg_row['transcript']
                     pos = neg_row['position']
@@ -316,13 +320,18 @@ for tool, pred_df in tool_dfs.items():
                   if (precision + recall) > 0 else 0)
 
             # Specificity: TN / (TN + FP) or TN / total_negative
-            if total_negative > 0:
-                specificity = tn / total_negative
-            else:
+            # For inferred negatives, specificity is not meaningful
+            if is_inferred_negative or total_negative == 0:
                 specificity = np.nan
+            else:
+                specificity = tn / total_negative
 
             # Matthews Correlation Coefficient
-            mcc = compute_mcc(tp, fp, fn, tn)
+            # For inferred negatives, MCC with TN=0 is misleading; set to NaN
+            if is_inferred_negative:
+                mcc = np.nan
+            else:
+                mcc = compute_mcc(tp, fp, fn, tn)
 
             # AUPRC and AUROC (only if score column exists)
             auprc, auroc = compute_ranking_metrics(
