@@ -41,7 +41,10 @@ def format_epinano(input_file,output_file):
 def format_drummer(input_dir,output_file):
     control = snakemake.wildcards.control
     native = snakemake.wildcards.native
-    f = glob.glob(f'{input_dir}/{control}*-{native}*/summary.txt')[0]
+    files = glob.glob(f'{input_dir}/{control}*-{native}*/summary.txt')
+    if not files:
+        raise FileNotFoundError(f"No DRUMMER summary file found for {control}-{native} in {input_dir}")
+    f = files[0]
     df = pd.read_csv(f,sep='\t').sort_values(['transcript_id','transcript_pos'])
     # convert pos to 0-based
     df['transcript_pos'] = df['transcript_pos']-1

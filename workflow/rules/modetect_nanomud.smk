@@ -29,25 +29,3 @@ rule nanomud_predict:
         "--output {output.outdir} "
         "{params.extra} "
         "2>{log}"
-
-
-rule nanomud_postprocess:
-    input:
-        predictions="{project}/results/dataprep/{sample}_nanomud_dataprep/predictions.tsv",
-        dataprep_dir="{project}/results/dataprep/{sample}_nanomud_dataprep",
-    output:
-        "{project}/results/modifications/nanomud/{sample}/nanomud_results.tsv",
-    params:
-        tool="nanomud",
-    container:
-        get_container("default")
-    threads: get_threads("default", 1)
-    resources:
-        mem_mb = 1024 * 20
-    priority: 20
-    log:
-        "logs/{project}/nanomud_postprocess/{sample}.log"
-    conda:
-        "../envs/pandas.yaml"
-    script:
-        "../scripts/format.py"

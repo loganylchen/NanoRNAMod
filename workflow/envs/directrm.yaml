@@ -12,3 +12,6 @@ dependencies:
   - scikit-learn
   - pyyaml
   - tqdm
+  - pip
+  - pip:
+    - direct-rm

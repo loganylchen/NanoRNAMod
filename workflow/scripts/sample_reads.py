@@ -12,6 +12,10 @@ sys.stdout = open(snakemake.log[0], "w")
 threads = snakemake.threads
 sample_sizes = [int(i) for i in snakemake.params.sample_size]
 iter_number = snakemake.params.iter_number
+if isinstance(iter_number, (int, str)):
+    iter_number = list(range(int(iter_number)))
+elif not isinstance(iter_number, (list, tuple)):
+    iter_number = list(range(1))  # Default to single iteration
 
 sample_read_names = defaultdict(dict)
 

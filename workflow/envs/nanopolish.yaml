@@ -1,3 +1,4 @@
+name: nanopolish
 channels:
   - conda-forge
   - bioconda

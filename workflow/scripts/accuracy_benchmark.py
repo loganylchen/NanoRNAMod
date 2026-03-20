@@ -62,54 +62,58 @@ for tool in tool_dfs:
     tool_dfs[tool] = pd.concat(tool_dfs[tool], ignore_index=True).drop_duplicates()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TODO: Implement the metric computation below (~15-20 lines).
-#
-# For each (tool, modification_type) pair:
-#
-#   1. Filter truth to the relevant modification_type
-#   2. For each truth site (transcript, position), check if the tool has a
-#      predicted site within ±window nt on the same transcript:
-#        hit = any(
-#            (pred_df['transcript'] == tx) &
-#            (pred_df['position'].between(pos - window, pos + window))
-#        )
-#   3. Compute:
-#        tp = number of truth sites with a hit
-#        fn = number of truth sites without a hit
-#        fp = number of predicted sites that don't match any truth site
-#              (you can compute this symmetrically)
-#        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-#        recall    = tp / (tp + fn) if (tp + fn) > 0 else 0
-#        f1 = 2*precision*recall / (precision+recall) if (precision+recall) > 0 else 0
-#   4. Append a result row dict to `records`
-#
-# Trade-offs to consider:
-#   - window=0 (exact position match) is strictest; window=2 tolerates minor
-#     off-by-one errors from different tools' position conventions
-#   - If a tool produces many rows per site (one per read), deduplicate first
+# Compute accuracy metrics for each tool and modification type
 # ─────────────────────────────────────────────────────────────────────────────
 
 records = []
-
 mod_types = truth['modification_type'].unique()
 
 for tool, pred_df in tool_dfs.items():
     for mod_type in mod_types:
-        truth_subset = truth[truth['modification_type'] == mod_type]
+        truth_subset = truth[truth['modification_type'] == mod_type].copy()
+        if truth_subset.empty:
+            continue
 
-        # TODO: compute tp, fp, fn, precision, recall, f1 for this tool/mod_type
-        # Then append to records:
-        # records.append({
-        #     "tool": tool,
-        #     "modification_type": mod_type,
-        #     "precision": precision,
-        #     "recall": recall,
-        #     "f1": f1,
-        #     "tp": tp, "fp": fp, "fn": fn,
-        #     "total_truth": len(truth_subset),
-        #     "total_predicted": len(pred_df),
-        # })
-        pass
+        # Track which predicted sites matched truth sites
+        matched_pred_indices = set()
+
+        # For each truth site, check if there's a predicted site within window
+        tp = 0
+        for _, truth_row in truth_subset.iterrows():
+            tx = truth_row['transcript']
+            pos = truth_row['position']
+
+            # Find predictions within window on same transcript
+            matches = pred_df[
+                (pred_df['transcript'] == tx) &
+                (pred_df['position'].between(pos - window, pos + window))
+            ]
+
+            if not matches.empty:
+                tp += 1
+                matched_pred_indices.update(matches.index.tolist())
+
+        fn = len(truth_subset) - tp
+        fp = len(pred_df) - len(matched_pred_indices)
+
+        total_predicted = len(pred_df)
+        total_truth = len(truth_subset)
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        f1 = (2 * precision * recall / (precision + recall)
+              if (precision + recall) > 0 else 0)
+
+        records.append({
+            "tool": tool,
+            "modification_type": mod_type,
+            "precision": precision,
+            "recall": recall,
+            "f1": f1,
+            "tp": tp, "fp": fp, "fn": fn,
+            "total_truth": total_truth,
+            "total_predicted": total_predicted,
+        })
 
 # Write output
 if records:

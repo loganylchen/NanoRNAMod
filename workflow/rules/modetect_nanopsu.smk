@@ -27,25 +27,3 @@ rule nanopsu_predict:
         "--output {output.outdir} "
         "{params.extra} "
         "2>{log}"
-
-
-rule nanopsu_postprocess:
-    input:
-        predictions="{project}/results/dataprep/{sample}_nanopsu_dataprep/predictions.tsv",
-        dataprep_dir="{project}/results/dataprep/{sample}_nanopsu_dataprep",
-    output:
-        "{project}/results/modifications/nanopsu/{sample}/nanopsu_results.tsv",
-    params:
-        tool="nanopsu",
-    container:
-        get_container("default")
-    threads: get_threads("default", 1)
-    resources:
-        mem_mb = 1024 * 20
-    priority: 20
-    log:
-        "logs/{project}/nanopsu_postprocess/{sample}.log"
-    conda:
-        "../envs/pandas.yaml"
-    script:
-        "../scripts/format.py"

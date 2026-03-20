@@ -1,7 +1,7 @@
+name: pyfastx
 channels:
   - conda-forge
   - bioconda
-  - anaconda
 dependencies:
-  - pyfastx==1.1.0
+  - pyfastx=1.1.0
 

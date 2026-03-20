@@ -1,3 +1,4 @@
+name: xpore
 channels:
   - conda-forge
   - bioconda

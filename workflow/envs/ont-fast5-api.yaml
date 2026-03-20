@@ -1,3 +1,4 @@
+name: ont-fast5-api
 channels:
   - conda-forge
   - bioconda

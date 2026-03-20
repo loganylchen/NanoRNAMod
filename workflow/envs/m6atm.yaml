@@ -12,3 +12,6 @@ dependencies:
   - scikit-learn
   - tqdm
   - pyyaml
+  - pip
+  - pip:
+    - m6atm

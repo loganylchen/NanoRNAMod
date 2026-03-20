@@ -86,20 +86,23 @@ containers:
   eligos2: "docker://piroonj/eligos2:2.1.0"
   drummer: "docker://btrspg/drummer:dd0ccc81"
   epinano: "docker://btrspg/epinano:1.2.5"
-  tandemmod: ""
-  directrm: ""
-  m6atm: ""
-  rnano: ""
-  psipore: ""
-  nanopsu: ""
-  nanomud: ""
-  penguin: ""
+  bedtools: "docker://biocontainers/bedtools:2.31.1--hf5e1c6e_1"
+  tandemmod: "docker://btrspg/tandemmod:1.0.0"
+  directrm: "docker://btrspg/directrm:1.0.0"
+  m6atm: "docker://btrspg/m6atm:1.0.0"
+  rnano: "docker://btrspg/rnano:1.0.0"
+  psipore: "docker://btrspg/psipore:1.0.0"
+  nanopsu: "docker://btrspg/nanopsu:1.0.0"
+  nanomud: "docker://btrspg/nanomud:1.0.0"
+  penguin: "docker://btrspg/penguin:1.0.0"
   samtools: "docker://btrspg/minimap2:2.28"
   nanopolish: "docker://btrspg/nanopolish:0.14.0"
   nanocount: "docker://btrspg/nanocount:1.0.0"
   qualimap: "docker://btrspg/qualimap:2.2.2a"
+  python3: "docker://condaforge/mambaforge:22.11.1-4"
   nanoplot: ""
   bcftools: ""
+  python3: "docker://python:3.9-slim"
 
 reference:
   genome_fasta: data/ref.fa
@@ -124,21 +127,21 @@ tools:
   epinano:
     activate: True
   tandemmod:
-    activate: False
+    activate: True
   directrm:
-    activate: False
+    activate: True
   m6atm:
-    activate: False
+    activate: True
   rnano:
-    activate: False
+    activate: True
   psipore:
-    activate: False
+    activate: True
   nanopsu:
-    activate: False
+    activate: True
   nanomud:
-    activate: False
+    activate: True
   penguin:
-    activate: False
+    activate: True
 
 benchmark:
   truth_set: ""   # path to ground truth TSV (leave empty to skip accuracy benchmarking)

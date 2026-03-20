@@ -26,8 +26,6 @@ rule epinano_prep:
         "logs/{project}/epinano_prep/{sample}.log",
     benchmark:
         "benchmarks/{project}/{sample}.epinano_prep.benchmark.txt"
-    container:
-        get_container("epinano")
     script:
         "../scripts/epinano_prep.sh"
 
@@ -55,8 +53,6 @@ rule epinano:
         stderr="logs/{project}/epinano/{native}_{control}.err",
     benchmark:
         "benchmarks/{project}/{native}_{control}.epinano.benchmark.txt"
-    container:
-        get_container("epinano")
     shell:
         "Rscript /opt/epinano/Epinano_DiffErr.R "
         "-t {threads} "

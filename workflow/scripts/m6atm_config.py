@@ -1,3 +1,4 @@
+import os
 import yaml
 import sys
 
@@ -15,7 +16,7 @@ config_dict = {
     'reference': reference,
     'threshold': threshold,
     'stoichiometry': stoichiometry,
-    'output_prefix': bam_file.replace('.bam', '')
+    'output_prefix': os.path.splitext(bam_file)[0]
 }
 
 with open(output_config, 'w') as f:

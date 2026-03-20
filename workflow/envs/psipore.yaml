@@ -9,3 +9,6 @@ dependencies:
   - pandas
   - scikit-learn
   - pysam
+  - pip
+  - pip:
+    - psipore

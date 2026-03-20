@@ -33,32 +33,28 @@ if not benchmark_files:
     benchmark_files = glob.glob(os.path.join(benchmark_dir, "*.benchmark.txt"))
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TODO: Implement the aggregation logic below (~10 lines).
-#
-# Steps to complete:
-#   1. Parse each benchmark file with pd.read_csv(f, sep='\t')
-#   2. Extract `tool` and `sample` from the filename stem:
-#        stem = os.path.basename(f).replace(".benchmark.txt", "")
-#        tool  = stem.rsplit(".", 1)[-1]      # last dot-separated token
-#        sample = stem.rsplit(".", 1)[0]      # everything before the last dot
-#   3. Add "tool" and "sample" columns to each DataFrame
-#   4. Concatenate all DataFrames with pd.concat(...)
-#   5. Sort by ["tool", "sample"] and write to output_file with sep='\t', index=False
-#
-# Trade-offs to consider:
-#   - rsplit(".", 1) handles tool names with no dots; stems like
-#     "SampleA_SampleB.eligos2" correctly yield sample="SampleA_SampleB"
-#   - You may want to add error handling for malformed or empty files
+# Aggregate benchmark files into a single summary table
 # ─────────────────────────────────────────────────────────────────────────────
 
 rows = []
 
 for f in sorted(benchmark_files):
-    # TODO: parse the file and extract tool/sample, then append to rows
-    pass
+    try:
+        df = pd.read_csv(f, sep='\t')
+        # Extract tool and sample from filename
+        stem = os.path.basename(f).replace(".benchmark.txt", "")
+        tool = stem.rsplit(".", 1)[-1]
+        sample = stem.rsplit(".", 1)[0]
+        df['tool'] = tool
+        df['sample'] = sample
+        rows.append(df)
+    except Exception as e:
+        print(f"Warning: could not parse {f}: {e}")
 
-# TODO: build a DataFrame from rows and write to output_file
-# Example final lines:
-#   df = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
-#   df = df.sort_values(["tool", "sample"]) if not df.empty else df
-#   df.to_csv(output_file, sep='\t', index=False)
+if rows:
+    df = pd.concat(rows, ignore_index=True)
+    df = df.sort_values(["tool", "sample"])
+else:
+    df = pd.DataFrame()
+
+df.to_csv(output_file, sep='\t', index=False)
