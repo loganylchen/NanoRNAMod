@@ -76,7 +76,11 @@ properties:
       truth_set:
         type: string
       window:
-        type: integer
+        oneOf:
+          - type: integer
+          - type: array
+            items:
+              type: integer
 
 required:
   - samples
