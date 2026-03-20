@@ -144,6 +144,13 @@ tools:
 
 benchmark:
   truth_set: ""   # path to ground truth TSV (leave empty to skip accuracy benchmarking)
-  window: 0       # positional tolerance in nucleotides
+  # window: 0     # single window (integer)
+  window: [0, 1, 2, 5]  # multiple windows for evaluation (list of integers)
+  # Truth set TSV format:
+  #   transcript  position  modification_type  label
+  #   ENST001     1234      m6A                positive    # positive site
+  #   ENST001     5678      m6A                -           # negative site
+  #   ENST002     100       m6A                            # no label = positive (backward compatible)
+  # Metrics: precision, recall, f1, tp, fp, fn, tn, specificity, mcc
 
 target_region: ''
