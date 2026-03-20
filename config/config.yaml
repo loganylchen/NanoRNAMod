@@ -99,10 +99,9 @@ containers:
   nanopolish: "docker://btrspg/nanopolish:0.14.0"
   nanocount: "docker://btrspg/nanocount:1.0.0"
   qualimap: "docker://btrspg/qualimap:2.2.2a"
-  python3: "docker://condaforge/mambaforge:22.11.1-4"
+  python3: "docker://python:3.9-slim"
   nanoplot: ""
   bcftools: ""
-  python3: "docker://python:3.9-slim"
 
 reference:
   genome_fasta: data/ref.fa
