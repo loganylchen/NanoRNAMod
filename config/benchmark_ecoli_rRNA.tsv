@@ -1,0 +1,38 @@
+transcript	position	modification_type	modification_name	label
+ecoli16S	516	Psi	pseudouridine	positive
+ecoli16S	527	m7G	N7-methylguanosine	positive
+ecoli16S	966	m2G	N2-methylguanosine	positive
+ecoli16S	967	m5C	5-methylcytidine	positive
+ecoli16S	1207	m2G	N2-methylguanosine	positive
+ecoli16S	1402	m4Cm	N4,2'-O-dimethylcytidine	positive
+ecoli16S	1407	m5C	5-methylcytidine	positive
+ecoli16S	1498	m3U	3-methyluridine	positive
+ecoli16S	1516	m2G	N2-methylguanosine	positive
+ecoli16S	1518	m66A	N6,N6-dimethyladenosine	positive
+ecoli16S	1519	m66A	N6,N6-dimethyladenosine	positive
+ecoli23S	745	m1G	1-methylguanosine	positive
+ecoli23S	746	Psi	pseudouridine	positive
+ecoli23S	747	m5U	5-methyluridine	positive
+ecoli23S	955	Psi	pseudouridine	positive
+ecoli23S	1618	m6A	N6-methyladenosine	positive
+ecoli23S	1835	m2G	N2-methylguanosine	positive
+ecoli23S	1911	Psi	pseudouridine	positive
+ecoli23S	1915	m3Psi	3-methylpseudouridine	positive
+ecoli23S	1917	Psi	pseudouridine	positive
+ecoli23S	1939	m5U	5-methyluridine	positive
+ecoli23S	1962	m5C	5-methylcytidine	positive
+ecoli23S	2030	m6A	N6-methyladenosine	positive
+ecoli23S	2069	m7G	N7-methylguanosine	positive
+ecoli23S	2251	Gm	2'-O-methyl guanine	positive
+ecoli23S	2445	m2G	N2-methylguanosine	positive
+ecoli23S	2449	D	dihydrouridine	positive
+ecoli23S	2457	Psi	pseudouridine	positive
+ecoli23S	2498	Cm	2'-O-methyl cytosine	positive
+ecoli23S	2501	ho5C	5-hydroxycytidine	positive
+ecoli23S	2502	m2A	2-methyladenosine	positive
+ecoli23S	2503	m2A	2-methyladenosine	positive
+ecoli23S	2504	Psi	pseudouridine	positive
+ecoli23S	2552	Um	2'-O-methyl uridine	positive
+ecoli23S	2580	Psi	pseudouridine	positive
+ecoli23S	2604	Psi	pseudouridine	positive
+ecoli23S	2605	Psi	pseudouridine	positive

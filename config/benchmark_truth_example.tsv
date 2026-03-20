@@ -1,0 +1,22 @@
+transcript	position	modification_type	label
+# Example benchmark truth set for RNA modification detection
+# Columns:
+#   transcript        - Transcript identifier (must match tool output)
+#   position          - 0-based position on transcript
+#   modification_type - Modification type (e.g., m6A, Psi, m1Psi)
+#   label             - "positive" for known modification sites, "-" for known unmodified sites
+#
+# Usage:
+#   1. Copy this file and fill in your known modification sites
+#   2. Positive sites: experimentally validated modifications (e.g., miCLIP, ME-RIP, LC-MS/MS)
+#   3. Negative sites: experimentally validated unmodified positions (e.g., synthetic RNA, enzyme-treated)
+#   4. Update config.yaml: benchmark.truth_set: "path/to/your/truth_set.tsv"
+#
+# Example data (replace with your actual sites):
+ENST00000357654	1234	m6A	positive
+ENST00000357654	5678	m6A	positive
+ENST00000589432	456	m6A	positive
+ENST00000589432	789	m6A	-
+ENST00000456789	100	m6A	-
+ENST00000456789	200	Psi	positive
+ENST00000456789	300	Psi	-

@@ -7,14 +7,17 @@ Truth set TSV format (tab-separated, with header):
     modification_type - e.g. "m6A", "Psi", "m1Psi"
     label             - (optional) "-" for negative sites, any other value for positive
                        If absent, all sites are treated as positive.
+                       Negative sites will be auto-inferred if not explicitly provided.
 
 Tool result TSV format (standard NanoRNAMod output):
-    transcript  - transcript identifier
-    position    - 0-based position
-    (other tool-specific columns)
+    transcript  - transcript identifier (or id, chrom, ref_id depending on tool)
+    position    - 0-based position (or pos, start, start_loc depending on tool)
+    (other tool-specific columns including optional scores)
 
 Output columns:
-    tool, modification_type, window, precision, recall, f1, tp, fp, fn, tn, specificity, mcc, total_truth, total_predicted, total_negative
+    tool, modification_type, window, precision, recall, f1, tp, fp, fn, tn,
+    specificity, mcc, auprc, auroc, called_sites,
+    total_truth, total_predicted, total_negative
 
 Configuration (from snakemake.params):
     window  - positional tolerance in nucleotides (0 = exact match)
@@ -27,7 +30,7 @@ import ast
 import pandas as pd
 import numpy as np
 
-result_files = snakemake.input.results    # list of *_results.tsv paths
+result_files = snakemake.input.results
 truth_set_path = snakemake.input.truth_set
 output_file = snakemake.output[0]
 window_param = snakemake.params.window
@@ -38,7 +41,6 @@ if isinstance(window_param, int):
 elif isinstance(window_param, list):
     windows = window_param
 else:
-    # Try to parse as string representation (safe parsing with ast.literal_eval)
     try:
         parsed = ast.literal_eval(str(window_param))
         if isinstance(parsed, list):
@@ -65,36 +67,145 @@ if has_label:
     truth_pos = truth[truth['label'] != '-'].copy()
     truth_neg = truth[truth['label'] == '-'].copy()
 else:
-    # All sites are positive
+    # All sites are positive; negatives will be auto-inferred
     truth_pos = truth.copy()
     truth_neg = pd.DataFrame(columns=truth.columns)
 
 # ── Helper: extract tool name from result file path ────────────────────────
 def tool_from_path(path):
-    """
-    Path pattern: .../modifications/{tool}/{comp_or_sample}/{tool}_results.tsv
-    """
+    """Extract tool name from path like .../modifications/{tool}/{comp}/{tool}_results.tsv"""
     parts = path.split(os.sep)
     for i, part in enumerate(parts):
         if part == "modifications" and i + 1 < len(parts):
             return parts[i + 1]
     return os.path.basename(os.path.dirname(os.path.dirname(path)))
 
-# ── Load all tool results ──────────────────────────────────────────────────
+# ── Helper: normalize column names for transcript and position ────────────
+def normalize_columns(df):
+    """Map various column names to standard 'transcript' and 'position'."""
+    col_mapping = {}
+
+    # Transcript column variants
+    transcript_cols = ['transcript', 'id', 'ref_id', 'chrom']
+    for col in transcript_cols:
+        if col in df.columns:
+            col_mapping[col] = 'transcript'
+            break
+
+    # Position column variants
+    position_cols = ['position', 'pos', 'start', 'start_loc', 'transcript_pos', 'transcript_loc']
+    for col in position_cols:
+        if col in df.columns and col not in col_mapping.values():
+            col_mapping[col] = 'position'
+            break
+
+    if col_mapping:
+        df = df.rename(columns=col_mapping)
+
+    return df
+
+# ── Helper: detect score column in dataframe ───────────────────────────────
+def detect_score_column(df):
+    """Detect the most likely score column for ranking predictions."""
+    # Tool-specific score columns
+    tool_score_map = {
+        'xpore': ['p_value', 'diff_mod'],
+        'nanocompore': ['pvalue', 'logit', 'p_value'],
+        'baleen': ['mod_score', 'score'],
+        'differr': ['-log10 P value', 'score', 'pvalue'],
+        'epinano': ['z_score_prediction', 'z_scores', 'delta_sum_err'],
+    }
+
+    # Generic score columns
+    generic_score_cols = [
+        'score', 'pvalue', 'p_value', 'pval', 'probability', 'prob',
+        '-log10_pvalue', '-log10(p)', '-log10_p', 'logit_pvalue',
+        'prob_modified', 'mod_prob', 'posterior_prob', 'mod_score'
+    ]
+
+    # First try tool-specific (would need tool name context)
+    # For now, use generic detection
+    for col in generic_score_cols:
+        if col in df.columns:
+            return col
+
+    return None
+
+# ── Helper: compute AUPRC and AUROC ───────────────────────────────────────
+def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_col):
+    """
+    Compute AUPRC and AUROC given predictions with scores.
+
+    Uses binary labels based on match with ground truth sites.
+    """
+    if score_col is None or pred_df.empty:
+        return np.nan, np.nan
+
+    # Check if score column exists and has valid values
+    if score_col not in pred_df.columns:
+        return np.nan, np.nan
+
+    # Create labels and scores arrays
+    labels = []
+    scores = []
+
+    for _, pred_row in pred_df.iterrows():
+        tx = pred_row['transcript']
+        pos = pred_row['position']
+        score = pred_row[score_col]
+
+        # Skip if score is NaN
+        if pd.isna(score):
+            continue
+
+        # Check if this prediction matches a positive truth site
+        is_positive = False
+        for _, truth_row in truth_pos_subset.iterrows():
+            if (truth_row['transcript'] == tx and
+                abs(truth_row['position'] - pos) <= 0):  # exact match for ranking
+                is_positive = True
+                break
+
+        labels.append(1 if is_positive else 0)
+        scores.append(float(score))
+
+    if len(set(labels)) < 2 or len(scores) == 0:
+        return np.nan, np.nan
+
+    try:
+        from sklearn.metrics import roc_auc_score, average_precision_score
+        auroc = roc_auc_score(labels, scores)
+        auprc = average_precision_score(labels, scores)
+        return auprc, auroc  # AUPRC priority over AUROC per requirements
+    except Exception:
+        return np.nan, np.nan
+
+# ── Load all tool results (preserving all columns for scores) ────────────────
 tool_dfs = {}
+tool_score_cols = {}
+
 for f in result_files:
     tool = tool_from_path(f)
     try:
         df = pd.read_csv(f, sep='\t')
+        df = normalize_columns(df)
+
         if 'transcript' in df.columns and 'position' in df.columns:
+            # Detect score column for this tool
+            score_col = detect_score_column(df)
+            if score_col and tool not in tool_score_cols:
+                tool_score_cols[tool] = score_col
+
             if tool not in tool_dfs:
                 tool_dfs[tool] = []
-            tool_dfs[tool].append(df[['transcript', 'position']])
+            tool_dfs[tool].append(df)
     except Exception as e:
         print(f"Warning: could not read {f}: {e}")
 
 for tool in tool_dfs:
-    tool_dfs[tool] = pd.concat(tool_dfs[tool], ignore_index=True).drop_duplicates()
+    tool_dfs[tool] = pd.concat(tool_dfs[tool], ignore_index=True).drop_duplicates(
+        subset=['transcript', 'position']
+    )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Compute accuracy metrics for each tool, modification type, and window
@@ -110,24 +221,50 @@ def compute_mcc(tp, fp, fn, tn):
 
 records = []
 
-# Get all modification types from both positive and negative sites
-all_mod_types = set(truth_pos['modification_type'].unique()) | set(truth_neg['modification_type'].unique())
+# Get all modification types from positive sites
+all_mod_types = set(truth_pos['modification_type'].unique())
 
 for tool, pred_df in tool_dfs.items():
     for mod_type in all_mod_types:
         truth_subset = truth_pos[truth_pos['modification_type'] == mod_type].copy()
-        truth_neg_subset = truth_neg[truth_neg['modification_type'] == mod_type].copy()
 
-        if truth_subset.empty and truth_neg_subset.empty:
+        if truth_subset.empty:
             continue
 
         # Get unique transcripts for this mod type
-        tx_with_pos = set(truth_subset['transcript'].unique()) if not truth_subset.empty else set()
-        tx_with_neg = set(truth_neg_subset['transcript'].unique()) if not truth_neg_subset.empty else set()
-        all_tx = tx_with_pos | tx_with_neg
+        all_tx = set(truth_subset['transcript'].unique())
 
         # Filter predictions to relevant transcripts
         pred_subset = pred_df[pred_df['transcript'].isin(all_tx)].copy()
+
+        # Auto-infer negative sites if not provided
+        # Negative sites = all positions that are NOT positive sites
+        # (using the prediction set as the universe of possible positions)
+        truth_neg_subset = truth_neg[truth_neg['modification_type'] == mod_type].copy()
+
+        if truth_neg_subset.empty and not pred_subset.empty:
+            # Create inferred negative sites from predictions that don't match truth
+            neg_sites = []
+            for _, pred_row in pred_subset.iterrows():
+                tx = pred_row['transcript']
+                pos = pred_row['position']
+                is_match = False
+                for _, truth_row in truth_subset.iterrows():
+                    if (truth_row['transcript'] == tx and
+                        abs(truth_row['position'] - pos) <= 0):
+                        is_match = True
+                        break
+                if not is_match:
+                    neg_sites.append({
+                        'transcript': tx,
+                        'position': pos,
+                        'modification_type': mod_type,
+                        'label': '-'
+                    })
+            if neg_sites:
+                truth_neg_subset = pd.DataFrame(neg_sites)
+
+        score_col = tool_score_cols.get(tool)
 
         for window in windows:
             # Track which predicted sites matched truth sites
@@ -139,7 +276,6 @@ for tool, pred_df in tool_dfs.items():
                 tx = truth_row['transcript']
                 pos = truth_row['position']
 
-                # Find predictions within window on same transcript
                 matches = pred_subset[
                     (pred_subset['transcript'] == tx) &
                     (pred_subset['position'].between(pos - window, pos + window))
@@ -152,7 +288,8 @@ for tool, pred_df in tool_dfs.items():
             fn = len(truth_subset) - tp
             fp = len(pred_subset) - len(matched_pred_indices)
 
-            total_predicted = len(pred_subset)
+            called_sites = len(pred_subset)
+            total_predicted = called_sites
             total_truth = len(truth_subset)
 
             # Calculate TN (true negatives)
@@ -163,13 +300,11 @@ for tool, pred_df in tool_dfs.items():
                     tx = neg_row['transcript']
                     pos = neg_row['position']
 
-                    # Check if there are predictions within window of this negative site
                     nearby_preds = pred_subset[
                         (pred_subset['transcript'] == tx) &
                         (pred_subset['position'].between(pos - window, pos + window))
                     ]
 
-                    # If no predictions nearby, this is a true negative
                     if nearby_preds.empty:
                         tn += 1
 
@@ -180,8 +315,7 @@ for tool, pred_df in tool_dfs.items():
             f1 = (2 * precision * recall / (precision + recall)
                   if (precision + recall) > 0 else 0)
 
-            # Specificity: TN / (TN + FP)
-            # Note: FP here includes all false positives, not just those near negative sites
+            # Specificity: TN / (TN + FP) or TN / total_negative
             if total_negative > 0:
                 specificity = tn / total_negative
             else:
@@ -189,6 +323,11 @@ for tool, pred_df in tool_dfs.items():
 
             # Matthews Correlation Coefficient
             mcc = compute_mcc(tp, fp, fn, tn)
+
+            # AUPRC and AUROC (only if score column exists)
+            auprc, auroc = compute_ranking_metrics(
+                pred_subset, truth_subset, truth_neg_subset, score_col
+            )
 
             records.append({
                 "tool": tool,
@@ -200,6 +339,9 @@ for tool, pred_df in tool_dfs.items():
                 "tp": tp, "fp": fp, "fn": fn, "tn": tn,
                 "specificity": specificity,
                 "mcc": mcc,
+                "auprc": auprc,
+                "auroc": auroc,
+                "called_sites": called_sites,
                 "total_truth": total_truth,
                 "total_predicted": total_predicted,
                 "total_negative": total_negative,
@@ -207,9 +349,15 @@ for tool, pred_df in tool_dfs.items():
 
 # Write output
 if records:
-    out_df = pd.DataFrame(records).sort_values(["modification_type", "window", "f1"], ascending=[True, True, False])
+    out_df = pd.DataFrame(records).sort_values(
+        ["modification_type", "window", "f1"],
+        ascending=[True, True, False]
+    )
 else:
-    out_df = pd.DataFrame(columns=["tool", "modification_type", "window", "precision", "recall",
-                                   "f1", "tp", "fp", "fn", "tn", "specificity", "mcc",
-                                   "total_truth", "total_predicted", "total_negative"])
+    out_df = pd.DataFrame(columns=[
+        "tool", "modification_type", "window", "precision", "recall",
+        "f1", "tp", "fp", "fn", "tn", "specificity", "mcc",
+        "auprc", "auroc", "called_sites",
+        "total_truth", "total_predicted", "total_negative"
+    ])
 out_df.to_csv(output_file, sep='\t', index=False)
