@@ -1,16 +1,16 @@
-rule prep_drummer_region:
+rule psipore_prep:
     input:
         control_bam="{project}/results/alignments/{control}_filtered.bam",
         control_bai="{project}/results/alignments/{control}_filtered.bam.bai",
         native_bam="{project}/results/alignments/{native}_filtered.bam",
         native_bai="{project}/results/alignments/{native}_filtered.bam.bai",
     output:
-        region=temp("{project}/results/drummer/{native}_{control}_regions.bed"),
+        region=temp("{project}/results/psipore/{native}_{control}_regions.bed"),
     container:
         get_container("bedtools")
-    threads: get_threads("drummer", 1)
+    threads: get_threads("psipore", 1)
     resources:
-        mem_mb = 1024 
+        mem_mb = 1024
     priority: 10
     shell:
         "bedtools bamtobed -bed12 -i {input.control_bam} | cut -f1 | sort > {output.region}.tmp && "
@@ -19,27 +19,38 @@ rule prep_drummer_region:
         "rm {output.region}.tmp"
 
 
-rule drummer:
+rule psipore_run:
     input:
         control_bam="{project}/results/alignments/{control}_filtered.bam",
         control_bai="{project}/results/alignments/{control}_filtered.bam.bai",
         native_bam="{project}/results/alignments/{native}_filtered.bam",
         native_bai="{project}/results/alignments/{native}_filtered.bam.bai",
-        region="{project}/results/drummer/{native}_{control}_regions.bed",
-    params:
         reference=config["reference"]["transcriptome_fasta"],
-        extra=config["params"]["drummer"],
-    container:
-        get_container("drummer")
-    priority: 10
-    log:
-        "logs/{project}/drummer/{native}_{control}.log",
-    resources:
-        mem_mb = 1024 *20
+        region="{project}/results/psipore/{native}_{control}_regions.bed",
     output:
-        outdir=KEEP_OR_NOT(directory("{project}/results/drummer/{native}_{control}/")),
-        # summary="results/drummer/{native}_{control}/{control}_filtered-{native}_filtered/summary.txt"
+        result="{project}/results/psipore/{native}_{control}/psipore_results.tsv",
+    container:
+        get_container("psipore")
+    threads: get_threads("psipore", 4)
+    resources:
+        mem_mb = 1024 * 50
+    priority: 10
+    params:
+        extra=config["params"].get("psipore", ""),
+        outdir="{project}/results/psipore/{native}_{control}",
+    log:
+        "logs/{project}/psipore/{native}_{control}.log",
     benchmark:
-        "benchmarks/{project}/{native}_{control}.drummer.benchmark.txt"
-    script:
-        "../scripts/drummer.py"
+        "benchmarks/{project}/{native}_{control}.psipore.benchmark.txt"
+    conda:
+        "../envs/psipore.yaml"
+    shell:
+        "psipore compare "
+        "--native {input.native_bam} "
+        "--control {input.control_bam} "
+        "--reference {input.reference} "
+        "--regions {input.region} "
+        "--threads {threads} "
+        "--output {output.result} "
+        "{params.extra} "
+        "2>{log}"

@@ -12,8 +12,6 @@ rule eligos2:
     params:
         prefix="{native}_{control}",
         extra=config["params"]["eligos2"],
-    container:
-        get_container("eligos2")
     log:
         stdout="logs/{project}/eligos2/{native}_{control}.log",
         stderr="logs/{project}/eligos2/{native}_{control}.log",

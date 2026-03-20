@@ -26,6 +26,11 @@ params:
   directrm: "--mods all --min-prob 0.7"
   m6atm: "--stoichiometry --threshold 0.6"
   rnano: "--model pretrained --gpu False"
+  psipore: ""
+  nanopsu: ""
+  nanomud: ""
+  nanomud_mods: "Psi,m1Psi"
+  penguin: ""
 
 # Thread configuration for each tool
 # 每个工具的线程数配置
@@ -48,6 +53,10 @@ threads:
   directrm: 4
   m6atm: 4
   rnano: 4
+  psipore: 4
+  nanopsu: 4
+  nanomud: 4
+  penguin: 4
 
 # Container images for each tool
 # 每个工具的容器镜像配置
@@ -81,6 +90,10 @@ containers:
   directrm: ""
   m6atm: ""
   rnano: ""
+  psipore: ""
+  nanopsu: ""
+  nanomud: ""
+  penguin: ""
   samtools: "docker://btrspg/minimap2:2.28"
   nanopolish: "docker://btrspg/nanopolish:0.14.0"
   nanocount: "docker://btrspg/nanocount:1.0.0"
@@ -118,5 +131,17 @@ tools:
     activate: False
   rnano:
     activate: False
+  psipore:
+    activate: False
+  nanopsu:
+    activate: False
+  nanomud:
+    activate: False
+  penguin:
+    activate: False
+
+benchmark:
+  truth_set: ""   # path to ground truth TSV (leave empty to skip accuracy benchmarking)
+  window: 0       # positional tolerance in nucleotides
 
 target_region: ''

@@ -1,6 +1,7 @@
 rule tandemmod_config:
     input:
-        bam="{project}/results/bam/{sample}.bam",
+        bam="{project}/results/alignments/{sample}_filtered.bam",
+        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
         reference=config["reference"]["transcriptome_fasta"]
     output:
         config="{project}/results/tandemmod/{sample}_tandemmod_config.yaml"
@@ -10,7 +11,7 @@ rule tandemmod_config:
     resources:
         mem_mb = 1024
     params:
-        model_type="multi"
+        model_type="multi",
         threshold=0.5
     log:
         "logs/{project}/tandemmod_config/{sample}.log"
@@ -20,7 +21,8 @@ rule tandemmod_config:
 
 rule tandemmod_predict:
     input:
-        bam="{project}/results/bam/{sample}.bam",
+        bam="{project}/results/alignments/{sample}_filtered.bam",
+        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
         config="{project}/results/tandemmod/{sample}_tandemmod_config.yaml"
     output:
@@ -56,7 +58,7 @@ rule tandemmod_postprocess:
         predictions="{project}/results/tandemmod/{sample}_predictions.completed",
         pred_file="{project}/results/tandemmod/{sample}_predictions.tsv"
     output:
-        directory="{project}/results/dataprep/{sample}_tandemmod_dataprep")
+        directory("{project}/results/dataprep/{sample}_tandemmod_dataprep")
     container:
         get_container("tandemmod")
     threads: get_threads("tandemmod", 1)

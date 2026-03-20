@@ -1,6 +1,7 @@
 rule rnano_config:
     input:
-        bam="{project}/results/bam/{sample}.bam",
+        bam="{project}/results/alignments/{sample}_filtered.bam",
+        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
         reference=config["reference"]["transcriptome_fasta"]
     output:
         config="{project}/results/rnano/{sample}_rnano_config.yaml"
@@ -10,7 +11,7 @@ rule rnano_config:
     resources:
         mem_mb = 1024
     params:
-        model="pretrained"
+        model="pretrained",
         gpu=False
     log:
         "logs/{project}/rnano_config/{sample}.log"
@@ -20,7 +21,8 @@ rule rnano_config:
 
 rule rnano_predict:
     input:
-        bam="{project}/results/bam/{sample}.bam",
+        bam="{project}/results/alignments/{sample}_filtered.bam",
+        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
         config="{project}/results/rnano/{sample}_rnano_config.yaml"
     output:
@@ -56,7 +58,7 @@ rule rnano_postprocess:
         predictions="{project}/results/rnano/{sample}_predictions.completed",
         pred_file="{project}/results/rnano/{sample}_predictions.tsv"
     output:
-        directory="{project}/results/dataprep/{sample}_rnano_dataprep")
+        directory("{project}/results/dataprep/{sample}_rnano_dataprep")
     container:
         get_container("rnano")
     threads: get_threads("rnano", 1)
