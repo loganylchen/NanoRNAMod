@@ -1,5 +1,8 @@
 def get_all_result_tsvs(wildcards):
-    """Collect all *_results.tsv paths for activated tools."""
+    """Collect all *_results.tsv paths for activated tools.
+
+    Note: wildcards parameter is kept for Snakemake consistency but not used.
+    """
     tools = [t for t in config["tools"] if config["tools"][t]["activate"]]
     result_files = []
     per_comparison_tools = ["xpore", "nanocompore", "baleen", "differr", "drummer", "pybaleen",

@@ -322,4 +322,13 @@ def get_final_output():
     final_output += [f"{RESULT_ROOT}/benchmarks/resource_summary.tsv"]
     if config.get("benchmark", {}).get("truth_set", ""):
         final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_overall.tsv"]
+        # Visualization and detailed reports
+        final_output += [f"{RESULT_ROOT}/benchmarks/viz/benchmark_report.html"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/optimal_thresholds.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/detailed_predictions.tsv"]
+        # Multi-threshold evaluation outputs
+        final_output += [f"{RESULT_ROOT}/benchmarks/threshold_evaluation.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/optimal_thresholds_detailed.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/score_distributions.tsv"]
     return final_output
