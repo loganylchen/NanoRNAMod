@@ -457,15 +457,22 @@ def generate_html_report(accuracy_df, resource_df, figures_dir, output_path):
         if 'modification_type' in row:
             html += f"                        <td>{row.get('modification_type', '')}</td>\n"
 
+        # Format metrics safely (handle None/NaN values)
+        prec_str = f"{row['precision']:.3f}" if pd.notna(row.get('precision')) else 'N/A'
+        recall_str = f"{row['recall']:.3f}" if pd.notna(row.get('recall')) else 'N/A'
+        f1_str = f"{row['f1']:.3f}" if pd.notna(row.get('f1')) else 'N/A'
+        auroc_str = f"{row['auroc']:.3f}" if pd.notna(row.get('auroc')) else 'N/A'
+        auprc_str = f"{row['auprc']:.3f}" if pd.notna(row.get('auprc')) else 'N/A'
+
         html += f"""                        <td>{row['window']}</td>
-                        <td><span class="metric {f1_class}">{row['precision']:.3f if row['precision'] else 'N/A'}</span></td>
-                        <td><span class="metric {f1_class}">{row['recall']:.3f if row['recall'] else 'N/A'}</span></td>
-                        <td><span class="metric {f1_class}">{row['f1']:.3f if row['f1'] else 'N/A'}</span></td>
+                        <td><span class="metric {f1_class}">{prec_str}</span></td>
+                        <td><span class="metric {f1_class}">{recall_str}</span></td>
+                        <td><span class="metric {f1_class}">{f1_str}</span></td>
                         <td>{row['tp']}</td>
                         <td>{row['fp']}</td>
                         <td>{row['fn']}</td>
-                        <td>{row['auroc']:.3f if row['auroc'] else 'N/A'}</td>
-                        <td>{row['auprc']:.3f if row['auprc'] else 'N/A'}</td>
+                        <td>{auroc_str}</td>
+                        <td>{auprc_str}</td>
                     </tr>
 """
 
@@ -491,14 +498,21 @@ def generate_html_report(accuracy_df, resource_df, figures_dir, output_path):
 """
 
     for row in resource_rows:
+        # Format metrics safely
+        time_str = f"{row['time_s']:.2f}" if pd.notna(row.get('time_s')) else 'N/A'
+        mem_str = f"{row['max_rss_mb']:.0f}" if pd.notna(row.get('max_rss_mb')) else 'N/A'
+        cpu_str = f"{row['cpu_time_s']:.2f}" if pd.notna(row.get('cpu_time_s')) else 'N/A'
+        io_in_str = f"{row['io_in_mb']:.2f}" if pd.notna(row.get('io_in_mb')) else 'N/A'
+        io_out_str = f"{row['io_out_mb']:.2f}" if pd.notna(row.get('io_out_mb')) else 'N/A'
+
         html += f"""                    <tr>
                         <td>{row['tool']}</td>
                         <td>{row['sample']}</td>
-                        <td>{row['time_s']:.2f if row['time_s'] else 'N/A'}</td>
-                        <td>{row['max_rss_mb']:.0f if row['max_rss_mb'] else 'N/A'}</td>
-                        <td>{row['cpu_time_s']:.2f if row['cpu_time_s'] else 'N/A'}</td>
-                        <td>{row['io_in_mb']:.2f if row['io_in_mb'] else 'N/A'}</td>
-                        <td>{row['io_out_mb']:.2f if row['io_out_mb'] else 'N/A'}</td>
+                        <td>{time_str}</td>
+                        <td>{mem_str}</td>
+                        <td>{cpu_str}</td>
+                        <td>{io_in_str}</td>
+                        <td>{io_out_str}</td>
                     </tr>
 """
 

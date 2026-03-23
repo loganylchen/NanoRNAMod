@@ -393,7 +393,7 @@ def main():
 
         pd.DataFrame(columns=[
             'tool', 'modification_type', 'window', 'score_column', 'is_pvalue',
-            'optimal_threshold', 'optimal_f1', 'precision', 'recall', 'tp', 'fp', 'fn', 'criterion'
+            'threshold', 'f1', 'precision', 'recall', 'tp', 'fp', 'fn', 'criterion'
         ]).to_csv(output_optimal, sep='\t', index=False)
 
         pd.DataFrame(columns=[
@@ -493,7 +493,7 @@ def main():
     if all_optimal_records:
         optimal_df = pd.DataFrame(all_optimal_records)
         optimal_df = optimal_df.sort_values(
-            ['modification_type', 'window', 'optimal_f1'],
+            ['modification_type', 'window', 'f1'],
             ascending=[True, True, False]
         )
     else:
