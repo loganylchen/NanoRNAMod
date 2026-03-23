@@ -3,8 +3,9 @@ rule create_dict:
         config['reference']['transcriptome_fasta']
     output:
         config['reference']['transcriptome_fasta']+'.dict'
+    # Note: wrapper uses its own conda environment, disable singularity to avoid conda-in-container issue
     container:
-        get_container("default")
+        None
     log:
         "logs/picard/create_dict.log",
     params:
