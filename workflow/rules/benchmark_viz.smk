@@ -23,6 +23,8 @@ rule benchmark_visualization:
         "logs/{project}/benchmark_visualization/viz.log",
     conda:
         "../envs/matplotlib.yaml"
+    container:
+        None  # Disable singularity for this rule - uses host conda
     script:
         "../scripts/benchmark_plots.py"
 
@@ -47,6 +49,8 @@ rule benchmark_threshold:
         "benchmarks/{project}/benchmark_threshold.benchmark.txt"
     conda:
         "../envs/pandas.yaml"
+    container:
+        None  # Disable singularity for this rule - uses host conda
     script:
         "../scripts/benchmark_threshold.py"
 
@@ -71,6 +75,8 @@ rule benchmark_detailed:
         "benchmarks/{project}/benchmark_detailed.benchmark.txt"
     conda:
         "../envs/pandas.yaml"
+    container:
+        None  # Disable singularity for this rule - uses host conda
     script:
         "../scripts/benchmark_detailed.py"
 
@@ -98,6 +104,8 @@ rule benchmark_multithreshold:
         "benchmarks/{project}/benchmark_multithreshold.benchmark.txt"
     conda:
         "../envs/pandas.yaml"
+    container:
+        None  # Disable singularity for this rule - uses host conda
     script:
         "../scripts/benchmark_multithreshold.py"
 
@@ -123,6 +131,8 @@ rule benchmark_score_optimization:
         "benchmarks/{project}/benchmark_score_optimization.benchmark.txt"
     conda:
         "../envs/pandas.yaml"
+    container:
+        None  # Disable singularity for this rule - uses host conda
     script:
         "../scripts/benchmark_score_optimization.py"
 
@@ -147,5 +157,7 @@ rule benchmark_r_figures:
         "logs/{project}/benchmark_r_figures/figures.log",
     conda:
         "../envs/r_viz.yaml"
+    container:
+        None  # Disable singularity for this rule - uses host conda
     script:
         "../scripts/R/run_all_figures.R"
