@@ -95,7 +95,7 @@ def normalize_columns(df):
             break
 
     # Position column variants
-    position_cols = ['position', 'pos', 'start', 'start_loc', 'transcript_pos', 'transcript_loc']
+    position_cols = ['position', 'pos', 'start', 'start_loc', 'transcript_pos', 'transcript_loc', 'genomic_pos']
     for col in position_cols:
         if col in df.columns and col not in col_mapping.values():
             col_mapping[col] = 'position'
@@ -113,7 +113,8 @@ def detect_score_column(df, tool_name=None):
     tool_score_map = {
         'xpore': ['p_value', 'diff_mod', 'diff_mod_frac', 'mod_ratio'],
         'nanocompore': ['pvalue', 'logit_pvalue', 'logit', 'p_value', 'coverage'],
-        'baleen': ['mod_score', 'score', 'kmer_score'],
+        'baleen': ['mod_score', 'score', 'kmer_score'],  # old baleen (Baleen.py dataprep/modcall/postcall)
+        'baleen_old': ['mod_score', 'score', 'kmer_score'],  # alias for old baleen
         'differr': ['-log10 P value', '-log10_pvalue', 'score', 'pvalue'],
         'eligos2': ['pvalue', 'p_value', 'esb', 'oddsR'],
         'epinano': ['z_score_prediction', 'z_scores', 'delta_sum_err'],
@@ -126,6 +127,7 @@ def detect_score_column(df, tool_name=None):
         'nanopsu': ['pvalue', 'p_value', 'score'],
         'nanomud': ['probability', 'pvalue', 'score'],
         'penguin': ['probability', 'score', 'pvalue'],
+        'pybaleen': ['mean_p_mod', 'stoichiometry', 'pvalue', 'p_value', 'score'],  # new baleen (baleen run with HMM)
     }
 
     # If tool name is provided, try tool-specific columns first
