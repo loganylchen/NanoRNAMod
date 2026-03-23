@@ -19,7 +19,6 @@ rule qc_qualimap:
         "../envs/qualimap.yaml"
     priority: 50
     resources:
-        mem="50G",
         mem_mb=1024 * 50,
         javaopt=" -Djava.awt.headless=true ",
     shell:

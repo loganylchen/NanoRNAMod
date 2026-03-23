@@ -545,7 +545,9 @@ def main():
     if 'snakemake' in globals():
         accuracy_file = snakemake.input.accuracy
         resource_file = snakemake.input.resource
-        output_dir = snakemake.output.dir
+        # Get output directory from params (parent of html output)
+        output_dir = snakemake.params.output_dir
+        html_output = snakemake.output.html
         figures_dir = os.path.join(output_dir, 'figures')
         os.makedirs(figures_dir, exist_ok=True)
 
@@ -578,8 +580,7 @@ def main():
             plots.append(resource_path)
 
         # Generate HTML report
-        html_path = os.path.join(output_dir, 'benchmark_report.html')
-        generate_html_report(accuracy_df, resource_df, figures_dir, html_path)
+        generate_html_report(accuracy_df, resource_df, figures_dir, html_output)
 
         print(f"Generated {len(plots)} plots and HTML report")
 

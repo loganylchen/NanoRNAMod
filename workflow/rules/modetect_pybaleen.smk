@@ -19,11 +19,7 @@ rule pybaleen_run:
         ),
     params:
         output_dir="{project}/results/pybaleen/{native}_{control}/",
-        padding=config["params"].get("pybaleen", {}).get("padding", 0),
-        min_depth=config["params"].get("pybaleen", {}).get("min_depth", 15),
-        min_mapq=config["params"].get("pybaleen", {}).get("min_mapq", 0),
-        cuda=config["params"].get("pybaleen", {}).get("cuda", False),
-        no_hmm=config["params"].get("pybaleen", {}).get("no_hmm", False),
+        extra=config["params"].get("pybaleen", ""),
     container:
         get_container("pybaleen")
     benchmark:
@@ -45,9 +41,5 @@ rule pybaleen_run:
         "--ivt-blow5 {input.control_blow5} "
         "--ref {input.ref} "
         "-o {params.output_dir} "
-        "--padding {params.padding} "
-        "--min-depth {params.min_depth} "
-        "--min-mapq {params.min_mapq} "
-        "{ '--cuda' if params.cuda else '' } "
-        "{ '--no-hmm' if params.no_hmm else '' } "
+        "{params.extra} "
         "1> {log.out} 2> {log.err}"

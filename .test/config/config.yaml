@@ -2,6 +2,7 @@
 samples: config/samples.tsv
 project: RNAModProject
 only_final_results: True
+qc: False
 params:
   minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 10 -p 0 "
   minimap2_genome: " -ax splice -u f -k 14 -G 500000 --secondary=no "
@@ -59,3 +60,9 @@ tools:
     activate: True
 
 target_region: ''
+
+benchmark:
+  truth_set: "config/benchmark_ecoli_rRNA.tsv"
+  window: [0, 1, 2, 5]
+  n_thresholds: 50
+  custom_thresholds: []
