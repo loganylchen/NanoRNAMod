@@ -22,7 +22,7 @@ rule benchmark_visualization:
     log:
         "logs/{project}/benchmark_visualization/viz.log",
     container:
-        get_container("matplotlib")
+        get_container("python3")
     script:
         "../scripts/benchmark_plots.py"
 
@@ -46,7 +46,7 @@ rule benchmark_threshold:
     benchmark:
         "benchmarks/{project}/benchmark_threshold.benchmark.txt"
     container:
-        get_container("pandas")
+        get_container("python3")
     script:
         "../scripts/benchmark_threshold.py"
 
@@ -70,7 +70,7 @@ rule benchmark_detailed:
     benchmark:
         "benchmarks/{project}/benchmark_detailed.benchmark.txt"
     container:
-        get_container("pandas")
+        get_container("python3")
     script:
         "../scripts/benchmark_detailed.py"
 
@@ -97,7 +97,7 @@ rule benchmark_multithreshold:
     benchmark:
         "benchmarks/{project}/benchmark_multithreshold.benchmark.txt"
     container:
-        get_container("pandas")
+        get_container("python3")
     script:
         "../scripts/benchmark_multithreshold.py"
 
@@ -122,7 +122,7 @@ rule benchmark_score_optimization:
     benchmark:
         "benchmarks/{project}/benchmark_score_optimization.benchmark.txt"
     container:
-        get_container("pandas")
+        get_container("python3")
     script:
         "../scripts/benchmark_score_optimization.py"
 

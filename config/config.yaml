@@ -107,9 +107,6 @@ containers:
   python3: "docker://btrspg/misc-python3:2026-03-20"
   nanoplot: ""
   bcftools: ""
-  # Containers for benchmark and visualization
-  pandas: "docker://btrspg/misc-python3:2026-03-20"
-  matplotlib: "docker://btrspg/misc-python3:2026-03-20"
   r_viz: "docker://6oclock/r-deseq2-edger-ggplot2:3.6.3"
   picard: "docker://broadinstitute/picard:3.1.0"
 

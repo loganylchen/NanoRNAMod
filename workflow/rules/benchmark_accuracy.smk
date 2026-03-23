@@ -40,6 +40,6 @@ if config.get("benchmark", {}).get("truth_set", ""):
         log:
             "logs/{project}/accuracy_benchmark/accuracy.log",
         container:
-            get_container("pandas")
+            get_container("python3")
         script:
             "../scripts/accuracy_benchmark.py"

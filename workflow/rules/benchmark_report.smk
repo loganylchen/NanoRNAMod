@@ -16,6 +16,6 @@ rule aggregate_benchmarks:
     log:
         "logs/{project}/aggregate_benchmarks/aggregate.log",
     container:
-        get_container("pandas")
+        get_container("python3")
     script:
         "../scripts/aggregate_benchmarks.py"
