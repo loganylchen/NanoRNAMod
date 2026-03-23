@@ -19,10 +19,11 @@ rule qc_qualimap:
     resources:
         mem_mb=1024 * 50,
         javaopt=" -Djava.awt.headless=true ",
+        mem=50,  # Java heap size in GB for qualimap
     shell:
         "export JAVA_OPTS='{resources.javaopt}' && "
         "qualimap rnaseq -bam {input.bam} "
         "-gtf {params.reference_gtf} "
         "-outdir {params.output_dir} "
         "-outfile {params.output_file} "
-        "-outformat PDF:HTML --java-mem-size={resources.mem}> {log}"
+        "-outformat PDF:HTML --java-mem-size={resources.mem}G > {log}"
