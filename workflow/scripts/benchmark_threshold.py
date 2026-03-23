@@ -102,11 +102,15 @@ def compute_metrics_at_threshold(pred_df, truth_pos, threshold, score_col,
     Returns:
         dict with tp, fp, fn, precision, recall, f1
     """
+    # Convert score column to numeric for comparison
+    pred_df = pred_df.copy()
+    pred_df['_numeric_score'] = pd.to_numeric(pred_df[score_col], errors='coerce')
+
     # Filter predictions by threshold
     if is_pvalue:
-        filtered = pred_df[pred_df[score_col] <= threshold].copy()
+        filtered = pred_df[pred_df['_numeric_score'] <= threshold].copy()
     else:
-        filtered = pred_df[pred_df[score_col] >= threshold].copy()
+        filtered = pred_df[pred_df['_numeric_score'] >= threshold].copy()
 
     if filtered.empty:
         return {'tp': 0, 'fp': 0, 'fn': len(truth_pos),
@@ -161,8 +165,8 @@ def find_optimal_threshold(pred_df, truth_pos, score_col, is_pvalue,
     if pred_df.empty or score_col not in pred_df.columns:
         return None
 
-    # Get valid scores
-    scores = pred_df[score_col].dropna()
+    # Get valid scores - convert to numeric first
+    scores = pd.to_numeric(pred_df[score_col], errors='coerce').dropna()
 
     if scores.empty:
         return None

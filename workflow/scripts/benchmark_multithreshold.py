@@ -127,7 +127,8 @@ def generate_thresholds(scores, n_thresholds=50, min_thresholds=10, custom_thres
 
     Uses percentiles to ensure even coverage across the score range.
     """
-    scores = scores.dropna()
+    # Convert to numeric, coercing errors to NaN, then drop NAs
+    scores = pd.to_numeric(scores, errors='coerce').dropna()
 
     if scores.empty:
         return []
@@ -172,11 +173,15 @@ def compute_metrics_at_threshold(pred_df, truth_pos, threshold, score_col,
     Returns:
         dict with tp, fp, fn, precision, recall, f1
     """
+    # Convert score column to numeric for comparison
+    pred_df = pred_df.copy()
+    pred_df['_numeric_score'] = pd.to_numeric(pred_df[score_col], errors='coerce')
+
     # Filter predictions by threshold
     if is_pvalue:
-        filtered = pred_df[pred_df[score_col] <= threshold].copy()
+        filtered = pred_df[pred_df['_numeric_score'] <= threshold].copy()
     else:
-        filtered = pred_df[pred_df[score_col] >= threshold].copy()
+        filtered = pred_df[pred_df['_numeric_score'] >= threshold].copy()
 
     if filtered.empty:
         return {
@@ -221,7 +226,8 @@ def compute_metrics_at_threshold(pred_df, truth_pos, threshold, score_col,
 
 def compute_score_distribution(pred_df, score_col):
     """Compute summary statistics for score distribution."""
-    scores = pred_df[score_col].dropna()
+    # Convert to numeric, coercing errors to NaN, then drop NAs
+    scores = pd.to_numeric(pred_df[score_col], errors='coerce').dropna()
 
     if scores.empty:
         return {
@@ -283,7 +289,7 @@ def evaluate_tool_at_thresholds(pred_df, truth_pos, tool_name, mod_type,
 
     # Fallback: if no positive matches found, use median score threshold
     if best_f1 == 0 and records:
-        median_score = pred_df[score_col].median()
+        median_score = pd.to_numeric(pred_df[score_col], errors='coerce').median()
         print(f"Warning: No positive F1 for {tool_name}/{mod_type}. Using median score: {median_score}")
         # Use the median as fallback threshold
         metrics = compute_metrics_at_threshold(
