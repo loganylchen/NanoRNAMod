@@ -10,8 +10,6 @@ rule samtools_filter_mapped:
         get_container("samtools")
     log:
         "logs/{project}/readfiltering/{sample}.log",
-    conda:
-        "../envs/minimap2.yaml"
     params:
         extra=config["params"]["samtools_filtering"],
     shell:
@@ -37,8 +35,6 @@ rule samtools_depth:
         get_container("samtools")
     log:
         "logs/{project}/depth.log",
-    conda:
-        "../envs/minimap2.yaml"
     shell:
         "samtools depth  -J {input.bams} > {output} 2>{log}  "
 
@@ -52,8 +48,6 @@ rule make_depth_table:
         samples=list(samples.index),
     container:
         get_container("python3")
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/depth.py"
 
@@ -70,8 +64,6 @@ rule samtools_filter_mapped_epi:
         get_container("samtools")
     log:
         "logs/{project}/readfiltering_3.2.4/{sample}.log",
-    conda:
-        "../envs/minimap2.yaml"
     params:
         extra=config["params"]["samtools_filtering"],
     shell:

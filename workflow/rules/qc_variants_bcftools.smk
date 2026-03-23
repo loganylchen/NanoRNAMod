@@ -10,8 +10,6 @@ rule variants_bcftools:
         "benchmarks/{project}/{sample}.variants_bcftools.benchmark.txt"
     log:
         "logs/{project}/qc/{sample}_variants_bcftools.log",
-    conda:
-        "../envs/minimap2.yaml"
     priority: 20
     threads: get_threads("bcftools", 4)
     resources:

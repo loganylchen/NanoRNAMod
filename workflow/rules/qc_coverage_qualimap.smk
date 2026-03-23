@@ -15,8 +15,6 @@ rule qc_qualimap:
         "benchmarks/{project}/{sample}.qualimap_rnaseq.benchmark.txt"
     log:
         "logs/{project}/qc/{sample}_qualimap.log",
-    conda:
-        "../envs/qualimap.yaml"
     priority: 50
     resources:
         mem_mb=1024 * 50,

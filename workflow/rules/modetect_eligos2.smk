@@ -47,8 +47,6 @@ rule eligos2_prep:
     resources:
         mem_mb = 1024 * 50
     priority: 10
-    conda:
-        "../envs/bedtools.yaml"
     shell:
         "bedtools bamtobed -bed12 -i {input.control_bam}  > {output.region}.tmp && "
         "bedtools bamtobed -bed12 -i {input.native_bam} >> {output.region}.tmp && "

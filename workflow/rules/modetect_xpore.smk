@@ -40,8 +40,6 @@ rule xpore_dataprep:
         mem_mb = 1024 * 50
     params:
         extra="",
-    conda:
-        "../envs/xpore.yaml"
     shell:
         "xpore dataprep "
         "--eventalign {input.eventalign} "
@@ -89,8 +87,6 @@ rule xpore_run:
         stderr="logs/{project}/xpore/{native}_{control}.err",
     benchmark:
         "benchmarks/{project}/{native}_{control}.xpore.benchmark.txt"
-    conda:
-        "../envs/xpore.yaml"
     shell:
         "xpore diffmod --config {input[0]} --n_processes {threads} 1>{log.stdout} 2>{log.stderr}"
 
@@ -113,7 +109,5 @@ rule xpore_postprocessing:
         "logs/{project}/xpore_postprocessing/{native}_{control}.log",
     benchmark:
         "benchmarks/{project}/{native}_{control}.xpore_postprocessing.benchmark.txt"
-    conda:
-        "../envs/xpore.yaml"
     shell:
         "xpore postprocessing --diffmod_dir {params}  2>{log}"

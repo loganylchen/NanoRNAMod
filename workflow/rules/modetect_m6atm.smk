@@ -40,8 +40,6 @@ rule m6atm_predict:
         "benchmarks/{project}/{sample}.m6atm.benchmark.txt"
     params:
         extra=""
-    conda:
-        "../envs/m6atm.yaml"
     shell:
         "m6atm predict "
         "--bam {input.bam} "
@@ -67,7 +65,5 @@ rule m6atm_postprocess:
     priority: 10
     log:
         "logs/{project}/m6atm_postprocess/{sample}.log"
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/m6atm_postprocess.py"

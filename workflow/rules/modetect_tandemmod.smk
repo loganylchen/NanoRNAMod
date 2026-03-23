@@ -40,8 +40,6 @@ rule tandemmod_predict:
         "benchmarks/{project}/{sample}.tandemmod.benchmark.txt"
     params:
         extra=""
-    conda:
-        "../envs/tandemmod.yaml"
     shell:
         "tandemmod predict "
         "--bam {input.bam} "
@@ -67,7 +65,5 @@ rule tandemmod_postprocess:
     priority: 10
     log:
         "logs/{project}/tandemmod_postprocess/{sample}.log"
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/tandemmod_postprocess.py"

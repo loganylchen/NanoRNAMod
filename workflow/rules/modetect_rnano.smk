@@ -40,8 +40,6 @@ rule rnano_predict:
         "benchmarks/{project}/{sample}.rnano.benchmark.txt"
     params:
         extra=""
-    conda:
-        "../envs/rnano.yaml"
     shell:
         "rnano predict "
         "--bam {input.bam} "
@@ -67,7 +65,5 @@ rule rnano_postprocess:
     priority: 10
     log:
         "logs/{project}/rnano_postprocess/{sample}.log"
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/rnano_postprocess.py"

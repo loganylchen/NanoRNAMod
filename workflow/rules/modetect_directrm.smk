@@ -40,8 +40,6 @@ rule directrm_predict:
         "benchmarks/{project}/{sample}.directrm.benchmark.txt"
     params:
         extra=""
-    conda:
-        "../envs/directrm.yaml"
     shell:
         "directrm predict "
         "--bam {input.bam} "
@@ -67,7 +65,5 @@ rule directrm_postprocess:
     priority: 10
     log:
         "logs/{project}/directrm_postprocess/{sample}.log"
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/directrm_postprocess.py"

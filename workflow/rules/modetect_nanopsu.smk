@@ -17,8 +17,6 @@ rule nanopsu_predict:
         "logs/{project}/nanopsu_predict/{sample}.log"
     benchmark:
         "benchmarks/{project}/{sample}.nanopsu.benchmark.txt"
-    conda:
-        "../envs/nanopsu.yaml"
     shell:
         "nanopsu predict "
         "--bam {input.bam} "

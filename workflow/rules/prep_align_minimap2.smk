@@ -11,8 +11,6 @@ rule minimap2_transcriptome_align:
         "benchmarks/{project}/{sample}.minimap2_transcriptome_alignment.benchmark.txt"
     container:
         get_container("minimap2")
-    conda:
-        "../envs/minimap2.yaml"
     params:
         extra=config["params"]["minimap2_transcriptome"],
         reference=config["reference"]["transcriptome_fasta"],
@@ -39,8 +37,6 @@ rule minimap2_genome_align:
         "benchmarks/{project}/{sample}.minimap2_genome_alignment.benchmark.txt"
     container:
         get_container("minimap2")
-    conda:
-        "../envs/minimap2.yaml"
     params:
         extra=config["params"]["minimap2_genome"],
         reference=config["reference"]["genome_fasta"],
@@ -69,8 +65,6 @@ rule minimap2_transcriptome_align_epi:
         "benchmarks/{project}/{sample}.minimap2_transcriptome_alignment_3.2.4.benchmark.txt"
     container:
         get_container("minimap2")
-    conda:
-        "../envs/minimap2.yaml"
     params:
         extra=config["params"]["minimap2_transcriptome"],
         reference=config["reference"]["transcriptome_fasta"],

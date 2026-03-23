@@ -16,8 +16,6 @@ rule post_tandemmod:
         mem_mb=1024 * 50,
     priority: 20
     threads: get_threads("default", 1)
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -69,8 +67,6 @@ rule post_directrm:
         mem_mb=1024 * 50,
     priority: 20
     threads: get_threads("default", 1)
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -122,8 +118,6 @@ rule post_m6atm:
         mem_mb=1024 * 50,
     priority: 20
     threads: get_threads("default", 1)
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -175,8 +169,6 @@ rule post_rnano:
         mem_mb=1024 * 50,
     priority: 20
     threads: get_threads("default", 1)
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -277,8 +269,6 @@ rule post_nanocompore:
     resources:
         mem_mb=1024 * 50,
     threads: get_threads("python3", 1)
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -328,8 +318,6 @@ rule post_baleen:
     resources:
         mem_mb=1024 * 50,
     threads: get_threads("python3", 1)
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -379,8 +367,6 @@ rule post_differr:
     resources:
         mem_mb=1024 * 50,
     threads: get_threads("python3", 1)
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -431,8 +417,6 @@ rule post_epinano:
         "logs/{project}/post_epinano_sampled_format/{native}_{control}.log",
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_epinano_sampled_format.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -483,8 +467,6 @@ rule post_eligos2:
         "logs/{project}/post_eligos2_sampled_format/{native}_{control}.log",
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_eligos2_sampled_format.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -534,8 +516,6 @@ rule post_drummer:
         "logs/{project}/post_drummer_sampled_format/{native}_{control}.log",
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_drummer_sampled_format.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -585,8 +565,6 @@ rule post_psipore:
         mem_mb=1024 * 50,
     priority: 20
     threads: get_threads("default", 1)
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -638,8 +616,6 @@ rule post_nanopsu:
         mem_mb=1024 * 50,
     priority: 20
     threads: get_threads("default", 1)
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -691,8 +667,6 @@ rule post_nanomud:
         mem_mb=1024 * 50,
     priority: 20
     threads: get_threads("default", 1)
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -744,8 +718,6 @@ rule post_penguin:
         mem_mb=1024 * 50,
     priority: 20
     threads: get_threads("default", 1)
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/format.py"
 
@@ -795,8 +767,6 @@ rule post_pybaleen:
         mem_mb=1024 * 50,
     priority: 20
     threads: get_threads("default", 1)
-    conda:
-        "../envs/pandas.yaml"
     script:
         "../scripts/pybaleen_postprocess.py"
 

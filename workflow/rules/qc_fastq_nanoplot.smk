@@ -12,8 +12,6 @@ rule qc_nanoplot:
         "benchmarks/{project}/{sample}.nanoplot.benchmark.txt"
     log:
         "logs/{project}/qc/{sample}_nanoplot.log",
-    conda:
-        "../envs/nanoplot.yaml"
     resources:
         mem_mb=1024 * 20,
     priority: 50

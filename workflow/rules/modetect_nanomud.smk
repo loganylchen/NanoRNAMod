@@ -18,8 +18,6 @@ rule nanomud_predict:
         "logs/{project}/nanomud_predict/{sample}.log"
     benchmark:
         "benchmarks/{project}/{sample}.nanomud.benchmark.txt"
-    conda:
-        "../envs/nanomud.yaml"
     shell:
         "nanomud predict "
         "--bam {input.bam} "

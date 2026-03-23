@@ -39,7 +39,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
         priority: 30
         log:
             "logs/{project}/accuracy_benchmark/accuracy.log",
-        conda:
-            "../envs/pandas.yaml"
+        container:
+            get_container("pandas")
         script:
             "../scripts/accuracy_benchmark.py"

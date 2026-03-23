@@ -27,8 +27,6 @@ rule f5c_eventalign_with_readname:
         reference=config["reference"]["transcriptome_fasta"],
     benchmark:
         "benchmarks/{project}/{sample}.eventalign_full.benchmark.txt"
-    conda:
-        "../envs/f5c.yaml"
     resources:
         mem_mb=1024 * 50,
     threads: get_threads("f5c", 4)
@@ -72,8 +70,6 @@ rule f5c_eventalign_simple:
         "benchmarks/{project}/{sample}.eventalign_simple.benchmark.txt"
     resources:
         mem_mb=1024 * 50,
-    conda:
-        "../envs/f5c.yaml"
     threads: get_threads("f5c", 4)
     shell:
         "f5c eventalign -r {input.fastq} "

@@ -3,9 +3,6 @@ rule create_dict:
         config['reference']['transcriptome_fasta']
     output:
         config['reference']['transcriptome_fasta']+'.dict'
-    # Note: wrapper uses its own conda environment, disable singularity to avoid conda-in-container issue
-    container:
-        None
     log:
         "logs/picard/create_dict.log",
     params:
@@ -17,5 +14,12 @@ rule create_dict:
     resources:
         mem_mb=10240,
         disk_mb = 1024 * 10
-    wrapper:
-        "v3.10.2/bio/picard/createsequencedictionary"
+    container:
+        get_container("picard")
+    shell:
+        """
+        picard CreateSequenceDictionary \
+            R={input} \
+            O={output} \
+            {params.extra}
+        """

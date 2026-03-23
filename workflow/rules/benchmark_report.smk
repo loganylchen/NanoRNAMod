@@ -15,5 +15,7 @@ rule aggregate_benchmarks:
     priority: 30
     log:
         "logs/{project}/aggregate_benchmarks/aggregate.log",
+    container:
+        get_container("pandas")
     script:
         "../scripts/aggregate_benchmarks.py"

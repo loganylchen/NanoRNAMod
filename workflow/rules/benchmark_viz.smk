@@ -21,10 +21,8 @@ rule benchmark_visualization:
     priority: 25
     log:
         "logs/{project}/benchmark_visualization/viz.log",
-    conda:
-        "../envs/matplotlib.yaml"
     container:
-        None  # Disable singularity for this rule - uses host conda
+        get_container("matplotlib")
     script:
         "../scripts/benchmark_plots.py"
 
@@ -47,10 +45,8 @@ rule benchmark_threshold:
         "logs/{project}/benchmark_threshold/threshold.log",
     benchmark:
         "benchmarks/{project}/benchmark_threshold.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
     container:
-        None  # Disable singularity for this rule - uses host conda
+        get_container("pandas")
     script:
         "../scripts/benchmark_threshold.py"
 
@@ -73,10 +69,8 @@ rule benchmark_detailed:
         "logs/{project}/benchmark_detailed/detailed.log",
     benchmark:
         "benchmarks/{project}/benchmark_detailed.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
     container:
-        None  # Disable singularity for this rule - uses host conda
+        get_container("pandas")
     script:
         "../scripts/benchmark_detailed.py"
 
@@ -102,10 +96,8 @@ rule benchmark_multithreshold:
         "logs/{project}/benchmark_multithreshold/multithreshold.log",
     benchmark:
         "benchmarks/{project}/benchmark_multithreshold.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
     container:
-        None  # Disable singularity for this rule - uses host conda
+        get_container("pandas")
     script:
         "../scripts/benchmark_multithreshold.py"
 
@@ -129,10 +121,8 @@ rule benchmark_score_optimization:
         "logs/{project}/benchmark_score_optimization/score_optimization.log",
     benchmark:
         "benchmarks/{project}/benchmark_score_optimization.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
     container:
-        None  # Disable singularity for this rule - uses host conda
+        get_container("pandas")
     script:
         "../scripts/benchmark_score_optimization.py"
 
@@ -155,9 +145,7 @@ rule benchmark_r_figures:
     priority: 30
     log:
         "logs/{project}/benchmark_r_figures/figures.log",
-    conda:
-        "../envs/r_viz.yaml"
     container:
-        None  # Disable singularity for this rule - uses host conda
+        get_container("r_viz")
     script:
         "../scripts/R/run_all_figures.R"

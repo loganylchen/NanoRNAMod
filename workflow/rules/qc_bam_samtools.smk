@@ -14,8 +14,6 @@ rule qc_samtools:
         "benchmarks/{project}/{sample}.samtools_rnaseq.benchmark.txt"
     log:
         "logs/{project}/qc/{sample}_samtools.log",
-    conda:
-        "../envs/minimap2.yaml"
     priority: 50
     threads: get_threads("samtools", 4)
     resources:

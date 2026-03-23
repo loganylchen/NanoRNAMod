@@ -42,8 +42,6 @@ rule nanocompore_collapse:
     resources:
         mem_mb = 1024 * 50
     priority: 10
-    conda:
-        "../envs/nanocompore.yaml"
     threads: get_threads("nanocompore", 4)
     shell:
         "nanocompore eventalign_collapse "
@@ -78,8 +76,6 @@ rule nanocompore:
         stderr="logs/{project}/nanocompore/{native}_{control}.err",
     benchmark:
         "benchmarks/{project}/{native}_{control}.nanocompore.benchmark.txt"
-    conda:
-        "../envs/nanocompore.yaml"
     shell:
         "nanocompore sampcomp "
         "--file_list1 {input.control_file} "

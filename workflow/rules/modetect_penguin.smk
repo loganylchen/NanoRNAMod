@@ -17,8 +17,6 @@ rule penguin_predict:
         "logs/{project}/penguin_predict/{sample}.log"
     benchmark:
         "benchmarks/{project}/{sample}.penguin.benchmark.txt"
-    conda:
-        "../envs/penguin.yaml"
     shell:
         "penguin predict "
         "--bam {input.bam} "
