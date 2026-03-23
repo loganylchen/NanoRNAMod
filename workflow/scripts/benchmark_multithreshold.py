@@ -97,14 +97,27 @@ def detect_score_column(df, tool_name=None):
 
 
 def is_pvalue_column(col_name, tool_name=None):
-    """Determine if a column is a p-value (lower=better) or score (higher=better)."""
+    """
+    Determine if a column contains raw p-values that need -log10 transformation.
+
+    Returns True if the column is a raw p-value (smaller=better) that should
+    be transformed to -log10(p-value) for uniform "higher=better" comparison.
+
+    Returns False if the column is already:
+    - A probability/score (higher=better)
+    - Already -log10 transformed (higher=better)
+    """
     if not col_name:
         return False
 
     col_lower = col_name.lower().replace(' ', '_')
 
-    # Explicit p-value indicators
-    if any(x in col_lower for x in ['p_value', 'pvalue', 'pval', 'fdr', 'qval']):
+    # Already -log10 transformed columns are higher=better, no transformation needed
+    if '-log10' in col_lower:
+        return False
+
+    # Explicit p-value indicators (raw p-values, need transformation)
+    if any(x in col_lower for x in ['p_value', 'pvalue', 'pval', 'fdr', 'qval', 'padj', 'adj_p']):
         return True
 
     # Tool-specific heuristics
@@ -113,12 +126,36 @@ def is_pvalue_column(col_name, tool_name=None):
     if tool_name == 'nanocompore' and 'pvalue' in col_lower:
         return True
     if tool_name == 'differr' and '-log10' in col_lower:
-        return False  # -log10 is higher=better
+        return False  # -log10 is already higher=better
     if tool_name in ['tandemmod', 'directrm', 'm6atm', 'rnano'] and 'probability' in col_lower:
         return False
 
     # Default: assume higher is better for score/probability columns
     return False
+
+
+def transform_pvalue_to_log10(scores, is_pvalue):
+    """
+    Transform p-values to -log10(p-values) for uniform "higher=better" comparison.
+
+    Args:
+        scores: Series of score values
+        is_pvalue: Whether these are raw p-values
+
+    Returns:
+        Transformed scores (if is_pvalue) or original scores
+    """
+    if not is_pvalue:
+        return scores
+
+    # Convert to numeric
+    scores_numeric = pd.to_numeric(scores, errors='coerce')
+
+    # Transform: -log10(p-value), handling edge cases
+    # Clamp p-values to avoid log(0)
+    scores_numeric = scores_numeric.clip(lower=1e-300)
+
+    return -np.log10(scores_numeric)
 
 
 def generate_thresholds(scores, n_thresholds=50, min_thresholds=10, custom_thresholds=None):
@@ -458,23 +495,62 @@ def main():
             if pred_subset.empty or score_col not in pred_subset.columns:
                 continue
 
-            # Generate thresholds from score distribution
-            scores = pred_subset[score_col]
-            thresholds = generate_thresholds(scores, n_thresholds=n_thresholds,
-                                            custom_thresholds=custom_thresholds)
+            # Transform p-values to -log10 scale for uniform "higher=better" comparison
+            if is_pvalue:
+                # Create a new column for transformed scores
+                transformed_col = f'{score_col}_log10'
+                # Convert to numeric and apply -log10 transformation
+                pred_subset[transformed_col] = pd.to_numeric(
+                    pred_subset[score_col], errors='coerce'
+                ).clip(lower=1e-300)
+                # Apply -log10 transformation
+                pred_subset[transformed_col] = -np.log10(pred_subset[transformed_col])
 
-            for window in windows:
-                eval_records, optimal_record, dist_record = evaluate_tool_at_thresholds(
-                    pred_subset, truth_subset, tool, mod_type,
-                    score_col, is_pvalue, thresholds, window
-                )
+                # Generate thresholds from transformed scores (higher is better)
+                transformed_scores = pred_subset[transformed_col].dropna()
+                thresholds = generate_thresholds(transformed_scores, n_thresholds=n_thresholds,
+                                                custom_thresholds=custom_thresholds)
 
-                all_eval_records.extend(eval_records)
-                if optimal_record:
-                    all_optimal_records.append(optimal_record)
-                if dist_record:
-                    dist_record['window'] = window
-                    all_dist_records.append(dist_record)
+                # Use transformed column for evaluation (is_pvalue=False after transformation)
+                for window in windows:
+                    eval_records, optimal_record, dist_record = evaluate_tool_at_thresholds(
+                        pred_subset, truth_subset, tool, mod_type,
+                        transformed_col, False,  # is_pvalue=False after transformation
+                        thresholds, window
+                    )
+
+                    # Add original score column info for reporting
+                    for rec in eval_records:
+                        rec['original_score_column'] = score_col
+                        # Convert threshold back to original p-value for reference
+                        rec['original_threshold'] = 10 ** (-rec['threshold']) if rec['threshold'] else np.nan
+
+                    all_eval_records.extend(eval_records)
+                    if optimal_record:
+                        optimal_record['original_score_column'] = score_col
+                        optimal_record['original_threshold'] = 10 ** (-optimal_record['threshold']) if optimal_record['threshold'] else np.nan
+                        all_optimal_records.append(optimal_record)
+                    if dist_record:
+                        dist_record['window'] = window
+                        dist_record['original_score_column'] = score_col
+                        all_dist_records.append(dist_record)
+            else:
+                # Not a p-value column, use original scores
+                thresholds = generate_thresholds(pred_subset[score_col], n_thresholds=n_thresholds,
+                                                custom_thresholds=custom_thresholds)
+
+                for window in windows:
+                    eval_records, optimal_record, dist_record = evaluate_tool_at_thresholds(
+                        pred_subset, truth_subset, tool, mod_type,
+                        score_col, False, thresholds, window
+                    )
+
+                    all_eval_records.extend(eval_records)
+                    if optimal_record:
+                        all_optimal_records.append(optimal_record)
+                    if dist_record:
+                        dist_record['window'] = window
+                        all_dist_records.append(dist_record)
 
     # Write outputs
     if all_eval_records:
@@ -487,7 +563,8 @@ def main():
     else:
         eval_df = pd.DataFrame(columns=[
             'tool', 'modification_type', 'window', 'score_column', 'is_pvalue',
-            'threshold', 'tp', 'fp', 'fn', 'precision', 'recall', 'f1', 'predictions'
+            'threshold', 'tp', 'fp', 'fn', 'precision', 'recall', 'f1', 'predictions',
+            'original_score_column', 'original_threshold'
         ])
 
     if all_optimal_records:
@@ -499,7 +576,8 @@ def main():
     else:
         optimal_df = pd.DataFrame(columns=[
             'tool', 'modification_type', 'window', 'score_column', 'is_pvalue',
-            'optimal_threshold', 'optimal_f1', 'precision', 'recall', 'tp', 'fp', 'fn', 'criterion'
+            'threshold', 'f1', 'precision', 'recall', 'tp', 'fp', 'fn', 'criterion',
+            'original_score_column', 'original_threshold'
         ])
 
     if all_dist_records:
@@ -508,7 +586,8 @@ def main():
     else:
         dist_df = pd.DataFrame(columns=[
             'tool', 'modification_type', 'score_column', 'is_pvalue',
-            'count', 'min', 'max', 'mean', 'std', 'median', 'q25', 'q75'
+            'count', 'min', 'max', 'mean', 'std', 'median', 'q25', 'q75',
+            'window', 'original_score_column'
         ])
 
     eval_df.to_csv(output_eval, sep='\t', index=False)
