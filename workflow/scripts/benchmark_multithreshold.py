@@ -29,6 +29,15 @@ def tool_from_path(path):
     return os.path.basename(os.path.dirname(os.path.dirname(path)))
 
 
+def comparison_from_path(path):
+    """Extract comparison name (Native_Control pair) from path."""
+    parts = path.split(os.sep)
+    for i, part in enumerate(parts):
+        if part == "modifications" and i + 2 < len(parts):
+            return parts[i + 2]
+    return "unknown"
+
+
 def normalize_columns(df):
     """Map various column names to standard 'transcript' and 'position'."""
     col_mapping = {}
@@ -443,12 +452,17 @@ def main():
     tool_dfs = {}
     tool_score_cols = {}
     tool_is_pvalue = {}
+    tool_comparisons = {}  # Track comparisons per tool
 
     for f in result_files:
         tool = tool_from_path(f)
+        comparison = comparison_from_path(f)
         try:
             df = pd.read_csv(f, sep='\t')
             df = normalize_columns(df)
+
+            # Add comparison column to track source
+            df['_comparison'] = comparison
 
             if 'transcript' in df.columns and 'position' in df.columns:
                 score_col = detect_score_column(df, tool)
@@ -457,7 +471,9 @@ def main():
                         tool_dfs[tool] = []
                         tool_score_cols[tool] = score_col
                         tool_is_pvalue[tool] = is_pvalue_column(score_col, tool)
+                        tool_comparisons[tool] = set()
                     tool_dfs[tool].append(df)
+                    tool_comparisons[tool].add(comparison)
         except Exception as e:
             print(f"Warning: could not read {f}: {e}")
 

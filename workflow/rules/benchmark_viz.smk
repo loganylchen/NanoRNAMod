@@ -149,3 +149,27 @@ rule benchmark_r_figures:
         get_container("r_viz")
     script:
         "../scripts/R/run_all_figures.R"
+
+
+rule benchmark_pdf_report:
+    """Generate comprehensive PDF report with overall, per-comparison, and per-tool analysis."""
+    input:
+        accuracy="{project}/results/benchmarks/accuracy_summary.tsv",
+        accuracy_overall="{project}/results/benchmarks/accuracy_summary_overall.tsv",
+        thresholds="{project}/results/benchmarks/threshold_evaluation.tsv",
+        optimal="{project}/results/benchmarks/optimal_thresholds_detailed.tsv",
+        distributions="{project}/results/benchmarks/score_distributions.tsv",
+    output:
+        pdf="{project}/results/benchmarks/benchmark_report.pdf",
+    params:
+        benchmark_dir="{project}/results/benchmarks",
+    resources:
+        mem_mb=1024 * 8,
+    threads: 1
+    priority: 35
+    log:
+        "logs/{project}/benchmark_pdf_report/report.log",
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_pdf_report.py"
