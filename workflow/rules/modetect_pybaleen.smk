@@ -6,9 +6,25 @@ rule pybaleen_run:
         native_bam="{project}/results/alignments/{native}.bam",
         native_fastq="{project}/results/fastq/{native}.fq.gz",
         native_blow5="{project}/results/blow5/{native}.blow5",
+        native_blow5_index="{project}/results/blow5/{native}.blow5.idx",
+        native_fastq_index=multiext(
+            "{project}/results/fastq/{native}.fq.gz",
+            ".index",
+            ".index.fai",
+            ".index.gzi",
+            ".index.readdb",
+        ),
         control_bam="{project}/results/alignments/{control}.bam",
         control_fastq="{project}/results/fastq/{control}.fq.gz",
         control_blow5="{project}/results/blow5/{control}.blow5",
+        control_blow5_index="{project}/results/blow5/{control}.blow5.idx",
+        control_fastq_index=multiext(
+            "{project}/results/fastq/{control}.fq.gz",
+            ".index",
+            ".index.fai",
+            ".index.gzi",
+            ".index.readdb",
+        ),
         ref=config["reference"]["transcriptome_fasta"],
     output:
         result=KEEP_OR_NOT(
