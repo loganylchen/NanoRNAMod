@@ -3,10 +3,10 @@
 
 rule pybaleen_run:
     input:
-        native_bam="{project}/results/bam/{native}_transcriptome.bam",
+        native_bam="{project}/results/alignments/{native}.bam",
         native_fastq="{project}/results/fastq/{native}.fq.gz",
         native_blow5="{project}/results/blow5/{native}.blow5",
-        control_bam="{project}/results/bam/{control}_transcriptome.bam",
+        control_bam="{project}/results/alignments/{control}.bam",
         control_fastq="{project}/results/fastq/{control}.fq.gz",
         control_blow5="{project}/results/blow5/{control}.blow5",
         ref=config["reference"]["transcriptome_fasta"],
