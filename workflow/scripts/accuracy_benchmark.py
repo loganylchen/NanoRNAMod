@@ -108,59 +108,120 @@ def normalize_columns(df):
 
 # ── Helper: detect score column in dataframe ───────────────────────────────
 def detect_score_column(df, tool_name=None):
-    """Detect the most likely score column for ranking predictions."""
-    # Tool-specific score columns (in order of preference)
-    tool_score_map = {
-        'xpore': ['p_value', 'diff_mod', 'diff_mod_frac', 'mod_ratio'],
-        'nanocompore': ['pvalue', 'logit_pvalue', 'logit', 'p_value', 'coverage'],
-        'baleen': ['mod_score', 'score', 'kmer_score'],  # old baleen (Baleen.py dataprep/modcall/postcall)
-        'baleen_old': ['mod_score', 'score', 'kmer_score'],  # alias for old baleen
-        'differr': ['-log10 P value', '-log10_pvalue', 'score', 'pvalue'],
-        'eligos2': ['pvalue', 'p_value', 'esb', 'oddsR'],
-        'epinano': ['z_score_prediction', 'z_scores', 'delta_sum_err'],
-        'drummer': ['p_value', 'pvalue', 'z_score'],
-        'psipore': ['pvalue', 'p_value', 'score'],
-        'tandemmod': ['probability', 'prob', 'score', 'mod_prob'],
-        'directrm': ['probability', 'prob', 'mod_prob'],
-        'm6atm': ['stoichiometry', 'probability', 'prob'],
-        'rnano': ['probability', 'score', 'prob'],
-        'nanopsu': ['pvalue', 'p_value', 'score'],
-        'nanomud': ['probability', 'pvalue', 'score'],
-        'penguin': ['probability', 'score', 'pvalue'],
-        'pybaleen': ['mean_p_mod', 'stoichiometry', 'pvalue', 'p_value', 'score'],  # new baleen (baleen run with HMM)
+    """Detect the most likely score column for ranking predictions.
+
+    Score column priority per tool:
+    - P-value columns: lower is better (converted to -log10 for ranking)
+    - Probability/score columns: higher is better
+
+    Column names are matched using:
+    1. Exact match
+    2. Case-insensitive match
+    3. Substring match (for columns with prefixes/suffixes like pval_CASE_vs_CONTROL)
+    """
+    # Tool-specific score column patterns (in order of preference)
+    # Based on documented tool outputs from tools_comparison.md and actual output files
+    # Priority: p-value/adjusted p-value first (for comparative tools),
+    #           then probability/score (for ML tools)
+    tool_score_patterns = {
+        # Signal-based comparative tools
+        # xPore output: transcript, position, kmer, statistic, p_value, adjusted_p_value, direction
+        'xpore': ['p_value', 'adjusted_p_value', 'statistic', 'pval', 'padj'],
+        # Nanocompore output: transcript, position, ref_kmer, coverage, p_value, p_value_glm, p_value_ks, pass_glm, pass_ks
+        'nanocompore': ['p_value_glm', 'p_value_ks', 'p_value', 'GMM_logit_pvalue', 'KS_dwell_pvalue', 'KS_intensity_pvalue'],
+        # Baleen output: transcript, position, pvalue, padj, effect_size, mod_type
+        'baleen': ['pvalue', 'padj', 'effect_size', 'score'],
+        # pyBaleen output: transcript, position, pvalue, padj, effect_size
+        'pybaleen': ['pvalue', 'padj', 'effect_size', 'p_value', 'adjusted_p_value', 'stoichiometry'],
+
+        # Error-based comparative tools
+        # DiffErr output (from format.py): -log10 P value, -log10 FDR, odds ratio, G statistic
+        'differr': ['-log10 P value', '-log10 FDR', 'odds ratio', 'G statistic', 'score'],
+        # DRUMMER output: various statistical columns
+        'drummer': ['p_value', 'pvalue', 'padj', 'OR_padj', 'G_padj', 'odds_ratio', 'log2_(OR)'],
+        # ELIGOS2 output: chr, start, end, ref_base, coverage, error_rate, p_value, q_value
+        'eligos2': ['p_value', 'q_value', 'error_rate', 'pvalue', 'qvalue'],
+        # EpiNano output (from format.py): chrom, pos, ref, strand, ko_feature, wt_feature, delta_sum_err, z_scores, z_score_prediction
+        'epinano': ['z_scores', 'delta_sum_err', 'z_score_prediction', 'score'],
+        # psipore output: transcript, position, psi_score, p_value, coverage
+        'psipore': ['p_value', 'psi_score', 'pvalue', 'score'],
+
+        # Single-sample ML/DL tools
+        # TandemMod output: transcript, position, modification, probability, stoichiometry
+        'tandemmod': ['probability', 'stoichiometry', 'prob', 'score'],
+        # DirectRM output: transcript, position, modification, probability
+        'directrm': ['probability', 'prob', 'score'],
+        # m6ATM output: transcript, position, probability, stoichiometry
+        'm6atm': ['probability', 'stoichiometry', 'prob', 'score'],
+        # Rnano output: transcript, position, modification, probability
+        'rnano': ['probability', 'prob', 'score'],
+        # NanoPSU output: transcript, position, psi_probability, coverage
+        'nanopsu': ['psi_probability', 'probability', 'pvalue', 'score'],
+        # NanoMUD output: transcript, position, modification, probability, coverage
+        'nanomud': ['probability', 'pvalue', 'p_value', 'score'],
+        # Penguin output: transcript, position, psi_probability, score
+        'penguin': ['psi_probability', 'probability', 'score', 'pvalue'],
     }
 
-    # If tool name is provided, try tool-specific columns first
-    if tool_name and tool_name in tool_score_map:
-        for col in tool_score_map[tool_name]:
-            # Try exact match
-            if col in df.columns:
+    def match_column(df_columns, pattern):
+        """Match a pattern against dataframe columns using multiple strategies."""
+        pattern_lower = pattern.lower().replace(' ', '_')
+
+        # 1. Exact match
+        if pattern in df_columns:
+            return pattern
+
+        # 2. Case-insensitive exact match
+        for col in df_columns:
+            if col.lower().replace(' ', '_') == pattern_lower:
                 return col
-            # Try case-insensitive match
-            for df_col in df.columns:
-                if df_col.lower() == col.lower():
-                    return df_col
+
+        # 3. Substring match (pattern is contained in column name)
+        for col in df_columns:
+            col_lower = col.lower().replace(' ', '_')
+            if pattern_lower in col_lower:
+                return col
+
+        # 4. Reverse substring match (column name is contained in pattern)
+        for col in df_columns:
+            col_lower = col.lower().replace(' ', '_')
+            if col_lower in pattern_lower:
+                return col
+
+        return None
+
+    df_columns = list(df.columns)
+    print(f"[DEBUG] detect_score_column for {tool_name}: columns = {df_columns}")
+
+    # If tool name is provided, try tool-specific columns first
+    if tool_name and tool_name in tool_score_patterns:
+        print(f"[DEBUG] {tool_name}: trying tool-specific patterns: {tool_score_patterns[tool_name]}")
+        for pattern in tool_score_patterns[tool_name]:
+            matched = match_column(df_columns, pattern)
+            if matched:
+                print(f"[DEBUG] {tool_name}: matched pattern '{pattern}' -> column '{matched}'")
+                return matched
+        print(f"[DEBUG] {tool_name}: no tool-specific patterns matched")
 
     # Generic score columns (fallback)
-    generic_score_cols = [
+    print(f"[DEBUG] {tool_name}: falling back to generic patterns")
+    generic_patterns = [
         'p_value', 'pvalue', 'pval', '-log10_pvalue', '-log10 P value',
         'score', 'probability', 'prob', 'mod_score', 'mod_prob',
         'logit_pvalue', 'logit', 'z_score', 'z_scores'
     ]
 
-    for col in generic_score_cols:
-        # Try exact match
-        if col in df.columns:
-            return col
-        # Try case-insensitive match
-        for df_col in df.columns:
-            if df_col.lower().replace(' ', '_') == col.lower().replace(' ', '_'):
-                return df_col
+    for pattern in generic_patterns:
+        matched = match_column(df_columns, pattern)
+        if matched:
+            print(f"[DEBUG] {tool_name}: matched generic pattern '{pattern}' -> column '{matched}'")
+            return matched
 
+    print(f"[DEBUG] {tool_name}: No score column found in columns: {df_columns}")
     return None
 
 # ── Helper: compute AUPRC and AUROC ───────────────────────────────────────
-def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_col, window=0):
+def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_col, window=0, tool_name="unknown"):
     """
     Compute AUPRC and AUROC given predictions with scores.
 
@@ -168,19 +229,27 @@ def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_c
     Score is converted to -log10(p-value) if it's a p-value column.
     """
     if score_col is None or pred_df.empty:
+        print(f"[DEBUG] {tool_name}: No score column or empty predictions")
         return np.nan, np.nan
 
     # Check if score column exists and has valid values
     if score_col not in pred_df.columns:
+        print(f"[DEBUG] {tool_name}: Score column '{score_col}' not found in columns: {list(pred_df.columns)}")
         return np.nan, np.nan
 
     # Determine if this is a p-value column (needs -log10 transformation)
+    # Note: columns already containing '-log10' are pre-transformed (higher = better)
     score_col_lower = score_col.lower().replace(' ', '_')
-    is_pvalue_col = any(x in score_col_lower for x in ['p_value', 'pvalue', 'pval'])
+    is_log_transformed = '-log10' in score_col_lower or 'log10_pvalue' in score_col_lower
+    is_pvalue_col = not is_log_transformed and any(x in score_col_lower for x in ['p_value', 'pvalue', 'pval', 'padj', 'q_value', 'qval', 'fdr', 'adj'])
+
+    print(f"[DEBUG] {tool_name}: Using score column '{score_col}' (pvalue={is_pvalue_col}, log_transformed={is_log_transformed})")
 
     # Create labels and scores arrays
     labels = []
     scores = []
+    nan_count = 0
+    non_numeric_count = 0
 
     for _, pred_row in pred_df.iterrows():
         tx = pred_row['transcript']
@@ -189,10 +258,12 @@ def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_c
 
         # Skip if score is NaN or non-numeric
         if pd.isna(raw_score):
+            nan_count += 1
             continue
         try:
             raw_score = float(raw_score)
         except (ValueError, TypeError):
+            non_numeric_count += 1
             continue
 
         # Convert p-value to -log10(p-value) for ranking (higher = better)
@@ -214,16 +285,25 @@ def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_c
         labels.append(1 if is_positive else 0)
         scores.append(score)
 
+    n_valid = len(scores)
+    n_positive = sum(labels)
+    n_negative = n_valid - n_positive
+
+    print(f"[DEBUG] {tool_name}: {n_valid} valid scores (NaN={nan_count}, non-numeric={non_numeric_count}), positives={n_positive}, negatives={n_negative}")
+
     # Need at least one positive and one negative sample
     if len(set(labels)) < 2 or len(scores) == 0:
+        print(f"[DEBUG] {tool_name}: Cannot compute metrics - need at least 1 positive and 1 negative sample")
         return np.nan, np.nan
 
     try:
         from sklearn.metrics import roc_auc_score, average_precision_score
         auroc = roc_auc_score(labels, scores)
         auprc = average_precision_score(labels, scores)
+        print(f"[DEBUG] {tool_name}: Successfully computed AUROC={auroc:.4f}, AUPRC={auprc:.4f}")
         return auprc, auroc
     except Exception as e:
+        print(f"[DEBUG] {tool_name}: Error computing metrics: {e}")
         return np.nan, np.nan
 
 # ── Load all tool results (preserving all columns for scores) ────────────────
@@ -382,7 +462,7 @@ for tool, pred_df in tool_dfs.items():
 
             # AUPRC and AUROC (only if score column exists)
             auprc, auroc = compute_ranking_metrics(
-                pred_subset, truth_subset, truth_neg_subset, score_col, window
+                pred_subset, truth_subset, truth_neg_subset, score_col, window, tool_name=tool
             )
 
             records.append({

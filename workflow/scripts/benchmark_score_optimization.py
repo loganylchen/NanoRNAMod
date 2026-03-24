@@ -50,24 +50,47 @@ def normalize_columns(df):
     return df
 
 
-# Tool-specific score columns to evaluate
+# Tool-specific score columns to evaluate (in priority order)
+# Based on documented tool outputs from tools_comparison.md and format.py
+# Priority: p-value/adjusted p-value first, then other metrics
 TOOL_SCORE_COLUMNS = {
-    'xpore': ['p_value', 'diff_mod', 'diff_mod_frac', 'mod_ratio'],
-    'nanocompore': ['pvalue', 'logit_pvalue', 'logit', 'p_value', 'coverage'],
-    'baleen': ['mod_score', 'score', 'kmer_score'],
-    'differr': ['-log10 P value', '-log10_pvalue', 'score', 'pvalue'],
-    'eligos2': ['pvalue', 'p_value', 'esb', 'oddsR'],
-    'epinano': ['z_score_prediction', 'z_scores', 'delta_sum_err'],
-    'drummer': ['p_value', 'pvalue', 'z_score'],
-    'psipore': ['pvalue', 'p_value', 'score'],
-    'tandemmod': ['probability', 'prob', 'score', 'mod_prob'],
-    'directrm': ['probability', 'prob', 'mod_prob'],
-    'm6atm': ['stoichiometry', 'probability', 'prob'],
-    'rnano': ['probability', 'score', 'prob'],
-    'nanopsu': ['pvalue', 'p_value', 'score'],
-    'nanomud': ['probability', 'pvalue', 'score'],
-    'penguin': ['probability', 'score', 'pvalue'],
-    'pybaleen': ['mod_score', 'score'],
+    # Signal-based comparative tools
+    # xPore output: transcript, position, kmer, statistic, p_value, adjusted_p_value, direction
+    'xpore': ['p_value', 'adjusted_p_value', 'statistic', 'pval', 'padj'],
+    # Nanocompore output: transcript, position, ref_kmer, coverage, p_value, p_value_glm, p_value_ks, pass_glm, pass_ks
+    'nanocompore': ['p_value_glm', 'p_value_ks', 'p_value', 'GMM_logit_pvalue', 'KS_dwell_pvalue', 'KS_intensity_pvalue'],
+    # Baleen output: transcript, position, pvalue, padj, effect_size, mod_type
+    'baleen': ['pvalue', 'padj', 'effect_size', 'score'],
+    # pyBaleen output: transcript, position, pvalue, padj, effect_size
+    'pybaleen': ['pvalue', 'padj', 'effect_size', 'p_value', 'adjusted_p_value', 'stoichiometry'],
+
+    # Error-based comparative tools
+    # DiffErr output (from format.py): -log10 P value, -log10 FDR, odds ratio, G statistic
+    'differr': ['-log10 P value', '-log10 FDR', 'odds ratio', 'G statistic', 'score'],
+    # DRUMMER output: various statistical columns
+    'drummer': ['p_value', 'pvalue', 'padj', 'OR_padj', 'G_padj', 'odds_ratio', 'log2_(OR)'],
+    # ELIGOS2 output: chr, start, end, ref_base, coverage, error_rate, p_value, q_value
+    'eligos2': ['p_value', 'q_value', 'error_rate', 'pvalue', 'qvalue'],
+    # EpiNano output (from format.py): chrom, pos, ref, strand, ko_feature, wt_feature, delta_sum_err, z_scores, z_score_prediction
+    'epinano': ['z_scores', 'delta_sum_err', 'z_score_prediction', 'score'],
+    # psipore output: transcript, position, psi_score, p_value, coverage
+    'psipore': ['p_value', 'psi_score', 'pvalue', 'score'],
+
+    # Single-sample ML/DL tools
+    # TandemMod output: transcript, position, modification, probability, stoichiometry
+    'tandemmod': ['probability', 'stoichiometry', 'prob', 'score'],
+    # DirectRM output: transcript, position, modification, probability
+    'directrm': ['probability', 'prob', 'score'],
+    # m6ATM output: transcript, position, probability, stoichiometry
+    'm6atm': ['probability', 'stoichiometry', 'prob', 'score'],
+    # Rnano output: transcript, position, modification, probability
+    'rnano': ['probability', 'prob', 'score'],
+    # NanoPSU output: transcript, position, psi_probability, coverage
+    'nanopsu': ['psi_probability', 'probability', 'pvalue', 'score'],
+    # NanoMUD output: transcript, position, modification, probability, coverage
+    'nanomud': ['probability', 'pvalue', 'p_value', 'score'],
+    # Penguin output: transcript, position, psi_probability, score
+    'penguin': ['psi_probability', 'probability', 'score', 'pvalue'],
 }
 
 
@@ -76,34 +99,59 @@ def get_available_score_columns(df, tool_name=None):
     Get all available score columns for a tool.
 
     Returns a list of (column_name, is_pvalue) tuples.
+    Uses substring matching to handle columns with prefixes/suffixes.
     """
     available = []
+    df_columns = list(df.columns)
+    print(f"[DEBUG] get_available_score_columns for {tool_name}: columns = {df_columns}")
 
     if tool_name and tool_name in TOOL_SCORE_COLUMNS:
-        potential_cols = TOOL_SCORE_COLUMNS[tool_name]
+        potential_patterns = TOOL_SCORE_COLUMNS[tool_name]
+        print(f"[DEBUG] {tool_name}: using tool-specific patterns: {potential_patterns}")
     else:
         # Generic score columns if tool not recognized
-        potential_cols = [
+        potential_patterns = [
             'p_value', 'pvalue', 'pval', '-log10_pvalue', '-log10 P value',
             'score', 'probability', 'prob', 'mod_score', 'mod_prob',
             'logit_pvalue', 'logit', 'z_score', 'z_scores', 'esb', 'oddsR',
             'diff_mod', 'diff_mod_frac', 'mod_ratio', 'stoichiometry',
-            'kmer_score', 'delta_sum_err', 'z_score_prediction', 'coverage'
+            'kmer_score', 'delta_sum_err', 'z_score_prediction', 'coverage',
+            'psi_probability', 'psi_score', 'effect_size', 'mean_p_mod',
+            'adjusted_p_value', 'padj', 'q_value', 'statistic',
         ]
 
-    for col in potential_cols:
-        # Check for exact match
-        if col in df.columns:
-            is_pval = is_pvalue_column(col, tool_name)
-            available.append((col, is_pval))
-            continue
+    def match_column(pattern):
+        """Match a pattern against dataframe columns using multiple strategies."""
+        pattern_lower = pattern.lower().replace(' ', '_')
 
-        # Check for case-insensitive match
-        for df_col in df.columns:
-            if df_col.lower() == col.lower():
-                is_pval = is_pvalue_column(df_col, tool_name)
-                available.append((df_col, is_pval))
-                break
+        # 1. Exact match
+        if pattern in df_columns:
+            return pattern
+
+        # 2. Case-insensitive exact match
+        for col in df_columns:
+            if col.lower().replace(' ', '_') == pattern_lower:
+                return col
+
+        # 3. Substring match (pattern is contained in column name)
+        for col in df_columns:
+            col_lower = col.lower().replace(' ', '_')
+            if pattern_lower in col_lower:
+                return col
+
+        # 4. Reverse substring match (column name is contained in pattern)
+        for col in df_columns:
+            col_lower = col.lower().replace(' ', '_')
+            if col_lower in pattern_lower:
+                return col
+
+        return None
+
+    for pattern in potential_patterns:
+        matched = match_column(pattern)
+        if matched and matched not in [a[0] for a in available]:
+            is_pval = is_pvalue_column(matched, tool_name)
+            available.append((matched, is_pval))
 
     return available
 
@@ -111,32 +159,37 @@ def get_available_score_columns(df, tool_name=None):
 def is_pvalue_column(col_name, tool_name=None):
     """
     Determine if a column is a p-value (lower=better) or score (higher=better).
+
+    Returns:
+        True if lower values indicate more significant findings (p-values)
+        False if higher values indicate more significant findings (scores, probabilities)
     """
     if not col_name:
         return False
 
     col_lower = col_name.lower().replace(' ', '_')
 
-    # Explicit p-value indicators
-    if any(x in col_lower for x in ['p_value', 'pvalue', 'pval', 'fdr', 'qval']):
-        return True
-
     # -log10 columns are higher-is-better (negative log of p-value)
     if '-log10' in col_lower:
         return False
 
-    # Tool-specific heuristics
-    if tool_name == 'differr' and '-log10' in col_lower:
-        return False  # -log10 is higher=better
-    if tool_name in ['tandemmod', 'directrm', 'm6atm', 'rnano', 'nanomud', 'penguin']:
-        if 'probability' in col_lower or 'prob' in col_lower:
-            return False
-    if tool_name == 'xpore' and 'diff_mod' in col_lower:
-        return False  # diff_mod is higher=better
-    if tool_name == 'xpore' and 'mod_ratio' in col_lower:
+    # Explicit p-value indicators (lower is better)
+    if any(x in col_lower for x in ['p_value', 'pvalue', 'pval', 'padj', 'adjusted_p_value', 'fdr', 'q_value', 'qval']):
+        return True
+
+    # Probability columns (higher = more modification, better)
+    if any(x in col_lower for x in ['probability', 'prob', 'psi_probability', 'mean_p_mod']):
         return False
 
-    # Logit values: higher means more significant (lower p-value equivalent)
+    # Stoichiometry (higher = more modification)
+    if 'stoichiometry' in col_lower:
+        return False
+
+    # Effect size (higher = larger difference = more modification)
+    if 'effect_size' in col_lower:
+        return False
+
+    # Logit values: higher means more significant
     if 'logit' in col_lower:
         return False
 
@@ -145,7 +198,11 @@ def is_pvalue_column(col_name, tool_name=None):
         return False
 
     # Score columns typically higher=better
-    if 'score' in col_lower:
+    if 'score' in col_lower or 'psi_score' in col_lower:
+        return False
+
+    # Error-based metrics (delta, diff): higher absolute = more difference
+    if 'delta' in col_lower or 'diff_mod' in col_lower or 'mod_ratio' in col_lower:
         return False
 
     # Default: assume higher is better
