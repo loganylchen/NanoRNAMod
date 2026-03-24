@@ -40,8 +40,11 @@ COMPARISON_TOOLS = [
 
 PER_SAMPLE_TOOLS = ['tandemmod', 'directrm', 'm6atm', 'rnano', 'penguin']
 
-# Tools that need eventalign (signal-based)
-SIGNAL_TOOLS = ['nanocompore', 'baleen', 'pybaleen', 'xpore', 'psipore', 'nanopsu', 'nanomud']
+# Tools that need eventalign (signal-based, use pre-processed eventalign TSV)
+SIGNAL_TOOLS = ['nanocompore', 'baleen', 'xpore', 'psipore', 'nanopsu', 'nanomud']
+
+# Tools that need f5c index (read raw signal files directly)
+F5C_INDEX_TOOLS = ['pybaleen']
 
 # Tools that only need alignment
 ALIGNMENT_TOOLS = ['differr', 'drummer', 'eligos2', 'epinano', 'tandemmod', 'directrm', 'm6atm', 'rnano', 'penguin']
@@ -78,7 +81,7 @@ def parse_benchmark_filename(filename):
 
 def categorize_rule(rule_name):
     """
-    Categorize a rule into: modification_tool, alignment, eventalign, or other.
+    Categorize a rule into: modification_tool, alignment, eventalign, f5c_index, or other.
     """
     rule_lower = rule_name.lower()
 
@@ -90,6 +93,10 @@ def categorize_rule(rule_name):
     # Check if it's alignment
     if any(x in rule_lower for x in ['minimap2', 'alignment', 'align']):
         return ('alignment', 'minimap2')
+
+    # Check if it's f5c index (must check before eventalign since both contain 'f5c')
+    if 'f5c_index' in rule_lower or ('f5c' in rule_lower and 'index' in rule_lower):
+        return ('f5c_index', 'f5c')
 
     # Check if it's eventalign
     if any(x in rule_lower for x in ['eventalign', 'f5c']):
@@ -106,12 +113,18 @@ def get_tool_dependencies(tool_name):
     """
     Get the prerequisite rule categories for a modification tool.
 
-    Returns list of categories: ['link', 'alignment', 'eventalign'] (if signal-based)
+    Returns list of categories: ['link', 'alignment', ...] + additional deps based on tool type
     """
     dependencies = ['link', 'alignment']
 
-    if tool_name.lower() in [t.lower() for t in SIGNAL_TOOLS]:
+    tool_lower = tool_name.lower()
+
+    if tool_lower in [t.lower() for t in SIGNAL_TOOLS]:
+        # Tools that use pre-processed eventalign TSV
         dependencies.append('eventalign')
+    elif tool_lower in [t.lower() for t in F5C_INDEX_TOOLS]:
+        # Tools that read raw signal files directly (need f5c index)
+        dependencies.append('f5c_index')
 
     return dependencies
 
@@ -203,10 +216,17 @@ def aggregate_by_tool_with_dependencies(df):
                     if metric in event_df.columns:
                         row[f'{metric}_eventalign'] = event_df[metric].sum()
 
+            # f5c_index resources (if applicable - for tools that read raw signal directly)
+            if 'f5c_index' in dependencies:
+                index_df = sample_df[sample_df['rule_category'] == 'f5c_index']
+                for metric in metrics:
+                    if metric in index_df.columns:
+                        row[f'{metric}_f5c_index'] = index_df[metric].sum()
+
             # Calculate total (tool + dependencies)
             for metric in metrics:
                 total = 0
-                for suffix in ['_tool', '_alignment', '_eventalign']:
+                for suffix in ['_tool', '_alignment', '_eventalign', '_f5c_index']:
                     key = f'{metric}{suffix}'
                     if key in row and pd.notna(row[key]):
                         total += row[key]
@@ -277,14 +297,35 @@ def create_resource_visualization(agg_df, output_path):
         fig, ax = plt.subplots(figsize=(14, 8))
 
         # Calculate mean time by tool and component
-        components = ['tool', 'alignment', 'eventalign']
+        # Note: f5c_index is for tools that read raw signal directly (pybaleen)
+        # eventalign is for tools that use pre-processed signal TSV
+        components = ['tool', 'alignment', 'eventalign', 'f5c_index']
         time_cols = [f's_{c}' for c in components]
 
-        mean_times = agg_df.groupby('tool')[time_cols].mean() / 60  # to minutes
+        # Filter to only columns that exist
+        available_cols = [c for c in time_cols if c in agg_df.columns]
+        mean_times = agg_df.groupby('tool')[available_cols].mean() / 60  # to minutes
         mean_times = mean_times.loc[tool_order]
-        mean_times.columns = ['Tool\nItself', 'Alignment\n(prereq)', 'Eventalign\n(prereq)']
 
-        mean_times.plot(kind='bar', stacked=True, ax=ax, color=['#3498db', '#95a5a6', '#e74c3c'])
+        # Rename columns for display
+        col_rename = {
+            's_tool': 'Tool\nItself',
+            's_alignment': 'Alignment\n(prereq)',
+            's_eventalign': 'Eventalign\n(prereq)',
+            's_f5c_index': 'F5C Index\n(prereq)'
+        }
+        mean_times = mean_times.rename(columns={k: v for k, v in col_rename.items() if k in mean_times.columns})
+
+        # Colors for each component
+        color_map = {
+            'Tool\nItself': '#3498db',
+            'Alignment\n(prereq)': '#95a5a6',
+            'Eventalign\n(prereq)': '#e74c3c',
+            'F5C Index\n(prereq)': '#f39c12'
+        }
+        colors = [color_map[c] for c in mean_times.columns if c in color_map]
+
+        mean_times.plot(kind='bar', stacked=True, ax=ax, color=colors)
         ax.set_xlabel('Tool')
         ax.set_ylabel('Time (minutes)')
         ax.set_title('Time Breakdown: Tool vs Prerequisites', fontweight='bold')
@@ -308,9 +349,17 @@ def create_resource_visualization(agg_df, output_path):
         summary['s_total_min'] = summary['s_total'] / 60
         summary['max_rss_gb'] = summary['max_rss_total'] / 1024
 
-        # Color by whether tool needs eventalign
-        colors = ['#e74c3c' if t.lower() in [x.lower() for x in SIGNAL_TOOLS] else '#3498db'
-                  for t in summary['tool']]
+        # Color by whether tool needs signal processing (eventalign or f5c_index)
+        def get_tool_color(tool_name):
+            tool_lower = tool_name.lower()
+            if tool_lower in [t.lower() for t in SIGNAL_TOOLS]:
+                return '#e74c3c'  # Red for eventalign-based tools
+            elif tool_lower in [t.lower() for t in F5C_INDEX_TOOLS]:
+                return '#f39c12'  # Orange for f5c_index-based tools
+            else:
+                return '#3498db'  # Blue for alignment-only tools
+
+        colors = [get_tool_color(t) for t in summary['tool']]
 
         scatter = ax.scatter(summary['s_total_min'], summary['max_rss_gb'],
                             c=colors, s=200, alpha=0.7, edgecolors='black')
@@ -321,7 +370,7 @@ def create_resource_visualization(agg_df, output_path):
 
         ax.set_xlabel('Mean Total Wall Time (minutes)')
         ax.set_ylabel('Mean Peak Memory (GB)')
-        ax.set_title('Resource Efficiency: Time vs Memory\n(Red = Signal-based tools, Blue = Alignment-based)',
+        ax.set_title('Resource Efficiency: Time vs Memory\n(Red = Eventalign-based, Orange = F5C Index-based, Blue = Alignment-only)',
                      fontweight='bold')
         ax.grid(alpha=0.3)
 
