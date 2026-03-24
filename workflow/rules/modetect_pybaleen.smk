@@ -43,6 +43,7 @@ rule pybaleen_run:
     threads: get_threads("pybaleen", 4)
     resources:
         mem_mb=1024 * 650,
+        gpu=1,
     priority: 5
     log:
         out="logs/{project}/pybaleen/N_{native}_C_{control}.log",
