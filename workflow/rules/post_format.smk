@@ -756,7 +756,7 @@ rule post_pybaleen:
     input:
         result="{project}/results/pybaleen/{native}_{control}/site_results.tsv",
     output:
-        "{project}/results/modifications/pybaleen/{native}_{control}/pybaleen_results.tsv",
+        result="{project}/results/modifications/pybaleen/{native}_{control}/pybaleen_results.tsv",
     container:
         get_container("python3")
     log:
