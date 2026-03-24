@@ -55,31 +55,34 @@ def normalize_columns(df):
 # Priority: p-value/adjusted p-value first, then other metrics
 TOOL_SCORE_COLUMNS = {
     # Signal-based comparative tools
-    # xPore output: transcript, position, kmer, statistic, p_value, adjusted_p_value, direction
-    'xpore': ['p_value', 'adjusted_p_value', 'statistic', 'pval', 'padj'],
-    # Nanocompore output: transcript, position, ref_kmer, coverage, p_value, p_value_glm, p_value_ks, pass_glm, pass_ks
-    'nanocompore': ['p_value_glm', 'p_value_ks', 'p_value', 'GMM_logit_pvalue', 'KS_dwell_pvalue', 'KS_intensity_pvalue'],
-    # Baleen output: transcript, position, pvalue, padj, effect_size, mod_type
-    'baleen': ['pvalue', 'padj', 'effect_size', 'score'],
-    # pyBaleen output: transcript, position, pvalue, padj, effect_size
+    # xPore raw output: id,position,kmer,diff_mod_rate_CASE_vs_CONTROL,pval_CASE_vs_CONTROL,z_score_CASE_vs_CONTROL,...
+    # format.py preserves original column names
+    'xpore': ['pval_CASE_vs_CONTROL', 'z_score_CASE_vs_CONTROL', 'diff_mod_rate_CASE_vs_CONTROL',
+                  'p_value', 'adjusted_p_value', 'statistic', 'pval', 'padj'],
+    # Nanocompore raw output: pos,chr,genomicPos,ref_id,strand,ref_kmer,GMM_logit_pvalue,KS_dwell_pvalue,KS_intensity_pvalue,...
+    'nanocompore': ['GMM_logit_pvalue', 'KS_dwell_pvalue', 'KS_intensity_pvalue', 'Logit_LOR',
+                    'p_value_glm', 'p_value_ks', 'p_value'],
+    # Baleen raw output: transcript,position,kmer,homopolymer,...,p_value,padj,...
+    'baleen': ['p_value', 'padj', 'pvalue', 'padj', 'effect_size', 'score'],
+    # pyBaleen raw output: contig,position,kmer,mod_ratio,ci_low,ci_high,pvalue,padj,effect_size,...
     'pybaleen': ['pvalue', 'padj', 'effect_size', 'p_value', 'adjusted_p_value', 'stoichiometry'],
 
     # Error-based comparative tools
-    # DiffErr output (from format.py): -log10 P value, -log10 FDR, odds ratio, G statistic
+    # DiffErr raw output (BED, after format.py): -log10 P value, -log10 FDR, odds ratio, G statistic
     'differr': ['-log10 P value', '-log10 FDR', 'odds ratio', 'G statistic', 'score'],
-    # DRUMMER output: various statistical columns
-    'drummer': ['p_value', 'pvalue', 'padj', 'OR_padj', 'G_padj', 'odds_ratio', 'log2_(OR)'],
-    # ELIGOS2 output: chr, start, end, ref_base, coverage, error_rate, p_value, q_value
-    'eligos2': ['p_value', 'q_value', 'error_rate', 'pvalue', 'qvalue'],
-    # EpiNano output (from format.py): chrom, pos, ref, strand, ko_feature, wt_feature, delta_sum_err, z_scores, z_score_prediction
+    # DRUMMER raw output: transcript_id,reference_base,transcript_pos,...,OR_padj,...,G_test,G_padj,...
+    'drummer': ['OR_padj', 'G_padj', 'G_test', 'log2_(OR)', 'p_value', 'pvalue', 'padj', 'odds_ratio'],
+    # ELIGOS2 raw output: chrom,start_loc,end_loc,strand,name,ref,...,pval,adjPval,...
+    'eligos2': ['pval', 'adjPval', 'p_value', 'q_value', 'error_rate', 'pvalue', 'qvalue'],
+    # EpiNano raw output (after format.py): chrom,pos,ref,strand,...,delta_sum_err,z_scores,z_score_prediction
     'epinano': ['z_scores', 'delta_sum_err', 'z_score_prediction', 'score'],
-    # psipore output: transcript, position, psi_score, p_value, coverage
+    # psipore output: transcript,position,psi_score,p_value,coverage
     'psipore': ['p_value', 'psi_score', 'pvalue', 'score'],
 
     # Single-sample ML/DL tools
-    # TandemMod output: transcript, position, modification, probability, stoichiometry
+    # TandemMod output: transcript,position,modification,probability,stoichiometry
     'tandemmod': ['probability', 'stoichiometry', 'prob', 'score'],
-    # DirectRM output: transcript, position, modification, probability
+    # DirectRM output: transcript,position,modification,probability
     'directrm': ['probability', 'prob', 'score'],
     # m6ATM output: transcript, position, probability, stoichiometry
     'm6atm': ['probability', 'stoichiometry', 'prob', 'score'],
