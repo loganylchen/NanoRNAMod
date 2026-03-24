@@ -178,7 +178,7 @@ rule benchmark_pdf_report:
 rule benchmark_resource_by_tool:
     """Analyze resource usage by modification tool including prerequisite steps."""
     input:
-        benchmark_dir=directory("benchmarks/{project}"),
+        benchmark_dir="benchmarks/{project}",
     output:
         tsv="{project}/results/benchmarks/resource_by_tool.tsv",
         pdf="{project}/results/benchmarks/resource_by_tool.pdf",
