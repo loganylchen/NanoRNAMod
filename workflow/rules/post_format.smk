@@ -7,7 +7,7 @@ rule post_tandemmod:
     params:
         tool="tandemmod",
     container:
-        get_container("default")
+        get_container("python3")
     log:
         "logs/{project}/post_tandemmod_sampled_format/{sample}.log",
     benchmark:
@@ -15,7 +15,7 @@ rule post_tandemmod:
     resources:
         mem_mb=1024 * 50,
     priority: 20
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
 
@@ -58,7 +58,7 @@ rule post_directrm:
     params:
         tool="directrm",
     container:
-        get_container("default")
+        get_container("python3")
     log:
         "logs/{project}/post_directrm_sampled_format/{sample}.log",
     benchmark:
@@ -66,7 +66,7 @@ rule post_directrm:
     resources:
         mem_mb=1024 * 50,
     priority: 20
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
 
@@ -109,7 +109,7 @@ rule post_m6atm:
     params:
         tool="m6atm",
     container:
-        get_container("default")
+        get_container("python3")
     log:
         "logs/{project}/post_m6atm_sampled_format/{sample}.log",
     benchmark:
@@ -117,7 +117,7 @@ rule post_m6atm:
     resources:
         mem_mb=1024 * 50,
     priority: 20
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
 
@@ -160,7 +160,7 @@ rule post_rnano:
     params:
         tool="rnano",
     container:
-        get_container("default")
+        get_container("python3")
     log:
         "logs/{project}/post_rnano_sampled_format/{sample}.log",
     benchmark:
@@ -168,7 +168,7 @@ rule post_rnano:
     resources:
         mem_mb=1024 * 50,
     priority: 20
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
 
@@ -556,7 +556,7 @@ rule post_psipore:
     params:
         tool="psipore",
     container:
-        get_container("default")
+        get_container("python3")
     log:
         "logs/{project}/post_psipore_format/{native}_{control}.log",
     benchmark:
@@ -564,7 +564,7 @@ rule post_psipore:
     resources:
         mem_mb=1024 * 50,
     priority: 20
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
 
@@ -607,7 +607,7 @@ rule post_nanopsu:
     params:
         tool="nanopsu",
     container:
-        get_container("default")
+        get_container("python3")
     log:
         "logs/{project}/post_nanopsu_format/{sample}.log",
     benchmark:
@@ -615,7 +615,7 @@ rule post_nanopsu:
     resources:
         mem_mb=1024 * 50,
     priority: 20
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
 
@@ -658,7 +658,7 @@ rule post_nanomud:
     params:
         tool="nanomud",
     container:
-        get_container("default")
+        get_container("python3")
     log:
         "logs/{project}/post_nanomud_format/{sample}.log",
     benchmark:
@@ -666,7 +666,7 @@ rule post_nanomud:
     resources:
         mem_mb=1024 * 50,
     priority: 20
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
 
@@ -709,7 +709,7 @@ rule post_penguin:
     params:
         tool="penguin",
     container:
-        get_container("default")
+        get_container("python3")
     log:
         "logs/{project}/post_penguin_format/{sample}.log",
     benchmark:
@@ -758,7 +758,7 @@ rule post_pybaleen:
     output:
         "{project}/results/modifications/pybaleen/{native}_{control}/pybaleen_results.tsv",
     container:
-        get_container("default")
+        get_container("python3")
     log:
         "logs/{project}/post_pybaleen_format/{native}_{control}.log",
     benchmark:
@@ -766,7 +766,7 @@ rule post_pybaleen:
     resources:
         mem_mb=1024 * 50,
     priority: 20
-    threads: get_threads("default", 1)
+    threads: get_threads("python3", 1)
     script:
         "../scripts/pybaleen_postprocess.py"
 
