@@ -173,3 +173,24 @@ rule benchmark_pdf_report:
         get_container("python3")
     script:
         "../scripts/benchmark_pdf_report.py"
+
+
+rule benchmark_resource_by_tool:
+    """Analyze resource usage by modification tool including prerequisite steps."""
+    input:
+        benchmark_dir=directory("benchmarks/{project}"),
+    output:
+        tsv="{project}/results/benchmarks/resource_by_tool.tsv",
+        pdf="{project}/results/benchmarks/resource_by_tool.pdf",
+    params:
+        benchmark_dir="benchmarks/{project}",
+    resources:
+        mem_mb=1024 * 4,
+    threads: 1
+    priority: 36
+    log:
+        "logs/{project}/benchmark_resource_by_tool/analysis.log",
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_resource_by_tool.py"
