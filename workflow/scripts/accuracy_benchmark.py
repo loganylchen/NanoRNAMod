@@ -32,9 +32,10 @@ import numpy as np
 
 result_files = snakemake.input.results
 truth_set_path = snakemake.input.truth_set
-output_files = snakemake.output  # Now expects 2 files
+output_files = snakemake.output  # Now expects 3 files
 output_file = output_files[0]  # accuracy_summary.tsv (by modification_type)
 output_overall = output_files[1]  # accuracy_summary_overall.tsv
+output_by_comparison = output_files[2]  # accuracy_summary_by_comparison.tsv
 window_param = snakemake.params.window
 
 # Support both single int and list of windows
@@ -75,12 +76,34 @@ else:
 
 # ── Helper: extract tool name from result file path ────────────────────────
 def tool_from_path(path):
-    """Extract tool name from path like .../modifications/{tool}/{comp}/{tool}_results.tsv"""
+    """Extract tool name from path like .../modifications/{tool}/{comp}/{tool}_results.tsv
+    or .../results/{tool}/{comp}/transcript_mod_results.csv"""
     parts = path.split(os.sep)
     for i, part in enumerate(parts):
         if part == "modifications" and i + 1 < len(parts):
             return parts[i + 1]
+        if part == "results" and i + 1 < len(parts):
+            # Check if next part looks like a tool name (not 'alignments', 'fastq', etc.)
+            potential_tool = parts[i + 1]
+            non_tool_dirs = ['alignments', 'fastq', 'blow5', 'modifications', 'benchmarks', 'viz']
+            if potential_tool not in non_tool_dirs:
+                return potential_tool
     return os.path.basename(os.path.dirname(os.path.dirname(path)))
+
+
+def comparison_from_path(path):
+    """Extract comparison name from path like .../modifications/{tool}/{comp}/{tool}_results.tsv
+    or .../results/{tool}/{comp}/transcript_mod_results.csv"""
+    parts = path.split(os.sep)
+    for i, part in enumerate(parts):
+        if part == "modifications" and i + 2 < len(parts):
+            return parts[i + 2]
+        if part == "results" and i + 2 < len(parts):
+            # Check if this looks like a comparison directory
+            potential_comp = parts[i + 2]
+            if '_' in potential_comp:  # Comparison names typically have underscore (e.g., native_0_control_0)
+                return potential_comp
+    return "unknown"
 
 # ── Helper: normalize column names for transcript and position ────────────
 def normalize_columns(df):
@@ -133,7 +156,12 @@ def detect_score_column(df, tool_name=None):
         'nanocompore': ['GMM_logit_pvalue', 'KS_dwell_pvalue', 'KS_intensity_pvalue', 'Logit_LOR',
                         'p_value_glm', 'p_value_ks', 'p_value'],
         # Baleen raw output: transcript,position,kmer,homopolymer,...,p_value,padj,...
-        'baleen': ['p_value', 'padj', 'pvalue', 'padj', 'effect_size', 'score'],
+        # Full columns: transcript,position,kmer,homopolymer,control_depth,native_depth,control_LOD,native_LOD,
+        #               control_normalized_LOD,native_normalized_LOD,nLOD_diff,control_mod_ratio,native_mod_ratio,
+        #               mod_ratio_diff,mod_ratio_fc,z_test,p_value,padj
+        'baleen': ['p_value', 'padj', 'z_test', 'mod_ratio_diff', 'mod_ratio_fc', 'nLOD_diff',
+                   'native_mod_ratio', 'native_normalized_LOD', 'native_LOD',
+                   'pvalue', 'effect_size', 'score'],
         # pyBaleen raw output: contig,position,kmer,mod_ratio,ci_low,ci_high,pvalue,padj,effect_size,...
         'pybaleen': ['pvalue', 'padj', 'effect_size', 'p_value', 'adjusted_p_value', 'stoichiometry'],
 
@@ -310,13 +338,21 @@ def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_c
         return np.nan, np.nan
 
 # ── Load all tool results (preserving all columns for scores) ────────────────
+# Now also track comparison information for per-comparison analysis
 tool_dfs = {}
 tool_score_cols = {}
+tool_comparisons = {}  # tool -> list of (comparison, dataframe) tuples
 
 for f in result_files:
     tool = tool_from_path(f)
+    comparison = comparison_from_path(f)
+
     try:
-        df = pd.read_csv(f, sep='\t')
+        # Handle both TSV and CSV files (baleen outputs CSV)
+        if f.endswith('.csv'):
+            df = pd.read_csv(f)
+        else:
+            df = pd.read_csv(f, sep='\t')
         df = normalize_columns(df)
 
         if 'transcript' in df.columns and 'position' in df.columns:
@@ -328,17 +364,24 @@ for f in result_files:
 
             if tool not in tool_dfs:
                 tool_dfs[tool] = []
+                tool_comparisons[tool] = []
+
+            # Add comparison column to track source
+            df['comparison'] = comparison
             tool_dfs[tool].append(df)
+            tool_comparisons[tool].append((comparison, df))
     except Exception as e:
         print(f"Warning: could not read {f}: {e}")
 
 for tool in tool_dfs:
     tool_dfs[tool] = pd.concat(tool_dfs[tool], ignore_index=True).drop_duplicates(
-        subset=['transcript', 'position']
+        subset=['transcript', 'position', 'comparison']
     )
+    print(f"Loaded {len(tool_dfs[tool])} predictions for {tool} from {len(tool_comparisons[tool])} comparisons")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Compute accuracy metrics for each tool, modification type, and window
+# With FAIR COMPARISON: sites covered by any tool get score=0 for tools that didn't call them
 # ─────────────────────────────────────────────────────────────────────────────
 
 def compute_mcc(tp, fp, fn, tn):
@@ -349,10 +392,138 @@ def compute_mcc(tp, fp, fn, tn):
         return 0.0
     return numerator / denominator
 
+
+def compute_ranking_metrics_with_fair_comparison(pred_df, all_covered_sites,
+                                                   truth_pos_subset, truth_neg_subset,
+                                                   score_col, window=0, tool_name="unknown"):
+    """
+    Compute AUPRC and AUROC with fair comparison.
+
+    Fair comparison: if a site is covered by any tool but not called by this tool,
+    treat it as a negative prediction with score=0.
+
+    Parameters:
+        pred_df: DataFrame with this tool's predictions
+        all_covered_sites: Set of (transcript, position) tuples covered by ANY tool
+        truth_pos_subset: DataFrame of positive truth sites
+        truth_neg_subset: DataFrame of negative truth sites (if available)
+        score_col: Column name for score
+        window: Position tolerance window
+        tool_name: Tool name for debugging
+    """
+    if pred_df.empty and not all_covered_sites:
+        return np.nan, np.nan
+
+    # Determine if score column needs transformation
+    is_pvalue_col = False
+    is_log_transformed = False
+    if score_col is not None and score_col in pred_df.columns:
+        score_col_lower = score_col.lower().replace(' ', '_')
+        is_log_transformed = '-log10' in score_col_lower or 'log10_pvalue' in score_col_lower
+        is_pvalue_col = not is_log_transformed and any(
+            x in score_col_lower for x in ['p_value', 'pvalue', 'pval', 'padj', 'q_value', 'qval', 'fdr', 'adj']
+        )
+
+    # Build prediction lookup for this tool
+    pred_lookup = {}  # (tx, pos) -> score
+    if score_col is not None and score_col in pred_df.columns:
+        for _, row in pred_df.iterrows():
+            tx = row['transcript']
+            pos = row['position']
+            raw_score = row[score_col]
+            if pd.notna(raw_score):
+                try:
+                    raw_score = float(raw_score)
+                    if is_pvalue_col:
+                        pval = max(raw_score, 1e-300)
+                        score = -np.log10(pval)
+                    else:
+                        score = raw_score
+                    pred_lookup[(tx, pos)] = score
+                except (ValueError, TypeError):
+                    pass
+
+    # Build truth site lookup for efficient matching
+    truth_pos_lookup = set()
+    for _, row in truth_pos_subset.iterrows():
+        truth_pos_lookup.add((row['transcript'], row['position']))
+
+    truth_neg_lookup = set()
+    if not truth_neg_subset.empty:
+        for _, row in truth_neg_subset.iterrows():
+            truth_neg_lookup.add((row['transcript'], row['position']))
+
+    labels = []
+    scores = []
+
+    # For each covered site, determine label and score
+    for tx, pos in all_covered_sites:
+        # Check if this is a positive site (within window)
+        is_positive = False
+        for tpos in truth_pos_lookup:
+            if tpos[0] == tx and abs(tpos[1] - pos) <= window:
+                is_positive = True
+                break
+
+        # Check if this is a negative site (within window)
+        is_negative = False
+        if not is_positive:
+            for tpos in truth_neg_lookup:
+                if tpos[0] == tx and abs(tpos[1] - pos) <= window:
+                    is_negative = True
+                    break
+
+        # Get score for this site
+        if (tx, pos) in pred_lookup:
+            score = pred_lookup[(tx, pos)]
+        else:
+            # Fair comparison: tool didn't call this site -> score=0 (negative prediction)
+            score = 0.0
+
+        if is_positive:
+            labels.append(1)
+            scores.append(score)
+        elif is_negative or len(truth_neg_lookup) == 0:
+            # Include as negative if explicit negative or if no explicit negatives
+            # (in latter case, all non-positive predictions are treated as negatives)
+            labels.append(0)
+            scores.append(score)
+
+    if len(set(labels)) < 2 or len(scores) == 0:
+        return np.nan, np.nan
+
+    try:
+        from sklearn.metrics import roc_auc_score, average_precision_score
+        auroc = roc_auc_score(labels, scores)
+        auprc = average_precision_score(labels, scores)
+        return auprc, auroc
+    except Exception:
+        return np.nan, np.nan
+
+
 records = []
+records_by_comparison = []  # For per-comparison metrics
 
 # Get all modification types from positive sites
 all_mod_types = set(truth_pos['modification_type'].unique())
+
+# ── Build union of all covered sites per modification type (for fair comparison) ──
+print("\nBuilding union of all covered sites for fair comparison...")
+all_covered_sites_by_mod = {}  # mod_type -> set of (tx, pos) tuples
+
+for mod_type in all_mod_types:
+    all_covered_sites_by_mod[mod_type] = set()
+    for tool, pred_df in tool_dfs.items():
+        # Get relevant transcripts for this modification type
+        truth_subset = truth_pos[truth_pos['modification_type'] == mod_type]
+        relevant_tx = set(truth_subset['transcript'].unique())
+
+        # Add sites from this tool
+        tool_sites = pred_df[pred_df['transcript'].isin(relevant_tx)]
+        for _, row in tool_sites.iterrows():
+            all_covered_sites_by_mod[mod_type].add((row['transcript'], row['position']))
+
+    print(f"  {mod_type}: {len(all_covered_sites_by_mod[mod_type])} unique sites covered by all tools")
 
 for tool, pred_df in tool_dfs.items():
     for mod_type in all_mod_types:
@@ -367,22 +538,26 @@ for tool, pred_df in tool_dfs.items():
         # Filter predictions to relevant transcripts
         pred_subset = pred_df[pred_df['transcript'].isin(all_tx)].copy()
 
-        # Auto-infer negative sites if not provided
-        # Negative sites = all positions that are NOT positive sites
-        # (using the prediction set as the universe of possible positions)
-        truth_neg_subset = truth_neg[truth_neg['modification_type'] == mod_type].copy()
-        is_inferred_negative = False  # Track if negatives are explicit or inferred
+        # Get all covered sites for this modification type
+        all_covered_sites = all_covered_sites_by_mod.get(mod_type, set())
 
-        if truth_neg_subset.empty and not pred_subset.empty:
-            # Create inferred negative sites from predictions that don't match truth
+        # Auto-infer negative sites if not provided
+        # For fair comparison, use the union of all covered sites as the universe
+        truth_neg_subset = truth_neg[truth_neg['modification_type'] == mod_type].copy()
+        is_inferred_negative = False
+
+        if truth_neg_subset.empty and all_covered_sites:
+            # Create inferred negative sites from all covered sites that don't match truth
             neg_sites = []
-            for _, pred_row in pred_subset.iterrows():
-                tx = pred_row['transcript']
-                pos = pred_row['position']
+            truth_pos_set = set()
+            for _, truth_row in truth_subset.iterrows():
+                truth_pos_set.add((truth_row['transcript'], truth_row['position']))
+
+            for tx, pos in all_covered_sites:
+                # Check if this site matches any truth site
                 is_match = False
-                for _, truth_row in truth_subset.iterrows():
-                    if (truth_row['transcript'] == tx and
-                        abs(truth_row['position'] - pos) <= 0):
+                for ttx, tpos in truth_pos_set:
+                    if ttx == tx and abs(tpos - pos) <= 0:
                         is_match = True
                         break
                 if not is_match:
@@ -394,7 +569,7 @@ for tool, pred_df in tool_dfs.items():
                     })
             if neg_sites:
                 truth_neg_subset = pd.DataFrame(neg_sites)
-                is_inferred_negative = True  # Mark as inferred
+                is_inferred_negative = True
 
         score_col = tool_score_cols.get(tool)
 
@@ -418,6 +593,10 @@ for tool, pred_df in tool_dfs.items():
                     matched_pred_indices.update(matches.index.tolist())
 
             fn = len(truth_subset) - tp
+
+            # FAIR COMPARISON: FP includes sites this tool called that aren't truth sites
+            # AND sites other tools called but this tool didn't (already counted as not in pred_subset)
+            # The key change: total predictions = all covered sites, not just this tool's calls
             fp = len(pred_subset) - len(matched_pred_indices)
 
             called_sites = len(pred_subset)
@@ -425,11 +604,8 @@ for tool, pred_df in tool_dfs.items():
             total_truth = len(truth_subset)
 
             # Calculate TN (true negatives)
-            # TN = negative sites where there is NO prediction within window
-            # Note: For inferred negatives, TN is not meaningful (negatives are derived from predictions)
             tn = 0
             if not truth_neg_subset.empty and not is_inferred_negative:
-                # Only calculate TN for explicit negative sites
                 for _, neg_row in truth_neg_subset.iterrows():
                     tx = neg_row['transcript']
                     pos = neg_row['position']
@@ -449,23 +625,20 @@ for tool, pred_df in tool_dfs.items():
             f1 = (2 * precision * recall / (precision + recall)
                   if (precision + recall) > 0 else 0)
 
-            # Specificity: TN / (TN + FP) or TN / total_negative
-            # For inferred negatives, specificity is not meaningful
             if is_inferred_negative or total_negative == 0:
                 specificity = np.nan
             else:
                 specificity = tn / total_negative
 
-            # Matthews Correlation Coefficient
-            # For inferred negatives, MCC with TN=0 is misleading; set to NaN
             if is_inferred_negative:
                 mcc = np.nan
             else:
                 mcc = compute_mcc(tp, fp, fn, tn)
 
-            # AUPRC and AUROC (only if score column exists)
-            auprc, auroc = compute_ranking_metrics(
-                pred_subset, truth_subset, truth_neg_subset, score_col, window, tool_name=tool
+            # AUPRC and AUROC with fair comparison
+            auprc, auroc = compute_ranking_metrics_with_fair_comparison(
+                pred_subset, all_covered_sites, truth_subset, truth_neg_subset,
+                score_col, window, tool_name=tool
             )
 
             records.append({
@@ -485,6 +658,68 @@ for tool, pred_df in tool_dfs.items():
                 "total_predicted": total_predicted,
                 "total_negative": total_negative,
             })
+
+        # ── Per-comparison metrics (for scatterplot) ──
+        if tool in tool_comparisons:
+            for comparison, comp_df in tool_comparisons[tool]:
+                # Filter to relevant transcripts for this modification type
+                comp_subset = comp_df[comp_df['transcript'].isin(all_tx)].copy()
+
+                if comp_subset.empty:
+                    continue
+
+                # Get covered sites for this comparison
+                comp_covered_sites = set()
+                for _, row in comp_subset.iterrows():
+                    comp_covered_sites.add((row['transcript'], row['position']))
+
+                score_col = tool_score_cols.get(tool)
+
+                for window in windows:
+                    # Compute metrics for this comparison
+                    matched_indices = set()
+                    tp_comp = 0
+
+                    for _, truth_row in truth_subset.iterrows():
+                        tx = truth_row['transcript']
+                        pos = truth_row['position']
+
+                        matches = comp_subset[
+                            (comp_subset['transcript'] == tx) &
+                            (comp_subset['position'].between(pos - window, pos + window))
+                        ]
+
+                        if not matches.empty:
+                            tp_comp += 1
+                            matched_indices.update(matches.index.tolist())
+
+                    fn_comp = len(truth_subset) - tp_comp
+                    fp_comp = len(comp_subset) - len(matched_indices)
+
+                    precision_comp = tp_comp / (tp_comp + fp_comp) if (tp_comp + fp_comp) > 0 else 0
+                    recall_comp = tp_comp / (tp_comp + fn_comp) if (tp_comp + fn_comp) > 0 else 0
+                    f1_comp = (2 * precision_comp * recall_comp / (precision_comp + recall_comp)
+                               if (precision_comp + recall_comp) > 0 else 0)
+
+                    # Compute AUPRC/AUROC for this comparison
+                    auprc_comp, auroc_comp = compute_ranking_metrics_with_fair_comparison(
+                        comp_subset, comp_covered_sites, truth_subset, truth_neg_subset,
+                        score_col, window, tool_name=tool
+                    )
+
+                    records_by_comparison.append({
+                        "tool": tool,
+                        "modification_type": mod_type,
+                        "comparison": comparison,
+                        "window": window,
+                        "precision": precision_comp,
+                        "recall": recall_comp,
+                        "f1": f1_comp,
+                        "auprc": auprc_comp,
+                        "auroc": auroc_comp,
+                        "called_sites": len(comp_subset),
+                        "total_truth": len(truth_subset),
+                    })
 
 # ── Write output: by modification_type ───────────────────────────────────────
 if records:
@@ -576,4 +811,18 @@ else:
         "total_truth", "total_predicted", "total_negative"
     ])
 overall_df.to_csv(output_overall, sep='\t', index=False)
+
+# ── Write output: by comparison (for scatterplot visualization) ───────────────
+if records_by_comparison:
+    comp_df = pd.DataFrame(records_by_comparison).sort_values(
+        ["tool", "comparison", "window", "f1"],
+        ascending=[True, True, True, False]
+    )
+else:
+    comp_df = pd.DataFrame(columns=[
+        "tool", "modification_type", "comparison", "window", "precision", "recall",
+        "f1", "auprc", "auroc", "called_sites", "total_truth"
+    ])
+comp_df.to_csv(output_by_comparison, sep='\t', index=False)
+print(f"Saved per-comparison metrics to {output_by_comparison}")
 

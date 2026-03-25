@@ -103,6 +103,13 @@ def load_benchmark_data(benchmark_dir):
     else:
         data['all_scores'] = pd.DataFrame()
 
+    # Load per-comparison accuracy (for scatterplot by comparison)
+    by_comparison_path = os.path.join(benchmark_dir, "accuracy_summary_by_comparison.tsv")
+    if os.path.exists(by_comparison_path):
+        data['by_comparison'] = pd.read_csv(by_comparison_path, sep='\t')
+    else:
+        data['by_comparison'] = pd.DataFrame()
+
     return data
 
 
@@ -321,13 +328,22 @@ def plot_tool_called_sites_comparison(data, pdf, tool, window=0):
 
 
 def plot_tool_auprc_auroc_scatter(data, pdf, tool, window=0):
-    """Plot AUPRC vs AUROC scatter for each comparison."""
-    df = data['accuracy']
+    """Plot AUPRC vs AUROC scatter for each comparison (not modification_type).
+
+    Uses per-comparison metrics (accuracy_summary_by_comparison.tsv) which shows
+    how each tool performs on different sample pairs (native_0_control_0, etc).
+    """
+    # Use per-comparison data for scatterplot
+    df = data.get('by_comparison', pd.DataFrame())
+
+    if df.empty:
+        # Fallback to accuracy data if by_comparison not available
+        df = data.get('accuracy', pd.DataFrame())
 
     if df.empty:
         return
 
-    tool_df = df[df['tool'] == tool].copy()
+    tool_df = df[(df['tool'] == tool) & (df['window'] == window)].copy()
 
     if tool_df.empty:
         return
@@ -335,22 +351,43 @@ def plot_tool_auprc_auroc_scatter(data, pdf, tool, window=0):
     if 'auprc' not in tool_df.columns or 'auroc' not in tool_df.columns:
         return
 
+    # Remove NaN values
+    tool_df = tool_df.dropna(subset=['auprc', 'auroc'])
+
+    if tool_df.empty:
+        return
+
     fig, ax = plt.subplots(figsize=(PAGE_WIDTH * 0.7, PAGE_HEIGHT * 0.5))
 
-    # Plot scatter
-    ax.scatter(tool_df['auroc'], tool_df['auprc'], s=100, alpha=0.7,
-              c='steelblue', edgecolors='navy')
+    # Plot scatter with colors by comparison or modification_type
+    label_col = None
+    color_col = None
+    for col in ['comparison', 'modification_type']:
+        if col in tool_df.columns:
+            label_col = col
+            color_col = col
+            break
+
+    if color_col and tool_df[color_col].nunique() > 1:
+        # Color by comparison/modification_type
+        unique_vals = tool_df[color_col].unique()
+        colors = plt.cm.tab10(np.linspace(0, 1, len(unique_vals)))
+        color_map = dict(zip(unique_vals, colors))
+
+        for val in unique_vals:
+            subset = tool_df[tool_df[color_col] == val]
+            ax.scatter(subset['auroc'], subset['auprc'], s=100, alpha=0.7,
+                      c=[color_map[val]], label=str(val)[:20], edgecolors='navy')
+        ax.legend(loc='lower right', fontsize=8, title=color_col.replace('_', ' ').title())
+    else:
+        # Single color
+        ax.scatter(tool_df['auroc'], tool_df['auprc'], s=100, alpha=0.7,
+                  c='steelblue', edgecolors='navy')
 
     # Add diagonal reference line
     ax.plot([0, 1], [0, 1], 'k--', alpha=0.3, label='AUPRC = AUROC')
 
     # Add labels for each point
-    label_col = None
-    for col in ['modification_type', 'comparison', 'sample']:
-        if col in tool_df.columns:
-            label_col = col
-            break
-
     if label_col:
         for _, row in tool_df.iterrows():
             ax.annotate(str(row[label_col])[:15],
@@ -360,11 +397,11 @@ def plot_tool_auprc_auroc_scatter(data, pdf, tool, window=0):
 
     ax.set_xlabel('AUROC', fontsize=11)
     ax.set_ylabel('AUPRC', fontsize=11)
-    ax.set_title(f'{tool}: AUPRC vs AUROC', fontsize=14, fontweight='bold')
+    ax.set_title(f'{tool}: AUPRC vs AUROC (by {label_col.replace("_", " ") if label_col else "sample"})',
+                fontsize=14, fontweight='bold')
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.grid(alpha=0.3)
-    ax.legend(loc='lower right', fontsize=9)
 
     # Add mean point
     mean_auroc = tool_df['auroc'].mean()

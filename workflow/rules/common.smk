@@ -325,6 +325,7 @@ def get_final_output():
     if config.get("benchmark", {}).get("truth_set", ""):
         final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_overall.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_by_comparison.tsv"]
         # Visualization and detailed reports
         final_output += [f"{RESULT_ROOT}/benchmarks/viz/benchmark_report.html"]
         final_output += [f"{RESULT_ROOT}/benchmarks/benchmark_report.pdf"]

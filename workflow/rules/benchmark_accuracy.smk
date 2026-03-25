@@ -31,6 +31,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
         output:
             "{project}/results/benchmarks/accuracy_summary.tsv",
             "{project}/results/benchmarks/accuracy_summary_overall.tsv",
+            "{project}/results/benchmarks/accuracy_summary_by_comparison.tsv",
         params:
             window=config["benchmark"]["window"],
         resources:
