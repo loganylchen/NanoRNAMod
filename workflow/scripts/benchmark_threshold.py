@@ -10,8 +10,17 @@ import sys
 import pandas as pd
 import numpy as np
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add scripts directory to path for imports
+# When Snakemake runs, __file__ points to a temp copy, so we need to find the original
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_workflow_scripts = os.path.join(os.getcwd(), "workflow", "scripts")
+# Try the script's directory first (direct execution), then workflow/scripts (Snakemake execution)
+if os.path.exists(os.path.join(_script_dir, "benchmark_utils.py")):
+    sys.path.insert(0, _script_dir)
+elif os.path.exists(os.path.join(_workflow_scripts, "benchmark_utils.py")):
+    sys.path.insert(0, _workflow_scripts)
+else:
+    sys.path.insert(0, _script_dir)  # Fallback
 from benchmark_utils import tool_from_path, normalize_columns
 
 
