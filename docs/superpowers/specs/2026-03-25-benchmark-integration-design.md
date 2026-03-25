@@ -420,47 +420,76 @@ rule benchmark_sensitivity:
         "../scripts/benchmark_sensitivity.py"
 ```
 
-### 4.3 New Rule: benchmark_figures
+### 4.3 Modified Rule: benchmark_r_figures (Enhanced)
+
+The existing `benchmark_r_figures` rule will be enhanced to include ALL publication figures:
 
 ```python
-rule benchmark_figures:
-    """Generate publication-ready figures with Nature theme.
+rule benchmark_r_figures:
+    """Generate ALL publication-ready figures using ggplot2.
 
-    Note: This rule generates Python-based figures. The existing R-based
-    benchmark_r_figures rule (priority 30) can be used as an alternative
-    or supplement for ggplot2-based visualizations.
+    Enhanced to include PR/ROC curves with CI shading, heatmaps,
+    resource comparison, and threshold distributions - all in Nature format.
+
+    NOTE: ALL figures are generated using ggplot2. No Python matplotlib.
     """
     input:
-        summary="{project}/results/benchmarks/accuracy_summary.tsv",
+        # Existing accuracy inputs
+        aggregated=expand("{{project}}/results/benchmarks/{{agg_file}}", agg_file=[
+            "accuracy_summary.tsv",
+            "accuracy_summary_overall.tsv",
+            "accuracy_summary_by_comparison.tsv",
+            "accuracy_summary_by_negative_type.tsv",
+        ]),
+        # NEW: Statistics inputs for CI plotting
         ci="{project}/results/benchmarks/statistics/bootstrap_ci.tsv",
         significance="{project}/results/benchmarks/statistics/significance_tests.tsv",
+        # NEW: Sensitivity inputs
         coverage="{project}/results/benchmarks/sensitivity/coverage_analysis.tsv",
-        resources="{project}/results/benchmarks/resource_summary.tsv",
+        score_dist="{project}/results/benchmarks/sensitivity/score_distribution.tsv",
+        # Existing
+        optimal_scores="{project}/results/benchmarks/optimal_score_per_tool.tsv",
         thresholds="{project}/results/benchmarks/threshold_evaluation.tsv",
+        resources="{project}/results/benchmarks/resource_summary.tsv",
     output:
-        main=lambda wildcards: expand(
-            "{{project}}/results/benchmarks/figures/main/fig{{n}}.{{ext}}",
-            n=[1,2,3,4,5],
-            ext=config.get("benchmark", {}).get("fig_format", "pdf")
-        ),
+        # Main figures (5 figures for main text)
+        main=expand("{{project}}/results/benchmarks/figures/main/fig{{n}}.{{ext}}",
+                    n=[1,2,3,4,5],
+                    ext=config.get("benchmark", {}).get("fig_format", "pdf")),
+        # Supplementary figures
         supplementary=directory("{project}/results/benchmarks/figures/supplementary/"),
-        legends=expand("{{project}}/results/benchmarks/figures/legends/fig{n}_legend.md", n=[1,2,3,4,5]),
+        # Auto-generated figure legends
+        legends=expand("{{project}}/results/benchmarks/figures/legends/fig{{n}}_legend.md",
+                       n=[1,2,3,4,5]),
+        # Plotting data for reproducibility
         data=directory("{project}/results/benchmarks/data/"),
     params:
         theme=config.get("benchmark", {}).get("figure_theme", "nature"),
         dpi=config.get("benchmark", {}).get("dpi", 300),
         fig_format=config.get("benchmark", {}).get("fig_format", "pdf"),
     resources:
-        mem_mb=1024 * 4,
+        mem_mb=1024 * 8,
     threads: 1
-    priority: 40  # After all analysis rules complete
+    priority: 40  # After sensitivity analysis (33)
     log:
-        "logs/{project}/benchmark_figures/figures.log",
+        "logs/{project}/benchmark_r_figures/figures.log",
     container:
-        get_container("python3")
+        get_container("r_viz")
     script:
-        "../scripts/benchmark_figures.py"
+        "../scripts/R/benchmark_publication_figures.R"
 ```
+
+**Figure Outputs (all ggplot2):**
+
+| Figure | Content | Type |
+|--------|---------|------|
+| fig1.pdf | PR curves with 95% CI shading | Main |
+| fig2.pdf | ROC curves with 95% CI shading | Main |
+| fig3.pdf | Tool × modification type heatmap (pheatmap) | Main |
+| fig4.pdf | Runtime and memory comparison | Main |
+| fig5.pdf | Optimal threshold distributions | Main |
+| sfig1-N.pdf | Per-comparison breakdowns | Supplementary |
+| sfig*.pdf | Coverage sensitivity, score distributions | Supplementary |
 
 ### 4.4 New Rule: benchmark_supplementary
 
@@ -555,41 +584,54 @@ def get_final_output():
 
 ---
 
-## 5. R vs Python Figure Strategy
+## 5. Figure Strategy: ggplot2 Only
 
-### 5.1 Current State
+### 5.1 Decision: All Figures in R/ggplot2
 
-The codebase has TWO figure generation systems:
+**Rationale**:
+- Consistent aesthetics across all figures
+- ggplot2 has better publication theme support
+- Existing `benchmark_r_figures` infrastructure already works
+- Easier to maintain single figure system
 
-1. **Python-based** (`workflow/scripts/benchmark_plots.py` - 904 lines):
-   - Used by `benchmark_visualization` rule
-   - Generates HTML report and intermediate plots
-   - Good for development and debugging
+### 5.2 Implementation Approach
 
-2. **R-based** (`workflow/scripts/R/run_all_figures.R`):
-   - Used by `benchmark_r_figures` rule
-   - ggplot2-based with Nature-ready aesthetics
-   - Better for publication-quality figures
+All new figures will be added to the existing R system:
+- **File**: `workflow/scripts/R/benchmark_publication_figures.R`
+- **Dependencies**: ggplot2, ggpubr, patchwork, RColorBrewer
+- **Output**: PDF/PNG/SVG configurable via config
 
-### 5.2 Integration Strategy
+### 5.3 Figure Types
 
-**Decision**: Both systems coexist. The new `benchmark_figures` rule produces **Python-based publication figures** as a complement to the existing R figures.
+| Figure | R Function | Description |
+|--------|------------|-------------|
+| Fig 1 | `plot_pr_curves_with_ci()` | PR curves with bootstrap CI shading |
+| Fig 2 | `plot_roc_curves_with_ci()` | ROC curves with bootstrap CI shading |
+| Fig 3 | `plot_performance_heatmap()` | Tool × modification type heatmap |
+| Fig 4 | `plot_resource_comparison()` | Runtime/memory bar charts |
+| Fig 5 | `plot_threshold_distributions()` | Optimal threshold violin plots |
+| SFig 1-5 | `plot_supplementary_*()` | Per-comparison, sensitivity analyses |
 
-| Use Case | Recommended System |
-|----------|-------------------|
-| Quick exploration | Python (benchmark_visualization) |
-| Publication figures (ggplot2) | R (benchmark_r_figures) |
-| Publication figures (matplotlib) | Python (benchmark_figures) |
-| HTML interactive report | Python (benchmark_visualization) |
-
-### 5.3 Configuration
+### 5.4 Configuration
 
 ```yaml
 benchmark:
-  figure_backend: "python"  # Options: "python", "r", "both"
+  fig_format: "pdf"  # Options: pdf, png, svg
+  dpi: 300
+  fig_theme: "nature"  # Options: nature, cell, science
 ```
 
-When `figure_backend: "r"`, the `benchmark_figures` rule delegates to the existing R system. When `"both"`, both Python and R figures are generated.
+### 5.5 Python Role
+
+Python scripts handle:
+- **Statistics computation**: Bootstrap CIs, significance tests
+- **Data preparation**: Aggregating metrics, computing curves
+- **TSV output**: All plotting data saved for R to read
+
+R scripts handle:
+- **All visualization**: Every figure in ggplot2
+- **Theme application**: Nature/Cell/Science styling
+- **Legend generation**: Auto-populated from data
 
 ---
 
