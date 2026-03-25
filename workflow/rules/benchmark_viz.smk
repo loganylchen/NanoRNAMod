@@ -75,6 +75,31 @@ rule benchmark_detailed:
         "../scripts/benchmark_detailed.py"
 
 
+rule benchmark_kmer_negatives:
+    """K-mer negative benchmarking - use sites with same k-mer as negative controls."""
+    input:
+        results=lambda wc: get_all_result_tsvs(wc),
+        truth_set=config["benchmark"]["truth_set"],
+    output:
+        metrics="{project}/results/benchmarks/accuracy_summary_kmer_negatives.tsv",
+        negatives="{project}/results/benchmarks/kmer_negative_sites.tsv",
+    params:
+        window=config["benchmark"]["window"],
+        kmer_column=config.get("benchmark", {}).get("kmer_column", "auto"),
+    resources:
+        mem_mb=1024 * 8,
+    threads: 1
+    priority: 22
+    log:
+        "logs/{project}/benchmark_kmer_negatives/kmer_negatives.log",
+    benchmark:
+        "benchmarks/{project}/benchmark_kmer_negatives.benchmark.txt"
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_kmer_negatives.py"
+
+
 rule benchmark_multithreshold:
     """Multi-threshold evaluation with automatic threshold generation."""
     input:

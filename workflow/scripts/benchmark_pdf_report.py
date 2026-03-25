@@ -159,13 +159,15 @@ def add_table_of_contents(pdf):
         "3. Tool Comparison Charts",
         "4. Called Sites Comparison",
         "5. Metrics by Window",
-        "6. Heatmaps",
-        "7. Tool Rankings",
-        "8. Per-Modification Type Analysis",
-        "9. Per-Tool Detailed Analysis",
-        "10. Optimal Thresholds",
-        "11. Score Distributions",
-        "12. Data Sources"
+        "6. F1 Score Heatmap",
+        "7. AUPRC Heatmap",
+        "8. AUROC Heatmap",
+        "9. Tool Rankings",
+        "10. Per-Modification Type Analysis",
+        "11. Per-Tool Detailed Analysis",
+        "12. Optimal Thresholds",
+        "13. Score Distributions",
+        "14. Data Sources"
     ]
 
     y_pos = 0.75
@@ -509,8 +511,13 @@ def plot_metrics_by_window(data, pdf):
     plt.close(fig)
 
 
-def plot_heatmap(data, pdf, window=0, metric='f1'):
-    """Create heatmap of metrics per tool and modification type."""
+def plot_heatmap(data, pdf, window=0, metric='f1', vmin=None, vmax=None):
+    """Create heatmap of metrics per tool and modification type.
+
+    Parameters:
+        vmin, vmax: Override colorbar limits. If None, use data-driven range.
+                   Set to 0, 1 for percentage metrics where 0-1 is meaningful.
+    """
     df = data['accuracy']
 
     if df.empty:
@@ -538,11 +545,28 @@ def plot_heatmap(data, pdf, window=0, metric='f1'):
     if pivot.empty:
         return
 
+    # Determine colorbar limits based on data if not specified
+    data_min = pivot.min().min()
+    data_max = pivot.max().max()
+
+    if vmin is None:
+        vmin = data_min
+    if vmax is None:
+        vmax = data_max
+
+    # For metrics that are inherently 0-1 (precision, recall, f1, etc.),
+    # optionally clip to reasonable range
+    if metric.lower() in ['precision', 'recall', 'f1', 'auprc', 'auroc', 'specificity']:
+        # Use data range but don't extend beyond 0-1
+        vmin = max(0, data_min)
+        vmax = min(1, data_max)
+
     fig, ax = plt.subplots(figsize=(PAGE_WIDTH, PAGE_HEIGHT * 0.7))
 
+    # Use data-driven colorbar range for better differentiation
     sns.heatmap(pivot, annot=True, fmt='.3f', cmap='RdYlGn',
-                vmin=0, vmax=1, ax=ax,
-                cbar_kws={'label': metric.upper()},
+                vmin=vmin, vmax=vmax, ax=ax,
+                cbar_kws={'label': f'{metric.upper()} ({vmin:.2f}-{vmax:.2f})'},
                 linewidths=0.5, linecolor='white',
                 annot_kws={'fontsize': 10})
 
@@ -988,9 +1012,17 @@ def generate_pdf_report(data, output_path, benchmark_dir=None):
         # Metrics by window (line plot)
         plot_metrics_by_window(data, pdf)
 
-        # Heatmaps
+        # Heatmaps - F1, AUPRC, AUROC
         for window in windows:
             plot_heatmap(data, pdf, window, 'f1')
+
+        for window in windows:
+            if 'auprc' in data['accuracy'].columns:
+                plot_heatmap(data, pdf, window, 'auprc')
+
+        for window in windows:
+            if 'auroc' in data['accuracy'].columns:
+                plot_heatmap(data, pdf, window, 'auroc')
 
         # Ranking page
         for window in windows:
