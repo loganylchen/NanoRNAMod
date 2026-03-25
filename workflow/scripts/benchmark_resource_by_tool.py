@@ -49,24 +49,28 @@ F5C_INDEX_TOOLS = ['pybaleen']
 # Tools that only need alignment
 ALIGNMENT_TOOLS = ['differr', 'drummer', 'eligos2', 'epinano', 'tandemmod', 'directrm', 'm6atm', 'rnano', 'penguin']
 
+# Tools that have dataprep steps (data preparation before main tool execution)
+# baleen_dataprep, xpore_dataprep, nanocompore_collapse (eventalign_collapse)
+DATAPREP_TOOLS = ['baleen', 'xpore', 'nanocompore']
+
 # Detailed prerequisites for each tool (for documentation page)
 TOOL_PREREQUISITES = {
     'xpore': {
         'description': 'Differential RNA modification detection using nanopore direct RNA sequencing',
         'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Eventalign TSV (f5c eventalign --collapse)', 'Reference FASTA'],
-        'prereq_rules': ['link_fastq', 'minimap2', 'f5c_eventalign'],
+        'prereq_rules': ['link_fastq', 'minimap2', 'f5c_eventalign', 'xpore_dataprep'],
         'category': 'Signal-based (eventalign TSV)'
     },
     'nanocompore': {
         'description': 'Nanopore RNA modification calling using signal intensity and dwell time',
         'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Eventalign TSV (f5c eventalign --collapse)', 'Reference FASTA'],
-        'prereq_rules': ['link_fastq', 'minimap2', 'f5c_eventalign'],
+        'prereq_rules': ['link_fastq', 'minimap2', 'f5c_eventalign', 'nanocompore_collapse'],
         'category': 'Signal-based (eventalign TSV)'
     },
     'baleen': {
         'description': 'RNA modification detection using k-mer based models',
         'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Eventalign TSV (f5c eventalign --collapse)', 'Reference FASTA'],
-        'prereq_rules': ['link_fastq', 'minimap2', 'f5c_eventalign'],
+        'prereq_rules': ['link_fastq', 'minimap2', 'f5c_eventalign', 'baleen_dataprep'],
         'category': 'Signal-based (eventalign TSV)'
     },
     'pybaleen': {
@@ -158,8 +162,18 @@ def parse_benchmark_filename(filename):
         SampleA.minimap2_genome.benchmark.txt -> sample='SampleA', rule='minimap2_genome'
         SampleA_SampleB.xpore.benchmark.txt -> comparison='SampleA_SampleB', rule='xpore'
         SampleA.f5c_eventalign.benchmark.txt -> sample='SampleA', rule='f5c_eventalign'
+        SampleA.baleen_dataprep.txt -> sample='SampleA', rule='baleen_dataprep'
+        SampleA.xpore_dataprep.benchmark.txt -> sample='SampleA', rule='xpore_dataprep'
     """
-    stem = os.path.basename(filename).replace('.benchmark.txt', '')
+    basename = os.path.basename(filename)
+    # Handle both .benchmark.txt and .txt patterns
+    if basename.endswith('.benchmark.txt'):
+        stem = basename.replace('.benchmark.txt', '')
+    elif basename.endswith('.txt'):
+        stem = basename.replace('.txt', '')
+    else:
+        stem = basename
+
     parts = stem.rsplit('.', 1)
 
     if len(parts) == 2:
@@ -181,13 +195,23 @@ def parse_benchmark_filename(filename):
 
 def categorize_rule(rule_name):
     """
-    Categorize a rule into: modification_tool, alignment, eventalign, f5c_index, or other.
+    Categorize a rule into: modification_tool, alignment, eventalign, f5c_index, dataprep, or other.
     """
     rule_lower = rule_name.lower()
 
-    # Check if it's a modification tool
+    # Check if it's a dataprep step (data preparation before main tool execution)
+    # These are per-sample steps that prepare data for comparison-based tools
+    if 'dataprep' in rule_lower or 'eventalign_collapse' in rule_lower or 'nanocompore_collapse' in rule_lower:
+        # Extract tool name from dataprep rule
+        for tool in DATAPREP_TOOLS:
+            if tool in rule_lower:
+                return ('dataprep', tool)
+        # Generic dataprep if tool not found
+        return ('dataprep', 'dataprep')
+
+    # Check if it's a modification tool (main tool execution, not prep)
     for tool in COMPARISON_TOOLS + PER_SAMPLE_TOOLS:
-        if tool in rule_lower:
+        if tool in rule_lower and 'dataprep' not in rule_lower and 'collapse' not in rule_lower:
             return ('modification_tool', tool)
 
     # Check if it's alignment
@@ -223,6 +247,7 @@ def get_tool_dependencies(tool_name):
     from resource comparison. Only tool-specific prerequisites are counted:
     - eventalign: for signal-based tools that need pre-processed eventalign TSV
     - f5c_index: for tools that read raw signal files directly
+    - dataprep: for tools that have a data preparation step before main execution
     """
     dependencies = []
 
@@ -231,16 +256,25 @@ def get_tool_dependencies(tool_name):
     if tool_lower in [t.lower() for t in SIGNAL_TOOLS]:
         # Tools that use pre-processed eventalign TSV
         dependencies.append('eventalign')
-    elif tool_lower in [t.lower() for t in F5C_INDEX_TOOLS]:
+
+    if tool_lower in [t.lower() for t in F5C_INDEX_TOOLS]:
         # Tools that read raw signal files directly (need f5c index)
         dependencies.append('f5c_index')
+
+    if tool_lower in [t.lower() for t in DATAPREP_TOOLS]:
+        # Tools that have a data preparation step
+        dependencies.append('dataprep')
 
     return dependencies
 
 
 def load_benchmark_files(benchmark_dir):
     """Load all benchmark files from directory."""
+    # Load both .benchmark.txt and .txt files (some dataprep rules use .txt suffix)
     benchmark_files = glob.glob(os.path.join(benchmark_dir, '*.benchmark.txt'))
+    benchmark_files += glob.glob(os.path.join(benchmark_dir, '*.txt'))
+    # Remove duplicates (files ending in .benchmark.txt also match *.txt)
+    benchmark_files = list(set(benchmark_files))
 
     records = []
     for f in benchmark_files:
@@ -277,6 +311,7 @@ def aggregate_by_tool_with_dependencies(df):
     - The tool's own resource usage
     - Eventalign resource usage (only for signal-based tools)
     - f5c_index resource usage (only for tools that read raw signal directly)
+    - Dataprep resource usage (only for tools with data preparation steps)
 
     Note: Common steps (link_fastq, minimap2) used by ALL tools are excluded
     from the comparison since they don't differentiate between tools.
@@ -329,10 +364,17 @@ def aggregate_by_tool_with_dependencies(df):
                     if metric in index_df.columns:
                         row[f'{metric}_f5c_index'] = index_df[metric].sum()
 
+            # Dataprep resources (if applicable - data preparation before main tool)
+            if 'dataprep' in dependencies:
+                dataprep_df = sample_df[sample_df['rule_category'] == 'dataprep']
+                for metric in metrics:
+                    if metric in dataprep_df.columns:
+                        row[f'{metric}_dataprep'] = dataprep_df[metric].sum()
+
             # Calculate total (tool + differentiating dependencies only, NOT common steps)
             for metric in metrics:
                 total = 0
-                for suffix in ['_tool', '_eventalign', '_f5c_index']:  # Removed _alignment
+                for suffix in ['_tool', '_eventalign', '_f5c_index', '_dataprep']:  # Removed _alignment
                     key = f'{metric}{suffix}'
                     if key in row and pd.notna(row[key]):
                         total += row[key]
@@ -423,13 +465,17 @@ def create_prerequisites_page(pdf, agg_df):
 • minimap2: Align reads to reference (COMMON - excluded from comparison)
 • f5c_index: Create BLOW5 index files for fast signal access (pybaleen only)
 • f5c_eventalign: Align signal events to reference (signal tools only)
+• dataprep: Data preparation step before main tool execution
+  - baleen_dataprep: Prepare eventalign data for Baleen
+  - xpore_dataprep: Prepare eventalign data for xpore
+  - nanocompore_collapse: Collapse eventalign output for Nanocompore
 
 NOTE: Common steps (link_fastq, minimap2) are used by ALL tools
 and are excluded from resource comparison. Only tool-specific
 prerequisites are counted in resource totals.
 
 Category Legend:
-• Signal-based: Requires eventalign TSV (unique prereq)
+• Signal-based: Requires eventalign TSV + dataprep (unique prereqs)
 • Signal-based (raw BLOW5): Requires f5c_index (unique prereq, GPU)
 • Alignment-based: No unique prerequisites
 • Per-sample: No control sample needed"""
@@ -506,8 +552,8 @@ def create_resource_visualization(agg_df, output_path):
         fig, ax = plt.subplots(figsize=(14, 8))
 
         # Calculate mean time by tool and component
-        # Only differentiating components (eventalign, f5c_index), NOT common alignment
-        components = ['tool', 'eventalign', 'f5c_index']
+        # Only differentiating components (eventalign, f5c_index, dataprep), NOT common alignment
+        components = ['tool', 'eventalign', 'f5c_index', 'dataprep']
         time_cols = [f's_{c}' for c in components]
 
         # Filter to only columns that exist
@@ -519,7 +565,8 @@ def create_resource_visualization(agg_df, output_path):
         col_rename = {
             's_tool': 'Tool\nItself',
             's_eventalign': 'Eventalign\n(unique prereq)',
-            's_f5c_index': 'F5C Index\n(unique prereq)'
+            's_f5c_index': 'F5C Index\n(unique prereq)',
+            's_dataprep': 'Dataprep\n(unique prereq)'
         }
         mean_times = mean_times.rename(columns={k: v for k, v in col_rename.items() if k in mean_times.columns})
 
@@ -527,7 +574,8 @@ def create_resource_visualization(agg_df, output_path):
         color_map = {
             'Tool\nItself': '#3498db',
             'Eventalign\n(unique prereq)': '#e74c3c',
-            'F5C Index\n(unique prereq)': '#f39c12'
+            'F5C Index\n(unique prereq)': '#f39c12',
+            'Dataprep\n(unique prereq)': '#9b59b6'
         }
         colors = [color_map[c] for c in mean_times.columns if c in color_map]
 
@@ -562,6 +610,8 @@ def create_resource_visualization(agg_df, output_path):
                 return '#e74c3c'  # Red for eventalign-based tools
             elif tool_lower in [t.lower() for t in F5C_INDEX_TOOLS]:
                 return '#f39c12'  # Orange for f5c_index-based tools
+            elif tool_lower in [t.lower() for t in DATAPREP_TOOLS]:
+                return '#9b59b6'  # Purple for tools with dataprep steps
             else:
                 return '#3498db'  # Blue for alignment-only tools
 
@@ -576,7 +626,7 @@ def create_resource_visualization(agg_df, output_path):
 
         ax.set_xlabel('Mean Total Wall Time (minutes)')
         ax.set_ylabel('Mean Peak Memory (GB)')
-        ax.set_title('Resource Efficiency: Time vs Memory (common steps excluded)\n(Red = Eventalign-based, Orange = F5C Index-based, Blue = Alignment-only)',
+        ax.set_title('Resource Efficiency: Time vs Memory (common steps excluded)\n(Red = Eventalign-based, Orange = F5C Index-based, Purple = Dataprep, Blue = Alignment-only)',
                      fontweight='bold')
         ax.grid(alpha=0.3)
 
