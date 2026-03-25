@@ -49,6 +49,106 @@ F5C_INDEX_TOOLS = ['pybaleen']
 # Tools that only need alignment
 ALIGNMENT_TOOLS = ['differr', 'drummer', 'eligos2', 'epinano', 'tandemmod', 'directrm', 'm6atm', 'rnano', 'penguin']
 
+# Detailed prerequisites for each tool (for documentation page)
+TOOL_PREREQUISITES = {
+    'xpore': {
+        'description': 'Differential RNA modification detection using nanopore direct RNA sequencing',
+        'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Eventalign TSV (f5c eventalign --collapse)', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2', 'f5c_eventalign'],
+        'category': 'Signal-based (eventalign TSV)'
+    },
+    'nanocompore': {
+        'description': 'Nanopore RNA modification calling using signal intensity and dwell time',
+        'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Eventalign TSV (f5c eventalign --collapse)', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2', 'f5c_eventalign'],
+        'category': 'Signal-based (eventalign TSV)'
+    },
+    'baleen': {
+        'description': 'RNA modification detection using k-mer based models',
+        'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Eventalign TSV (f5c eventalign --collapse)', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2', 'f5c_eventalign'],
+        'category': 'Signal-based (eventalign TSV)'
+    },
+    'pybaleen': {
+        'description': 'CUDA-accelerated DTW + HMM modification detection',
+        'inputs': ['Native BAM', 'Control BAM', 'Native FASTQ', 'Control FASTQ', 'Native BLOW5 + Index', 'Control BLOW5 + Index', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'link_blow5', 'minimap2', 'f5c_index'],
+        'category': 'Signal-based (raw BLOW5, needs GPU)'
+    },
+    'differr': {
+        'description': 'Differential error rate analysis for RNA modification detection',
+        'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2'],
+        'category': 'Alignment-based'
+    },
+    'drummer': {
+        'description': 'DRUMMER - Differential RNA Modification detection',
+        'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2'],
+        'category': 'Alignment-based'
+    },
+    'eligos2': {
+        'description': 'Epitranscriptional landscape inferring from RNA sequencing',
+        'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Reference FASTA', 'Feature annotations (GTF)'],
+        'prereq_rules': ['link_fastq', 'minimap2'],
+        'category': 'Alignment-based'
+    },
+    'epinano': {
+        'description': 'Detection of m6A RNA modifications using nanopore direct RNA sequencing',
+        'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2'],
+        'category': 'Alignment-based'
+    },
+    'psipore': {
+        'description': 'RNA modification detection using PSI model',
+        'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Eventalign TSV (f5c eventalign --collapse)', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2', 'f5c_eventalign'],
+        'category': 'Signal-based (eventalign TSV)'
+    },
+    'nanopsu': {
+        'description': 'RNA modification detection using PSU features',
+        'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Eventalign TSV (f5c eventalign --collapse)', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2', 'f5c_eventalign'],
+        'category': 'Signal-based (eventalign TSV)'
+    },
+    'nanomud': {
+        'description': 'RNA modification detection using MUD model',
+        'inputs': ['Native BAM (minimap2)', 'Control BAM (minimap2)', 'Eventalign TSV (f5c eventalign --collapse)', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2', 'f5c_eventalign'],
+        'category': 'Signal-based (eventalign TSV)'
+    },
+    'tandemmod': {
+        'description': 'RNA modification detection without control sample',
+        'inputs': ['Native BAM (minimap2)', 'Native FASTQ', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2'],
+        'category': 'Per-sample (no control needed)'
+    },
+    'directrm': {
+        'description': 'Direct RNA modification detection',
+        'inputs': ['Native BAM (minimap2)', 'Native FASTQ', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2'],
+        'category': 'Per-sample (no control needed)'
+    },
+    'm6atm': {
+        'description': 'm6A detection using transformer model',
+        'inputs': ['Native BAM (minimap2)', 'Native FASTQ', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2'],
+        'category': 'Per-sample (no control needed)'
+    },
+    'rnano': {
+        'description': 'RNA modification detection using RNN',
+        'inputs': ['Native BAM (minimap2)', 'Native FASTQ', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2'],
+        'category': 'Per-sample (no control needed)'
+    },
+    'penguin': {
+        'description': 'RNA modification detection',
+        'inputs': ['Native BAM (minimap2)', 'Native FASTQ', 'Reference FASTA'],
+        'prereq_rules': ['link_fastq', 'minimap2'],
+        'category': 'Per-sample (no control needed)'
+    }
+}
+
 
 def parse_benchmark_filename(filename):
     """
@@ -237,6 +337,101 @@ def aggregate_by_tool_with_dependencies(df):
     return pd.DataFrame(results)
 
 
+def create_prerequisites_page(pdf, agg_df):
+    """Create a page showing prerequisites for each tool."""
+    fig = plt.figure(figsize=(14, 10))
+    ax = fig.add_subplot(111)
+    ax.axis('off')
+
+    ax.text(0.5, 0.97, 'Tool Prerequisites Overview',
+            fontsize=20, fontweight='bold', ha='center', va='center',
+            transform=ax.transAxes)
+
+    ax.text(0.5, 0.93, 'Input requirements and prerequisite steps for each modification detection tool',
+            fontsize=11, ha='center', va='center', transform=ax.transAxes,
+            color='gray')
+
+    # Get tools from data
+    tools_in_data = sorted(agg_df['tool'].unique()) if not agg_df.empty else []
+
+    # Build table data
+    table_data = []
+    headers = ['Tool', 'Category', 'Prerequisite Steps', 'Key Inputs']
+
+    for tool in tools_in_data:
+        info = TOOL_PREREQUISITES.get(tool, {})
+        category = info.get('category', 'Unknown')
+        prereqs = info.get('prereq_rules', [])
+        inputs = info.get('inputs', [])
+
+        # Format for display
+        prereqs_str = ', '.join(prereqs[:3])
+        if len(prereqs) > 3:
+            prereqs_str += f' +{len(prereqs)-3}'
+
+        inputs_str = '\n'.join(inputs[:2])
+        if len(inputs) > 2:
+            inputs_str += f'\n+{len(inputs)-2} more'
+
+        table_data.append([tool, category, prereqs_str, inputs_str])
+
+    if not table_data:
+        ax.text(0.5, 0.5, 'No tool data available',
+                fontsize=12, ha='center', va='center', transform=ax.transAxes)
+        pdf.savefig(fig, bbox_inches='tight')
+        plt.close(fig)
+        return
+
+    # Create table
+    table = ax.table(cellText=table_data,
+                     colLabels=headers,
+                     cellLoc='left',
+                     loc='center',
+                     colWidths=[0.12, 0.20, 0.28, 0.40])
+
+    table.auto_set_font_size(False)
+    table.set_fontsize(8)
+    table.scale(1.1, 2.2)
+
+    # Style header
+    for i in range(len(headers)):
+        table[(0, i)].set_facecolor('#2c3e50')
+        table[(0, i)].set_text_props(color='white', fontweight='bold')
+
+    # Alternate row colors
+    for i in range(1, len(table_data) + 1):
+        for j in range(len(headers)):
+            if i % 2 == 0:
+                table[(i, j)].set_facecolor('#ecf0f1')
+
+    # Set column alignments
+    for i in range(len(table_data) + 1):
+        for j in range(len(headers)):
+            cell = table[(i, j)]
+            cell.get_text().set_wrap(True)
+
+    # Add legend for prerequisite steps
+    legend_text = """Prerequisite Step Definitions:
+• link_fastq: Symlink raw FASTQ files to project results
+• link_blow5: Symlink raw BLOW5 signal files to project results
+• minimap2: Align reads to reference transcriptome (produces BAM)
+• f5c_index: Create BLOW5 index files for fast signal access
+• f5c_eventalign: Align signal events to reference (produces TSV)
+
+Category Legend:
+• Signal-based: Requires processed signal data (eventalign TSV or raw BLOW5)
+• Alignment-based: Only requires BAM alignment files
+• Per-sample: No control sample needed"""
+
+    ax.text(0.02, 0.15, legend_text,
+            fontsize=7, va='bottom', ha='left',
+            transform=ax.transAxes, family='monospace',
+            bbox=dict(boxstyle='round', facecolor='#f8f9fa', alpha=0.8))
+
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
+
+
 def create_resource_visualization(agg_df, output_path):
     """Create PDF visualization of resource usage by tool."""
     if agg_df.empty:
@@ -244,7 +439,10 @@ def create_resource_visualization(agg_df, output_path):
         return
 
     with PdfPages(output_path) as pdf:
-        # Page 1: Total wall time by tool
+        # Page 1: Tool Prerequisites Overview
+        create_prerequisites_page(pdf, agg_df)
+
+        # Page 2: Total wall time by tool
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         fig.suptitle('Resource Usage by Modification Tool (Total including prerequisites)',
                      fontsize=14, fontweight='bold')
