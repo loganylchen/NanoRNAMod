@@ -51,11 +51,14 @@ if config.get("benchmark", {}).get("truth_set", ""):
             results=get_all_result_tsvs,
             truth_set=config["benchmark"]["truth_set"],
         output:
+            # Use directory + touch file to track completion
+            # The script will create per-tool files and aggregated files
             directory("{project}/results/benchmarks"),
             touch("{project}/results/benchmarks/.benchmark_complete"),
         params:
             window=config["benchmark"]["window"],
-            output_files=get_benchmark_output_files,
+            # Pass output file paths to the script
+            per_tool_files=get_benchmark_output_files,
         resources:
             mem_mb=1024 * 8,
         threads: 1
