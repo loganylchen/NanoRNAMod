@@ -32,10 +32,11 @@ import numpy as np
 
 result_files = snakemake.input.results
 truth_set_path = snakemake.input.truth_set
-output_files = snakemake.output  # Now expects 3 files
+output_files = snakemake.output  # Now expects 4 files
 output_file = output_files[0]  # accuracy_summary.tsv (by modification_type)
 output_overall = output_files[1]  # accuracy_summary_overall.tsv
 output_by_comparison = output_files[2]  # accuracy_summary_by_comparison.tsv
+output_by_negative_type = output_files[3]  # accuracy_summary_by_negative_type.tsv
 window_param = snakemake.params.window
 
 # Support both single int and list of windows
@@ -503,9 +504,116 @@ def compute_ranking_metrics_with_fair_comparison(pred_df, all_covered_sites,
 
 records = []
 records_by_comparison = []  # For per-comparison metrics
+records_by_negtype = {}  # tool -> list of per-negative-type metrics
 
 # Get all modification types from positive sites
 all_mod_types = set(truth_pos['modification_type'].unique())
+
+# ── Helper: detect k-mer column ───────────────────────────────────────────────
+def detect_kmer_column(df):
+    """Detect the k-mer column in a dataframe."""
+    kmer_cols = ['kmer', 'k_mer', 'k-mer', 'motif', 'sequence', 'context']
+    for col in kmer_cols:
+        if col in df.columns:
+            return col
+    # Case-insensitive search
+    for col in df.columns:
+        if col.lower() in ['kmer', 'k_mer', 'k-mer']:
+            return col
+    return None
+
+# ── Helper: categorize negative sites ─────────────────────────────────────────
+def categorize_negative_sites(pred_df, truth_pos_subset, kmer_col=None, window=0):
+    """
+    Categorize negative sites into 3 types based on their relationship to positive sites.
+
+    Categories:
+    1. All Other Sites: Positions not in positive sites (general negatives)
+    2. Same K-mer Different Position: Positions sharing k-mer with positive sites
+    3. Same Base Position: Positions at exact same location as positive sites
+       (these are false positives at the modification site)
+
+    Returns:
+        dict: {neg_type: DataFrame of negative sites}
+    """
+    # Build positive site lookup
+    truth_pos_set = set()
+    truth_pos_kmers = {}  # (tx, pos) -> kmer
+    for _, row in truth_pos_subset.iterrows():
+        tx = row['transcript']
+        pos = row['position']
+        truth_pos_set.add((tx, pos))
+        # Store k-mer if available
+        if kmer_col and kmer_col in row:
+            truth_pos_kmers[(tx, pos)] = row[kmer_col]
+
+    # Get all kmers from positive sites for "same k-mer" category
+    positive_kmers = set(truth_pos_kmers.values()) if truth_pos_kmers else set()
+
+    neg_by_type = {
+        'all_other': [],      # Type 1: All other sites (not positive)
+        'same_kmer': [],      # Type 2: Same k-mer, different position
+        'same_position': [],  # Type 3: Same base position (FP at exact pos)
+    }
+
+    for _, row in pred_df.iterrows():
+        tx = row['transcript']
+        pos = row['position']
+
+        # Check if this is a positive site (within window)
+        is_positive = False
+        matched_pos = None
+        for ttx, tpos in truth_pos_set:
+            if ttx == tx and abs(tpos - pos) <= window:
+                is_positive = True
+                matched_pos = (ttx, tpos)
+                break
+
+        if is_positive:
+            continue  # Skip positive sites
+
+        # Categorize this negative
+        pred_kmer = row.get(kmer_col) if kmer_col else None
+
+        # Check if same position as a positive site (exact match but not positive)
+        # This happens when tool calls at the exact position but it's not in truth
+        is_same_position = False
+        for ttx, tpos in truth_pos_set:
+            if ttx == tx and tpos == pos:
+                is_same_position = True
+                break
+
+        if is_same_position:
+            neg_by_type['same_position'].append({
+                'transcript': tx,
+                'position': pos,
+                'kmer': pred_kmer,
+                'neg_type': 'same_position'
+            })
+        elif pred_kmer and pred_kmer in positive_kmers:
+            neg_by_type['same_kmer'].append({
+                'transcript': tx,
+                'position': pos,
+                'kmer': pred_kmer,
+                'neg_type': 'same_kmer'
+            })
+        else:
+            neg_by_type['all_other'].append({
+                'transcript': tx,
+                'position': pos,
+                'kmer': pred_kmer,
+                'neg_type': 'all_other'
+            })
+
+    # Convert to DataFrames
+    result = {}
+    for neg_type, sites in neg_by_type.items():
+        if sites:
+            result[neg_type] = pd.DataFrame(sites)
+        else:
+            result[neg_type] = pd.DataFrame(columns=['transcript', 'position', 'kmer', 'neg_type'])
+
+    return result
 
 # ── Build union of all covered sites per modification type (for fair comparison) ──
 print("\nBuilding union of all covered sites for fair comparison...")
@@ -658,6 +766,174 @@ for tool, pred_df in tool_dfs.items():
                 "total_predicted": total_predicted,
                 "total_negative": total_negative,
             })
+
+        # ── Per-negative-type metrics (detailed benchmark by negative category) ──
+        # When groundtruth only has positive sites, we categorize false positives into:
+        #
+        # NEGATIVE SITE CATEGORIES (for tools predicting modification sites):
+        # ─────────────────────────────────────────────────────────────────────────
+        # 1. all_other (Type 1): All other positions not in positive sites
+        #    - These are general negative sites, the easiest category
+        #    - Represents positions that have no relationship to true modification sites
+        #
+        # 2. same_kmer (Type 2): Positions sharing k-mer with positive sites but different position
+        #    - These are "harder" negatives because they share the same sequence context
+        #    - The k-mer is identical but the position differs
+        #    - Tests tool's ability to distinguish exact modification position within the k-mer
+        #
+        # 3. same_position (Type 3): Positions at the exact same base position
+        #    - These are false positives at the exact modification position
+        #    - Tool called a site at the correct position but it wasn't in the truth set
+        #    - Most confusing category - could indicate:
+        #      a) False positives (tool is wrong)
+        #      b) Missing truth sites (truth set is incomplete)
+        # ─────────────────────────────────────────────────────────────────────────
+        if tool not in records_by_negtype:
+            records_by_negtype[tool] = []
+
+        # Detect k-mer column for this tool
+        kmer_col = detect_kmer_column(pred_subset)
+
+        # Only compute per-negative-type if truth_neg is empty (no explicit negatives)
+        # and we're using inferred negatives
+        if truth_neg.empty and not truth_subset.empty:
+            # Build positive site lookup (exact matches)
+            truth_pos_set = set()
+            for _, row in truth_subset.iterrows():
+                truth_pos_set.add((row['transcript'], row['position']))
+
+            # Build k-mer lookup from positive sites
+            positive_kmers = set()
+            positive_kmer_by_tx = {}  # (tx) -> set of kmers at positive sites
+            if kmer_col and kmer_col in truth_subset.columns:
+                for _, row in truth_subset.iterrows():
+                    tx = row['transcript']
+                    kmer = row.get(kmer_col)
+                    if pd.notna(kmer):
+                        positive_kmers.add(kmer)
+                        if tx not in positive_kmer_by_tx:
+                            positive_kmer_by_tx[tx] = set()
+                        positive_kmer_by_tx[tx].add(kmer)
+
+            # Categorize each predicted site that is NOT a true positive
+            # These become our negative site categories
+            fp_by_type = {
+                'all_other': [],      # Type 1: General negatives
+                'same_kmer': [],      # Type 2: Same k-mer, different position
+                'same_position': [],  # Type 3: Same exact position (FP at truth site)
+            }
+
+            for idx, row in pred_subset.iterrows():
+                tx = row['transcript']
+                pos = row['position']
+
+                # Check if this prediction is at the exact position of a positive site
+                is_exact_match = (tx, pos) in truth_pos_set
+
+                # If exact match, it's a true positive, skip for negative categorization
+                if is_exact_match:
+                    continue
+
+                # This is a negative (either FP or TN depending on window)
+                # Categorize by relationship to positive sites
+
+                pred_kmer = row.get(kmer_col) if kmer_col else None
+
+                # Type 3: Same position - this prediction is at a different transcript
+                # or different position from positive sites, so not same_position
+                # (We already excluded exact matches above)
+
+                # Type 2: Same k-mer - check if this position shares k-mer with any positive site
+                is_same_kmer = False
+                if pred_kmer and pred_kmer in positive_kmers:
+                    is_same_kmer = True
+
+                if is_same_kmer:
+                    fp_by_type['same_kmer'].append(idx)
+                else:
+                    fp_by_type['all_other'].append(idx)
+
+            # Count negatives by type
+            for neg_type in ['all_other', 'same_kmer', 'same_position']:
+                neg_count = len(fp_by_type[neg_type])
+
+                # Get subset of predictions for this negative type
+                if fp_by_type[neg_type]:
+                    pred_subset_negtype = pred_subset.loc[fp_by_type[neg_type]]
+                else:
+                    pred_subset_negtype = pd.DataFrame(columns=pred_subset.columns)
+
+                for window in windows:
+                    # For per-negative-type analysis:
+                    # - TP = 0 (these are all negatives, no true positives in this subset)
+                    # - FP = predictions in this subset that don't match any truth site
+                    # - TN = all other negatives in this category not predicted
+
+                    # Actually, we need to reconsider the approach:
+                    # The user wants to see how the tool performs on different NEGATIVE SETS
+                    # not different PREDICTION subsets.
+                    #
+                    # So we should compute:
+                    # - For each negative type, treat those sites as the negative set
+                    # - Compute precision/recall against that negative set
+                    # - This shows tool's discrimination ability for each negative type
+
+                    # Count FP in this negative type (predictions that are in this category)
+                    fp_neg = len(pred_subset_negtype)
+
+                    # Count TN = total negatives of this type - FP (negatives correctly not called)
+                    tn_neg = neg_count - fp_neg if neg_count > 0 else 0
+
+                    # For precision/recall, we use all truth positives and all tool predictions
+                    # But specificity is computed against each negative type separately
+                    precision_neg = precision  # Same as overall (uses all predictions)
+                    recall_neg = recall  # Same as overall (uses all truth positives)
+                    f1_neg = f1  # Same as overall
+
+                    specificity_neg = tn_neg / neg_count if neg_count > 0 else np.nan
+
+                    # AUPRC/AUROC for this negative type
+                    # Create the negative set for this type
+                    truth_neg_negtype = pd.DataFrame([
+                        {'transcript': pred_subset.loc[idx, 'transcript'],
+                         'position': pred_subset.loc[idx, 'position'],
+                         'modification_type': mod_type, 'label': '-'}
+                        for idx in fp_by_type[neg_type]
+                    ]) if fp_by_type[neg_type] else pd.DataFrame()
+
+                    # Build covered sites for fair comparison
+                    covered_sites_neg = set()
+                    for idx in fp_by_type[neg_type]:
+                        r = pred_subset.loc[idx]
+                        covered_sites_neg.add((r['transcript'], r['position']))
+
+                    # Compute AUPRC/AUROC treating this negative type as the only negatives
+                    auprc_neg, auroc_neg = compute_ranking_metrics_with_fair_comparison(
+                        pred_subset, covered_sites_neg, truth_subset, truth_neg_negtype,
+                        score_col, window, tool_name=tool
+                    )
+
+                    records_by_negtype[tool].append({
+                        "tool": tool,
+                        "modification_type": mod_type,
+                        "negative_type": neg_type,
+                        "window": window,
+                        "precision": precision_neg,
+                        "recall": recall_neg,
+                        "f1": f1_neg,
+                        "tp": tp,  # Same as overall
+                        "fp": fp_neg,  # FP in this negative category
+                        "fn": fn,  # Same as overall
+                        "tn": tn_neg,  # TN in this negative category
+                        "specificity": specificity_neg,
+                        "auprc": auprc_neg,
+                        "auroc": auroc_neg,
+                        "called_sites": called_sites,
+                        "total_truth": total_truth,
+                        "total_negative": neg_count,
+                        "total_predicted": total_predicted,
+                        "fp_in_category": fp_neg,  # How many FPs fall into this category
+                    })
 
         # ── Per-comparison metrics (for scatterplot) ──
         if tool in tool_comparisons:
@@ -825,4 +1101,47 @@ else:
     ])
 comp_df.to_csv(output_by_comparison, sep='\t', index=False)
 print(f"Saved per-comparison metrics to {output_by_comparison}")
+
+# ── Write output: by negative type (per-tool detailed benchmark) ───────────────
+# Flatten records_by_negtype into a single list
+all_negtype_records = []
+for tool, negtype_recs in records_by_negtype.items():
+    all_negtype_records.extend(negtype_recs)
+
+if all_negtype_records:
+    negtype_df = pd.DataFrame(all_negtype_records).sort_values(
+        ["tool", "modification_type", "negative_type", "window", "f1"],
+        ascending=[True, True, True, True, False]
+    )
+else:
+    negtype_df = pd.DataFrame(columns=[
+        "tool", "modification_type", "negative_type", "window", "precision", "recall",
+        "f1", "tp", "fp", "fn", "tn", "specificity", "auprc", "auroc",
+        "called_sites", "total_truth", "total_negative", "total_predicted"
+    ])
+negtype_df.to_csv(output_by_negative_type, sep='\t', index=False)
+print(f"Saved per-negative-type metrics to {output_by_negative_type}")
+
+# ── Print summary of negative site counts ───────────────────────────────────────
+if all_negtype_records:
+    print("\n" + "="*60)
+    print("NEGATIVE SITE CATEGORIZATION SUMMARY")
+    print("="*60)
+    print("When groundtruth only has positive sites, negatives are categorized as:")
+    print("  1. all_other      : All positions not in positive sites (general negatives)")
+    print("  2. same_kmer      : Positions sharing k-mer with positive sites (harder negatives)")
+    print("  3. same_position  : Positions at exact same base position (FPs at modification sites)")
+    print("-"*60)
+    for tool in sorted(set(r["tool"] for r in all_negtype_records)):
+        print(f"\n{tool}:")
+        for mod_type in sorted(set(r["modification_type"] for r in all_negtype_records if r["tool"] == tool)):
+            records_for_tool_mod = [r for r in all_negtype_records
+                                     if r["tool"] == tool and r["modification_type"] == mod_type]
+            if records_for_tool_mod:
+                pos_count = records_for_tool_mod[0]["total_truth"]
+                print(f"  {mod_type}: {pos_count} positive sites")
+                for r in records_for_tool_mod:
+                    if r["window"] == 0:  # Show for window=0 only
+                        print(f"    {r['negative_type']}: {r['total_negative']} negative sites")
+    print("="*60)
 

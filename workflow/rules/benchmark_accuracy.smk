@@ -32,6 +32,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
             "{project}/results/benchmarks/accuracy_summary.tsv",
             "{project}/results/benchmarks/accuracy_summary_overall.tsv",
             "{project}/results/benchmarks/accuracy_summary_by_comparison.tsv",
+            "{project}/results/benchmarks/accuracy_summary_by_negative_type.tsv",
         params:
             window=config["benchmark"]["window"],
         resources:
