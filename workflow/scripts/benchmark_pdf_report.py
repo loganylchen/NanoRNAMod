@@ -89,7 +89,360 @@ def load_benchmark_data(benchmark_dir):
     else:
         data['distributions'] = pd.DataFrame()
 
+    # Load optimal score per tool
+    optimal_score_path = os.path.join(benchmark_dir, "optimal_score_per_tool.tsv")
+    if os.path.exists(optimal_score_path):
+        data['optimal_score'] = pd.read_csv(optimal_score_path, sep='\t')
+    else:
+        data['optimal_score'] = pd.DataFrame()
+
+    # Load all scores evaluation (for score column discovery)
+    all_scores_path = os.path.join(benchmark_dir, "all_scores_evaluation.tsv")
+    if os.path.exists(all_scores_path):
+        data['all_scores'] = pd.read_csv(all_scores_path, sep='\t')
+    else:
+        data['all_scores'] = pd.DataFrame()
+
     return data
+
+
+def plot_roc_prc_curves(data, pdf, window=0):
+    """Plot ROC and PR curves for all tools at a given window.
+
+    This visualizes the trade-off between precision and recall (PR curve)
+    and true positive rate vs false positive rate (ROC curve) for each tool.
+    """
+    df = data.get('roc_pr_data', pd.DataFrame())
+
+    if df.empty:
+        # Create placeholder page explaining data requirements
+        fig = plt.figure(figsize=(PAGE_WIDTH, PAGE_HEIGHT))
+        ax = fig.add_subplot(111)
+        ax.axis('off')
+
+        ax.text(0.5, 0.5, 'ROC/PR Curves\n\nRequires detailed predictions with scores.\n'
+                'Run benchmark_detailed.py to generate required data.',
+                fontsize=14, ha='center', va='center', transform=ax.transAxes)
+
+        ax.text(0.5, 0.95, 'ROC and Precision-Recall Curves',
+                fontsize=18, fontweight='bold', ha='center', transform=ax.transAxes)
+
+        # Add note about data location
+        ax.text(0.5, 0.15, 'Data source: {project}/results/benchmarks/detailed_predictions.tsv',
+                fontsize=10, ha='center', va='center', transform=ax.transAxes,
+                color='gray', style='italic')
+
+        pdf.savefig(fig, bbox_inches='tight')
+        plt.close(fig)
+        return
+
+    # Filter by window if available
+    if 'window' in df.columns:
+        df = df[df['window'] == window].copy()
+
+    if df.empty:
+        return
+
+    tools = df['tool'].unique()
+
+    # Create figure with two subplots
+    fig, axes = plt.subplots(1, 2, figsize=(PAGE_WIDTH, PAGE_HEIGHT * 0.8))
+
+    colors = plt.cm.tab10(np.linspace(0, 1, len(tools)))
+
+    # Plot ROC curves
+    ax_roc = axes[0]
+    for i, tool in enumerate(tools):
+        tool_df = df[df['tool'] == tool]
+
+        if 'fpr' in tool_df.columns and 'tpr' in tool_df.columns:
+            ax_roc.plot(tool_df['fpr'], tool_df['tpr'],
+                       label=f"{tool} (AUC={tool_df['auroc'].iloc[0]:.3f})" if 'auroc' in tool_df.columns else tool,
+                       color=colors[i], linewidth=2)
+
+    ax_roc.plot([0, 1], [0, 1], 'k--', alpha=0.5, label='Random')
+    ax_roc.set_xlabel('False Positive Rate', fontsize=11)
+    ax_roc.set_ylabel('True Positive Rate', fontsize=11)
+    ax_roc.set_title(f'ROC Curves (window={window}nt)', fontsize=14, fontweight='bold')
+    ax_roc.legend(loc='lower right', fontsize=9)
+    ax_roc.set_xlim(0, 1)
+    ax_roc.set_ylim(0, 1)
+    ax_roc.grid(alpha=0.3)
+
+    # Plot PR curves
+    ax_pr = axes[1]
+    for i, tool in enumerate(tools):
+        tool_df = df[df['tool'] == tool]
+
+        if 'recall' in tool_df.columns and 'precision' in tool_df.columns:
+            ax_pr.plot(tool_df['recall'], tool_df['precision'],
+                      label=f"{tool} (AUC={tool_df['auprc'].iloc[0]:.3f})" if 'auprc' in tool_df.columns else tool,
+                      color=colors[i], linewidth=2)
+
+    ax_pr.set_xlabel('Recall (Sensitivity)', fontsize=11)
+    ax_pr.set_ylabel('Precision', fontsize=11)
+    ax_pr.set_title(f'Precision-Recall Curves (window={window}nt)', fontsize=14, fontweight='bold')
+    ax_pr.legend(loc='lower left', fontsize=9)
+    ax_pr.set_xlim(0, 1)
+    ax_pr.set_ylim(0, 1)
+    ax_pr.grid(alpha=0.3)
+
+    plt.tight_layout()
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
+
+
+def plot_metrics_by_modification_type(data, pdf, window=0):
+    """Plot metrics grouped by modification type as grouped bar chart.
+
+    Data source: {project}/results/benchmarks/accuracy_summary.tsv
+    """
+    df = data['accuracy']
+
+    if df.empty:
+        return
+
+    # Filter by window if available
+    if 'window' in df.columns:
+        df = df[df['window'] == window].copy()
+
+    if df.empty or 'modification_type' not in df.columns:
+        return
+
+    mod_types = df['modification_type'].unique()
+    tools = df['tool'].unique()
+
+    if len(mod_types) == 0 or len(tools) == 0:
+        return
+
+    # Create figure with multiple subplots for key metrics
+    metrics = ['f1', 'precision', 'recall', 'auprc', 'auroc']
+    metrics = [m for m in metrics if m in df.columns]
+
+    if not metrics:
+        return
+
+    n_metrics = len(metrics)
+    fig, axes = plt.subplots(1, n_metrics, figsize=(PAGE_WIDTH, PAGE_HEIGHT * 0.6))
+
+    if n_metrics == 1:
+        axes = [axes]
+
+    colors = plt.cm.Set2(np.linspace(0, 1, len(tools)))
+
+    for ax, metric in zip(axes, metrics):
+        x = np.arange(len(mod_types))
+        width = 0.8 / len(tools)
+
+        for i, tool in enumerate(tools):
+            tool_df = df[df['tool'] == tool]
+            vals = [tool_df[tool_df['modification_type'] == mt][metric].mean()
+                   for mt in mod_types]
+            ax.bar(x + i * width, vals, width, label=tool, color=colors[i])
+
+        ax.set_xlabel('Modification Type', fontsize=10)
+        ax.set_ylabel(metric.upper(), fontsize=10)
+        ax.set_title(f'{metric.upper()} by Modification Type', fontsize=12, fontweight='bold')
+        ax.set_xticks(x + width * (len(tools) - 1) / 2)
+        ax.set_xticklabels(mod_types, rotation=45, ha='right', fontsize=9)
+        ax.set_ylim(0, 1)
+        ax.grid(axis='y', alpha=0.3)
+
+    # Add single legend for all subplots
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper center', ncol=min(len(tools), 5),
+               bbox_to_anchor=(0.5, 1.02), fontsize=9)
+
+    # Add data source annotation
+    fig.text(0.5, -0.02, 'Data source: {project}/results/benchmarks/accuracy_summary.tsv',
+             ha='center', fontsize=9, color='gray', style='italic')
+
+    plt.tight_layout()
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
+
+
+def plot_tool_called_sites_comparison(data, pdf, tool, window=0):
+    """Plot called sites for each comparison (e.g., control_0_case_0) for a tool.
+
+    Uses accuracy_summary.tsv data grouped by modification_type as a proxy for comparisons.
+    """
+    df = data['accuracy']
+
+    if df.empty:
+        return
+
+    # Filter for this tool and window
+    tool_df = df[df['tool'] == tool].copy()
+    if 'window' in tool_df.columns:
+        tool_df = tool_df[tool_df['window'] == window]
+
+    if tool_df.empty:
+        return
+
+    # Check if called_sites column exists
+    if 'called_sites' not in tool_df.columns:
+        fig = plt.figure(figsize=(PAGE_WIDTH * 0.9, PAGE_HEIGHT * 0.4))
+        ax = fig.add_subplot(111)
+        ax.axis('off')
+        ax.text(0.5, 0.5, f'{tool}: Called sites data not available',
+                ha='center', va='center', fontsize=12, color='gray')
+        pdf.savefig(fig, bbox_inches='tight')
+        plt.close(fig)
+        return
+
+    # Use modification_type as comparison groups
+    if 'modification_type' in tool_df.columns:
+        groups = tool_df.groupby('modification_type')['called_sites'].sum().sort_values(ascending=True)
+    else:
+        # Single value
+        groups = pd.Series({'overall': tool_df['called_sites'].sum()})
+
+    fig, ax = plt.subplots(figsize=(PAGE_WIDTH * 0.9, PAGE_HEIGHT * 0.4))
+
+    bars = ax.barh(range(len(groups)), groups.values, color='steelblue', edgecolor='navy')
+
+    ax.set_xlabel('Called Sites', fontsize=11)
+    ax.set_ylabel('Modification Type', fontsize=11)
+    ax.set_title(f'{tool}: Called Sites per Comparison (window={window}nt)', fontsize=14, fontweight='bold')
+    ax.set_yticks(range(len(groups)))
+    ax.set_yticklabels(groups.index, fontsize=9)
+    ax.grid(axis='x', alpha=0.3)
+
+    # Add count labels on bars
+    for bar, count in zip(bars, groups.values):
+        ax.text(bar.get_width() + max(groups.values) * 0.01,
+               bar.get_y() + bar.get_height()/2,
+               f'{int(count):,}', ha='left', va='center', fontsize=8)
+
+    plt.tight_layout()
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
+
+
+def plot_tool_auprc_auroc_scatter(data, pdf, tool, window=0):
+    """Plot AUPRC vs AUROC scatter for each comparison."""
+    df = data['accuracy']
+
+    if df.empty:
+        return
+
+    tool_df = df[df['tool'] == tool].copy()
+
+    if tool_df.empty:
+        return
+
+    if 'auprc' not in tool_df.columns or 'auroc' not in tool_df.columns:
+        return
+
+    fig, ax = plt.subplots(figsize=(PAGE_WIDTH * 0.7, PAGE_HEIGHT * 0.5))
+
+    # Plot scatter
+    ax.scatter(tool_df['auroc'], tool_df['auprc'], s=100, alpha=0.7,
+              c='steelblue', edgecolors='navy')
+
+    # Add diagonal reference line
+    ax.plot([0, 1], [0, 1], 'k--', alpha=0.3, label='AUPRC = AUROC')
+
+    # Add labels for each point
+    label_col = None
+    for col in ['modification_type', 'comparison', 'sample']:
+        if col in tool_df.columns:
+            label_col = col
+            break
+
+    if label_col:
+        for _, row in tool_df.iterrows():
+            ax.annotate(str(row[label_col])[:15],
+                       (row['auroc'], row['auprc']),
+                       xytext=(3, 3), textcoords='offset points',
+                       fontsize=8, alpha=0.7)
+
+    ax.set_xlabel('AUROC', fontsize=11)
+    ax.set_ylabel('AUPRC', fontsize=11)
+    ax.set_title(f'{tool}: AUPRC vs AUROC', fontsize=14, fontweight='bold')
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.grid(alpha=0.3)
+    ax.legend(loc='lower right', fontsize=9)
+
+    # Add mean point
+    mean_auroc = tool_df['auroc'].mean()
+    mean_auprc = tool_df['auprc'].mean()
+    ax.scatter([mean_auroc], [mean_auprc], s=200, c='red', marker='*',
+              edgecolors='darkred', zorder=5, label=f'Mean ({mean_auroc:.3f}, {mean_auprc:.3f})')
+
+    plt.tight_layout()
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
+
+
+def display_available_score_columns(data, pdf, tool):
+    """Display all available score columns that could be used for ROC calculation.
+
+    Uses optimal_score_per_tool.tsv if available, otherwise shows common patterns.
+    """
+    df = data.get('optimal_score', pd.DataFrame())
+
+    fig = plt.figure(figsize=(PAGE_WIDTH, PAGE_HEIGHT * 0.5))
+    ax = fig.add_subplot(111)
+    ax.axis('off')
+
+    # Check if we have score column data for this tool
+    if not df.empty and 'tool' in df.columns:
+        tool_df = df[df['tool'] == tool]
+
+        if not tool_df.empty and 'original_score_column' in tool_df.columns:
+            # Show actual score columns found
+            score_cols = tool_df['original_score_column'].unique().tolist()
+
+            text = f"Tool: {tool}\n\n"
+            text += "Score columns available for ROC calculation:\n\n"
+            for col in score_cols:
+                text += f"  • {col}\n"
+
+            if 'score_column' in tool_df.columns:
+                used = tool_df['score_column'].iloc[0]
+                text += f"\nColumn used for this report: {used}"
+
+            ax.text(0.1, 0.5, text, fontsize=11, va='center', transform=ax.transAxes,
+                   family='monospace',
+                   bbox=dict(boxstyle='round', facecolor='#d4edda', alpha=0.5))
+        else:
+            # Show common patterns
+            text = f"Tool: {tool}\n\n"
+            text += "Common score columns for this tool type:\n\n"
+            text += "  • p_value / pvalue / pval\n"
+            text += "  • adjusted_p_value / padj / FDR\n"
+            text += "  • mod_ratio / stoichiometry\n"
+            text += "  • diff_mod_rate / mod_diff\n"
+            text += "  • z_score / statistic\n"
+            text += "  • probability / score\n\n"
+            text += "Run benchmark_score_optimization rule\n"
+            text += "for detailed score column analysis."
+
+            ax.text(0.1, 0.5, text, fontsize=10, va='center', transform=ax.transAxes,
+                   family='monospace',
+                   bbox=dict(boxstyle='round', facecolor='#fff3cd', alpha=0.5))
+    else:
+        # No data available - show generic message
+        text = f"Tool: {tool}\n\n"
+        text += "Score column analysis requires:\n\n"
+        text += "  • Run benchmark_score_optimization rule\n"
+        text += "  • Output: optimal_score_per_tool.tsv\n\n"
+        text += "Common score columns include:\n"
+        text += "  p_value, adjusted_p_value, mod_ratio,\n"
+        text += "  stoichiometry, mod_diff, z_score"
+
+        ax.text(0.1, 0.5, text, fontsize=10, va='center', transform=ax.transAxes,
+               family='monospace',
+               bbox=dict(boxstyle='round', facecolor='#ecf0f1', alpha=0.5))
+
+    ax.set_title(f'{tool}: Available Score Columns for ROC Calculation',
+                fontsize=14, fontweight='bold')
+
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
 
 
 def add_title_page(pdf, data):
@@ -143,6 +496,256 @@ def add_title_page(pdf, data):
     plt.close(fig)
 
 
+# Tool prerequisites information
+TOOL_PREREQUISITES = {
+    'xpore': {
+        'inputs': [
+            'Native BAM (minimap2 alignment)',
+            'Control BAM (minimap2 alignment)',
+            'Reference FASTA (transcriptome)',
+            'Event alignment TSV (f5c eventalign --collapse)'
+        ],
+        'conda': 'xpore',
+        'container': 'nanocompore/xpore',
+        'description': 'Differential RNA modification detection using nanopore direct RNA sequencing',
+        'output': 'xpore_results.tsv',
+        'score_columns': ['pval_CASE_vs_CONTROL', 'z_score_CASE_vs_CONTROL', 'diff_mod_rate_CASE_vs_CONTROL']
+    },
+    'nanocompore': {
+        'inputs': [
+            'Native BAM (minimap2 alignment)',
+            'Control BAM (minimap2 alignment)',
+            'Reference FASTA (transcriptome)',
+            'Event alignment TSV (f5c eventalign --collapse)'
+        ],
+        'conda': 'nanocompore',
+        'container': 'nanocompore/nanocompore',
+        'description': 'Nanopore RNA modification calling using signal intensity and dwell time',
+        'output': 'nanocompore_results.tsv',
+        'score_columns': ['GMM_logit_pvalue', 'KS_dwell_pvalue', 'KS_intensity_pvalue', 'Logit_LOR']
+    },
+    'baleen': {
+        'inputs': [
+            'Native BAM (minimap2 alignment)',
+            'Control BAM (minimap2 alignment)',
+            'Reference FASTA (transcriptome)',
+            'Event alignment TSV (f5c eventalign --collapse)'
+        ],
+        'conda': 'baleen',
+        'container': ' nejlab/baleen',
+        'description': 'RNA modification detection using k-mer based models',
+        'output': 'site_results.tsv',
+        'score_columns': ['p_value', 'padj', 'effect_size', 'stoichiometry']
+    },
+    'pybaleen': {
+        'inputs': [
+            'Native BAM (minimap2 alignment)',
+            'Control BAM (minimap2 alignment)',
+            'Native FASTQ (basecalled reads)',
+            'Control FASTQ (basecalled reads)',
+            'Native BLOW5 (raw signal)',
+            'Control BLOW5 (raw signal)',
+            'Reference FASTA (transcriptome)'
+        ],
+        'conda': 'pybaleen',
+        'container': 'pybaleen',
+        'description': 'CUDA-accelerated DTW + HMM modification detection',
+        'output': 'site_results.tsv',
+        'score_columns': ['pvalue', 'padj', 'effect_size', 'stoichiometry']
+    },
+    'differr': {
+        'inputs': [
+            'Native BAM (minimap2 alignment)',
+            'Control BAM (minimap2 alignment)',
+            'Reference FASTA (transcriptome)'
+        ],
+        'conda': 'differr',
+        'container': '医用',
+        'description': 'Differential error rate analysis for RNA modification detection',
+        'output': 'differr_results.tsv',
+        'score_columns': ['-log10 P value', '-log10 FDR', 'odds ratio', 'G statistic']
+    },
+    'drummer': {
+        'inputs': [
+            'Native BAM (minimap2 alignment)',
+            'Control BAM (minimap2 alignment)',
+            'Reference FASTA (transcriptome)'
+        ],
+        'conda': 'drummer',
+        'container': '暂无',
+        'description': 'DRUMMER - Differential RNA Modification detection',
+        'output': 'drummer_results.tsv',
+        'score_columns': ['OR_padj', 'G_padj', 'G_test', 'log2_(OR)']
+    },
+    'eligos2': {
+        'inputs': [
+            'Native BAM (minimap2 alignment)',
+            'Control BAM (minimap2 alignment)',
+            'Reference FASTA (transcriptome)',
+            'Feature annotations (GTF)'
+        ],
+        'conda': 'eligos2',
+        'container': 'nanopore/eligos2',
+        'description': 'Epitranscriptional landscape inferring from RNA sequencing',
+        'output': 'eligos2_results.tsv',
+        'score_columns': ['p_value', 'adjusted_p_value', 'mod_ratio', 'coverage']
+    },
+    'epinano': {
+        'inputs': [
+            'Native BAM (minimap2 alignment)',
+            'Control BAM (minimap2 alignment)',
+            'Reference FASTA (transcriptome)'
+        ],
+        'conda': 'epinano',
+        'container': ' Nanopore/EpiNano',
+        'description': 'Detection of m6A RNA modifications using nanopore direct RNA sequencing',
+        'output': 'epinano_results.tsv',
+        'score_columns': ['SVM_score', 'probability', 'k_mer_score']
+    },
+    'tandemmod': {
+        'inputs': [
+            'Native BAM (minimap2 alignment)',
+            'Native FASTQ (basecalled reads)',
+            'Reference FASTA (transcriptome)'
+        ],
+        'conda': 'tandemmod',
+        'container': ' psmsl/tandemmod',
+        'description': 'RNA modification detection without control sample',
+        'output': 'tandemmod_results.tsv',
+        'score_columns': ['mod_score', 'mod_prob', 'coverage']
+    },
+    'directrm': {
+        'inputs': [
+            'Native BAM (minimap2 alignment)',
+            'Native FASTQ (basecalled reads)',
+            'Reference FASTA (transcriptome)'
+        ],
+        'conda': 'directrm',
+        'container': '暂无',
+        'description': 'Direct RNA modification detection',
+        'output': 'directrm_results.tsv',
+        'score_columns': ['score', 'probability', 'coverage']
+    },
+    'm6atm': {
+        'inputs': [
+            'Native BAM (minimap2 alignment)',
+            'Native FASTQ (basecalled reads)',
+            'Reference FASTA (transcriptome)'
+        ],
+        'conda': 'm6atm',
+        'container': '暂无',
+        'description': 'm6A detection using transformer model',
+        'output': 'm6atm_results.tsv',
+        'score_columns': ['score', 'probability']
+    },
+    'rnano': {
+        'inputs': [
+            'Native BAM (minimap2 alignment)',
+            'Native FASTQ (basecalled reads)',
+            'Reference FASTA (transcriptome)'
+        ],
+        'conda': 'rnano',
+        'container': '暂无',
+        'description': 'RNA modification detection using RNN',
+        'output': 'rnano_results.tsv',
+        'score_columns': ['score', 'probability', 'coverage']
+    }
+}
+
+
+def add_tool_prerequisites_page(pdf, data):
+    """Add page showing prerequisites for each tool."""
+    fig = plt.figure(figsize=(PAGE_WIDTH, PAGE_HEIGHT))
+    ax = fig.add_subplot(111)
+    ax.axis('off')
+
+    ax.text(0.5, 0.96, 'Tool Prerequisites',
+            fontsize=20, fontweight='bold', ha='center', va='center',
+            transform=ax.transAxes)
+
+    ax.text(0.5, 0.92, 'Input requirements for each modification detection tool',
+            fontsize=11, ha='center', va='center', transform=ax.transAxes,
+            color='gray')
+
+    # Get tools from data
+    df = data['accuracy']
+    if df.empty:
+        ax.text(0.5, 0.5, 'No tool data available',
+                fontsize=12, ha='center', va='center', transform=ax.transAxes)
+        pdf.savefig(fig, bbox_inches='tight')
+        plt.close(fig)
+        return
+
+    tools = sorted(df['tool'].unique())
+
+    # Create table data
+    table_data = []
+    headers = ['Tool', 'Input Files', 'Score Columns', 'Output']
+
+    for tool in tools:
+        info = TOOL_PREREQUISITES.get(tool, {})
+        inputs = info.get('inputs', ['Unknown'])
+        score_cols = info.get('score_columns', ['Unknown'])
+        output = info.get('output', 'Unknown')
+
+        # Truncate for display
+        inputs_str = '\n'.join(inputs[:3])
+        if len(inputs) > 3:
+            inputs_str += f'\n+{len(inputs)-3} more'
+        scores_str = ', '.join(score_cols[:3])
+        if len(score_cols) > 3:
+            scores_str += f' +{len(score_cols)-3}'
+
+        table_data.append([tool, inputs_str, scores_str, output])
+
+    # Create table
+    table = ax.table(cellText=table_data,
+                     colLabels=headers,
+                     cellLoc='left',
+                     loc='center',
+                     colWidths=[0.12, 0.45, 0.28, 0.15])
+
+    table.auto_set_font_size(False)
+    table.set_fontsize(8)
+    table.scale(1.1, 2.0)
+
+    # Style header
+    for i in range(len(headers)):
+        table[(0, i)].set_facecolor('#2c3e50')
+        table[(0, i)].set_text_props(color='white', fontweight='bold')
+
+    # Alternate row colors
+    for i in range(1, len(table_data) + 1):
+        for j in range(len(headers)):
+            if i % 2 == 0:
+                table[(i, j)].set_facecolor('#ecf0f1')
+
+    # Set column alignments
+    for i in range(len(table_data) + 1):
+        for j in range(len(headers)):
+            cell = table[(i, j)]
+            cell.get_text().set_wrap(True)
+
+    ax.set_title('', fontsize=14, fontweight='bold')
+
+    # Add legend for common input types
+    legend_text = """Common Input Types:
+• BAM: Aligned reads (minimap2)
+• FASTQ: Basecalled reads
+• BLOW5: Raw nanopore signal
+• Event TSV: f5c eventalign --collapse output
+• Reference FASTA: Transcriptome sequence
+• GTF: Gene annotations"""
+
+    ax.text(0.02, 0.08, legend_text,
+            fontsize=8, va='bottom', ha='left',
+            transform=ax.transAxes, family='monospace',
+            bbox=dict(boxstyle='round', facecolor='#f8f9fa', alpha=0.8))
+
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
+
+
 def add_table_of_contents(pdf):
     """Add table of contents page."""
     fig = plt.figure(figsize=(PAGE_WIDTH, PAGE_HEIGHT))
@@ -155,19 +758,21 @@ def add_table_of_contents(pdf):
 
     toc_items = [
         "1. Metrics Explanation",
-        "2. Overall Summary",
-        "3. Tool Comparison Charts",
-        "4. Called Sites Comparison",
-        "5. Metrics by Window",
-        "6. F1 Score Heatmap",
-        "7. AUPRC Heatmap",
-        "8. AUROC Heatmap",
-        "9. Tool Rankings",
-        "10. Per-Modification Type Analysis",
-        "11. Per-Tool Detailed Analysis",
-        "12. Optimal Thresholds",
-        "13. Score Distributions",
-        "14. Data Sources"
+        "2. Tool Prerequisites",
+        "3. Overall Summary",
+        "4. Tool Comparison Charts",
+        "5. Called Sites Comparison",
+        "6. ROC/PR Curves Comparison",
+        "7. Metrics by Window",
+        "8. F1 Score Heatmap",
+        "9. AUPRC Heatmap",
+        "10. AUROC Heatmap",
+        "11. Metrics by Modification Type",
+        "12. Tool Rankings",
+        "13. Per-Tool Detailed Analysis",
+        "14. Optimal Thresholds & Score Columns",
+        "15. Score Distributions",
+        "16. Data Sources"
     ]
 
     y_pos = 0.75
@@ -563,8 +1168,9 @@ def plot_heatmap(data, pdf, window=0, metric='f1', vmin=None, vmax=None):
 
     fig, ax = plt.subplots(figsize=(PAGE_WIDTH, PAGE_HEIGHT * 0.7))
 
-    # Use data-driven colorbar range for better differentiation
-    sns.heatmap(pivot, annot=True, fmt='.3f', cmap='RdYlGn',
+    # Use reversed colormap: green for low values, red for high values
+    # RdYlGn_r = green (low) -> yellow (mid) -> red (high)
+    sns.heatmap(pivot, annot=True, fmt='.3f', cmap='RdYlGn_r',
                 vmin=vmin, vmax=vmax, ax=ax,
                 cbar_kws={'label': f'{metric.upper()} ({vmin:.2f}-{vmax:.2f})'},
                 linewidths=0.5, linecolor='white',
@@ -740,13 +1346,21 @@ def add_metrics_table_page(pdf, title, df, window=None, max_rows=30):
 
 
 def add_per_tool_pages(data, pdf):
-    """Add detailed pages for each tool."""
+    """Add detailed pages for each tool with enhanced visualizations.
+
+    Each tool gets multiple pages:
+    - Page 1: Called sites per comparison + AUPRC vs AUROC scatter
+    - Page 2: Available score columns for ROC calculation
+    """
     df = data['accuracy']
 
     if df.empty:
         return
 
     tools = sorted(df['tool'].unique())
+    windows = [0]
+    if 'window' in df.columns:
+        windows = sorted(df['window'].unique())
 
     for tool in tools:
         tool_df = df[df['tool'] == tool].copy()
@@ -754,30 +1368,14 @@ def add_per_tool_pages(data, pdf):
         if tool_df.empty:
             continue
 
+        # Page 1: Called sites and AUPRC/AUROC scatter
         fig = plt.figure(figsize=(PAGE_WIDTH, PAGE_HEIGHT))
         gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
 
         fig.suptitle(f'Tool: {tool}', fontsize=18, fontweight='bold')
 
-        # Summary statistics box
-        ax_info = fig.add_subplot(gs[0, 0])
-        ax_info.axis('off')
-
-        info_lines = []
-        if 'called_sites' in tool_df.columns:
-            info_lines.append(f"Called sites: {tool_df['called_sites'].sum():,}")
-        if 'window' in tool_df.columns:
-            info_lines.append(f"Windows: {sorted(tool_df['window'].unique())}")
-        if 'modification_type' in tool_df.columns:
-            info_lines.append(f"Mod types: {list(tool_df['modification_type'].unique())}")
-
-        ax_info.text(0.1, 0.5, "\n".join(info_lines), fontsize=10,
-                    family='monospace', va='center',
-                    bbox=dict(boxstyle='round', facecolor='#ecf0f1', alpha=0.5))
-        ax_info.set_title('Summary', fontsize=12, fontweight='bold')
-
-        # Average metrics bar chart
-        ax_bar = fig.add_subplot(gs[0, 1])
+        # Average metrics bar chart (top-left)
+        ax_bar = fig.add_subplot(gs[0, 0])
 
         metrics = ['precision', 'recall', 'f1', 'auprc', 'auroc']
         metrics = [m for m in metrics if m in tool_df.columns]
@@ -796,34 +1394,75 @@ def add_per_tool_pages(data, pdf):
                     ax_bar.text(bar.get_x() + bar.get_width()/2, val + 0.02,
                                f'{val:.3f}', ha='center', fontsize=9)
 
-        # Metrics by window
-        if 'window' in tool_df.columns and len(tool_df['window'].unique()) > 1:
-            ax_window = fig.add_subplot(gs[1, 0])
+        # Called sites by modification type/comparison (top-right)
+        ax_sites = fig.add_subplot(gs[0, 1])
 
-            windows = sorted(tool_df['window'].unique())
-            x = np.arange(len(windows))
-            width = 0.25
+        if 'called_sites' in tool_df.columns:
+            if 'modification_type' in tool_df.columns:
+                # Group by modification type
+                sites_by_mod = tool_df.groupby('modification_type')['called_sites'].sum().sort_values(ascending=True)
+                bars = ax_sites.barh(sites_by_mod.index, sites_by_mod.values, color='steelblue')
+                ax_sites.set_xlabel('Called Sites')
+                ax_sites.set_title('Called Sites by Modification Type', fontsize=12, fontweight='bold')
 
-            for i, metric in enumerate(['precision', 'recall', 'f1']):
-                if metric in tool_df.columns:
-                    vals = [tool_df[tool_df['window'] == w][metric].mean() for w in windows]
-                    ax_window.bar(x + i * width, vals, width, label=metric)
+                for bar, val in zip(bars, sites_by_mod.values):
+                    ax_sites.text(val + max(sites_by_mod.values) * 0.01, bar.get_y() + bar.get_height()/2,
+                                 f'{int(val):,}', va='center', fontsize=8)
+            else:
+                # Show total
+                total = tool_df['called_sites'].sum()
+                ax_sites.bar(['Total'], [total], color='steelblue')
+                ax_sites.text(0, total + total * 0.02, f'{int(total):,}', ha='center', fontsize=10)
+                ax_sites.set_ylabel('Called Sites')
+                ax_sites.set_title('Total Called Sites', fontsize=12, fontweight='bold')
 
-            ax_window.set_xlabel('Window (nt)')
-            ax_window.set_ylabel('Score')
-            ax_window.set_title('Metrics by Window', fontsize=12, fontweight='bold')
-            ax_window.set_xticks(x + width)
-            ax_window.set_xticklabels([str(w) for w in windows])
-            ax_window.legend(fontsize=8)
-            ax_window.set_ylim(0, 1.0)
-            ax_window.grid(axis='y', alpha=0.3)
+            ax_sites.grid(axis='x', alpha=0.3)
         else:
-            ax_blank = fig.add_subplot(gs[1, 0])
-            ax_blank.axis('off')
-            ax_blank.text(0.5, 0.5, 'Single window only', ha='center', va='center',
+            ax_sites.axis('off')
+            ax_sites.text(0.5, 0.5, 'Called sites data\nnot available', ha='center', va='center',
                          fontsize=10, color='gray')
 
-        # Metrics by modification type
+        # AUPRC vs AUROC scatter (bottom-left)
+        ax_scatter = fig.add_subplot(gs[1, 0])
+
+        if 'auprc' in tool_df.columns and 'auroc' in tool_df.columns:
+            ax_scatter.scatter(tool_df['auroc'], tool_df['auprc'], s=100, alpha=0.7,
+                              c='steelblue', edgecolors='navy')
+            ax_scatter.plot([0, 1], [0, 1], 'k--', alpha=0.3, label='AUPRC = AUROC')
+
+            # Add labels for each point
+            label_col = None
+            for col in ['modification_type', 'comparison', 'sample']:
+                if col in tool_df.columns:
+                    label_col = col
+                    break
+
+            if label_col:
+                for _, row in tool_df.iterrows():
+                    ax_scatter.annotate(str(row[label_col])[:15],
+                                       (row['auroc'], row['auprc']),
+                                       xytext=(3, 3), textcoords='offset points',
+                                       fontsize=7, alpha=0.7)
+
+            # Add mean point
+            mean_auroc = tool_df['auroc'].mean()
+            mean_auprc = tool_df['auprc'].mean()
+            ax_scatter.scatter([mean_auroc], [mean_auprc], s=200, c='red', marker='*',
+                              edgecolors='darkred', zorder=5, label=f'Mean ({mean_auroc:.3f}, {mean_auprc:.3f})')
+
+            ax_scatter.set_xlabel('AUROC', fontsize=10)
+            ax_scatter.set_ylabel('AUPRC', fontsize=10)
+            ax_scatter.set_title('AUPRC vs AUROC', fontsize=12, fontweight='bold')
+            ax_scatter.set_xlim(0, 1)
+            ax_scatter.set_ylim(0, 1)
+            ax_scatter.grid(alpha=0.3)
+            ax_scatter.legend(loc='lower right', fontsize=8)
+        else:
+            ax_scatter.axis('off')
+            ax_scatter.text(0.5, 0.5, 'AUPRC/AUROC data\nnot available', ha='center', va='center',
+                           fontsize=10, color='gray')
+
+        # Metrics by modification type (bottom-right)
         if 'modification_type' in tool_df.columns:
             ax_mod = fig.add_subplot(gs[1, 1])
 
@@ -851,6 +1490,9 @@ def add_per_tool_pages(data, pdf):
 
         pdf.savefig(fig, bbox_inches='tight')
         plt.close(fig)
+
+        # Page 2: Available score columns
+        display_available_score_columns(data, pdf, tool)
 
 
 def add_optimal_thresholds_page(data, pdf):
@@ -996,6 +1638,9 @@ def generate_pdf_report(data, output_path, benchmark_dir=None):
         # Metrics explanation
         add_metrics_explanation_page(pdf)
 
+        # Tool prerequisites (at the beginning for easy checking)
+        add_tool_prerequisites_page(pdf, data)
+
         # Get windows to analyze
         windows = [0]
         if not data['accuracy'].empty and 'window' in data['accuracy'].columns:
@@ -1008,6 +1653,10 @@ def generate_pdf_report(data, output_path, benchmark_dir=None):
         # Called sites comparison
         for window in windows:
             plot_called_sites_comparison(data, pdf, window)
+
+        # ROC/PR Curves comparison
+        for window in windows:
+            plot_roc_prc_curves(data, pdf, window)
 
         # Metrics by window (line plot)
         plot_metrics_by_window(data, pdf)
@@ -1033,10 +1682,9 @@ def generate_pdf_report(data, output_path, benchmark_dir=None):
                                data['overall'] if not data['overall'].empty else data['accuracy'],
                                window=windows[0] if windows else None)
 
-        # Per-modification type table
-        if not data['accuracy'].empty and 'modification_type' in data['accuracy'].columns:
-            add_metrics_table_page(pdf, 'Metrics by Modification Type',
-                                   data['accuracy'], window=windows[0] if windows else None)
+        # Metrics by modification type (as figure instead of table)
+        for window in windows:
+            plot_metrics_by_modification_type(data, pdf, window)
 
         # Per-tool detailed pages
         add_per_tool_pages(data, pdf)
