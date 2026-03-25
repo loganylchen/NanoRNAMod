@@ -209,13 +209,22 @@ def categorize_rule(rule_name):
     return ('other', rule_name)
 
 
+# Steps used by ALL tools (excluded from resource comparison since they're common)
+COMMON_STEPS = ['link', 'alignment']
+
+
 def get_tool_dependencies(tool_name):
     """
     Get the prerequisite rule categories for a modification tool.
 
-    Returns list of categories: ['link', 'alignment', ...] + additional deps based on tool type
+    Returns list of categories: only DIFFERENTIATING dependencies (not common steps)
+
+    Note: link_fastq and minimap2 are used by ALL tools, so they are excluded
+    from resource comparison. Only tool-specific prerequisites are counted:
+    - eventalign: for signal-based tools that need pre-processed eventalign TSV
+    - f5c_index: for tools that read raw signal files directly
     """
-    dependencies = ['link', 'alignment']
+    dependencies = []
 
     tool_lower = tool_name.lower()
 
@@ -262,12 +271,15 @@ def load_benchmark_files(benchmark_dir):
 
 def aggregate_by_tool_with_dependencies(df):
     """
-    Aggregate resource usage by modification tool, including dependencies.
+    Aggregate resource usage by modification tool, including only differentiating dependencies.
 
     For each modification tool, sum up:
     - The tool's own resource usage
-    - Alignment resource usage (prerequisite)
-    - Eventalign resource usage (prerequisite for signal-based tools)
+    - Eventalign resource usage (only for signal-based tools)
+    - f5c_index resource usage (only for tools that read raw signal directly)
+
+    Note: Common steps (link_fastq, minimap2) used by ALL tools are excluded
+    from the comparison since they don't differentiate between tools.
     """
     if df.empty:
         return pd.DataFrame()
@@ -303,30 +315,24 @@ def aggregate_by_tool_with_dependencies(df):
                 if metric in tool_only.columns:
                     row[f'{metric}_tool'] = tool_only[metric].sum()
 
-            # Alignment resources
-            align_df = sample_df[sample_df['rule_category'] == 'alignment']
-            for metric in metrics:
-                if metric in align_df.columns:
-                    row[f'{metric}_alignment'] = align_df[metric].sum()
-
-            # Eventalign resources (if applicable)
+            # Eventalign resources (if applicable - differentiating prerequisite)
             if 'eventalign' in dependencies:
                 event_df = sample_df[sample_df['rule_category'] == 'eventalign']
                 for metric in metrics:
                     if metric in event_df.columns:
                         row[f'{metric}_eventalign'] = event_df[metric].sum()
 
-            # f5c_index resources (if applicable - for tools that read raw signal directly)
+            # f5c_index resources (if applicable - differentiating prerequisite)
             if 'f5c_index' in dependencies:
                 index_df = sample_df[sample_df['rule_category'] == 'f5c_index']
                 for metric in metrics:
                     if metric in index_df.columns:
                         row[f'{metric}_f5c_index'] = index_df[metric].sum()
 
-            # Calculate total (tool + dependencies)
+            # Calculate total (tool + differentiating dependencies only, NOT common steps)
             for metric in metrics:
                 total = 0
-                for suffix in ['_tool', '_alignment', '_eventalign', '_f5c_index']:
+                for suffix in ['_tool', '_eventalign', '_f5c_index']:  # Removed _alignment
                     key = f'{metric}{suffix}'
                     if key in row and pd.notna(row[key]):
                         total += row[key]
@@ -412,15 +418,20 @@ def create_prerequisites_page(pdf, agg_df):
 
     # Add legend for prerequisite steps
     legend_text = """Prerequisite Step Definitions:
-• link_fastq: Symlink raw FASTQ files to project results
-• link_blow5: Symlink raw BLOW5 signal files to project results
-• minimap2: Align reads to reference transcriptome (produces BAM)
-• f5c_index: Create BLOW5 index files for fast signal access
-• f5c_eventalign: Align signal events to reference (produces TSV)
+• link_fastq: Symlink raw FASTQ files (COMMON - excluded from comparison)
+• link_blow5: Symlink raw BLOW5 signal files (pybaleen only)
+• minimap2: Align reads to reference (COMMON - excluded from comparison)
+• f5c_index: Create BLOW5 index files for fast signal access (pybaleen only)
+• f5c_eventalign: Align signal events to reference (signal tools only)
+
+NOTE: Common steps (link_fastq, minimap2) are used by ALL tools
+and are excluded from resource comparison. Only tool-specific
+prerequisites are counted in resource totals.
 
 Category Legend:
-• Signal-based: Requires processed signal data (eventalign TSV or raw BLOW5)
-• Alignment-based: Only requires BAM alignment files
+• Signal-based: Requires eventalign TSV (unique prereq)
+• Signal-based (raw BLOW5): Requires f5c_index (unique prereq, GPU)
+• Alignment-based: No unique prerequisites
 • Per-sample: No control sample needed"""
 
     ax.text(0.02, 0.15, legend_text,
@@ -444,7 +455,7 @@ def create_resource_visualization(agg_df, output_path):
 
         # Page 2: Total wall time by tool
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-        fig.suptitle('Resource Usage by Modification Tool (Total including prerequisites)',
+        fig.suptitle('Resource Usage by Modification Tool (excluding common steps)',
                      fontsize=14, fontweight='bold')
 
         # Sort tools by median total time
@@ -457,7 +468,7 @@ def create_resource_visualization(agg_df, output_path):
         sns.boxplot(data=plot_df, x='tool', y='s_total_min', order=tool_order, ax=ax, palette='Set2')
         ax.set_xlabel('Tool')
         ax.set_ylabel('Total Time (minutes)')
-        ax.set_title('Total Wall Time (tool + prerequisites)')
+        ax.set_title('Total Wall Time (tool + unique prereqs, common steps excluded)')
         ax.tick_params(axis='x', rotation=45)
 
         # 2. CPU time boxplot
@@ -491,13 +502,12 @@ def create_resource_visualization(agg_df, output_path):
         pdf.savefig(fig, bbox_inches='tight')
         plt.close(fig)
 
-        # Page 2: Time breakdown by component
+        # Page 2: Time breakdown by component (tool-specific only, no common steps)
         fig, ax = plt.subplots(figsize=(14, 8))
 
         # Calculate mean time by tool and component
-        # Note: f5c_index is for tools that read raw signal directly (pybaleen)
-        # eventalign is for tools that use pre-processed signal TSV
-        components = ['tool', 'alignment', 'eventalign', 'f5c_index']
+        # Only differentiating components (eventalign, f5c_index), NOT common alignment
+        components = ['tool', 'eventalign', 'f5c_index']
         time_cols = [f's_{c}' for c in components]
 
         # Filter to only columns that exist
@@ -508,25 +518,23 @@ def create_resource_visualization(agg_df, output_path):
         # Rename columns for display
         col_rename = {
             's_tool': 'Tool\nItself',
-            's_alignment': 'Alignment\n(prereq)',
-            's_eventalign': 'Eventalign\n(prereq)',
-            's_f5c_index': 'F5C Index\n(prereq)'
+            's_eventalign': 'Eventalign\n(unique prereq)',
+            's_f5c_index': 'F5C Index\n(unique prereq)'
         }
         mean_times = mean_times.rename(columns={k: v for k, v in col_rename.items() if k in mean_times.columns})
 
         # Colors for each component
         color_map = {
             'Tool\nItself': '#3498db',
-            'Alignment\n(prereq)': '#95a5a6',
-            'Eventalign\n(prereq)': '#e74c3c',
-            'F5C Index\n(prereq)': '#f39c12'
+            'Eventalign\n(unique prereq)': '#e74c3c',
+            'F5C Index\n(unique prereq)': '#f39c12'
         }
         colors = [color_map[c] for c in mean_times.columns if c in color_map]
 
         mean_times.plot(kind='bar', stacked=True, ax=ax, color=colors)
         ax.set_xlabel('Tool')
         ax.set_ylabel('Time (minutes)')
-        ax.set_title('Time Breakdown: Tool vs Prerequisites', fontweight='bold')
+        ax.set_title('Time Breakdown: Tool + Unique Prerequisites\n(Common steps excluded: link_fastq, minimap2)', fontweight='bold')
         ax.tick_params(axis='x', rotation=45)
         ax.legend(title='Component', loc='upper right')
 
@@ -568,7 +576,7 @@ def create_resource_visualization(agg_df, output_path):
 
         ax.set_xlabel('Mean Total Wall Time (minutes)')
         ax.set_ylabel('Mean Peak Memory (GB)')
-        ax.set_title('Resource Efficiency: Time vs Memory\n(Red = Eventalign-based, Orange = F5C Index-based, Blue = Alignment-only)',
+        ax.set_title('Resource Efficiency: Time vs Memory (common steps excluded)\n(Red = Eventalign-based, Orange = F5C Index-based, Blue = Alignment-only)',
                      fontweight='bold')
         ax.grid(alpha=0.3)
 
@@ -620,7 +628,7 @@ def create_resource_visualization(agg_df, output_path):
             table[(0, i)].set_facecolor('#3498db')
             table[(0, i)].set_text_props(color='white', fontweight='bold')
 
-        ax.set_title('Resource Summary by Tool (including prerequisites)',
+        ax.set_title('Resource Summary by Tool (tool + unique prereqs only, common steps excluded)',
                      fontsize=14, fontweight='bold', y=0.98)
 
         pdf.savefig(fig, bbox_inches='tight')
