@@ -32,8 +32,19 @@ import numpy as np
 
 result_files = snakemake.input.results
 truth_set_path = snakemake.input.truth_set
-benchmark_dir = snakemake.output[0]  # The benchmarks directory
+output_files = snakemake.output  # 4 aggregated files + touch file
 per_tool_output_files = snakemake.params.per_tool_files  # Per-tool file paths from params
+
+# Parse aggregated output files (first 4 outputs)
+aggregated_files = {
+    "by_mod_type": output_files[0],      # accuracy_summary.tsv
+    "overall": output_files[1],          # accuracy_summary_overall.tsv
+    "by_comparison": output_files[2],    # accuracy_summary_by_comparison.tsv
+    "by_negative_type": output_files[3], # accuracy_summary_by_negative_type.tsv
+}
+
+# Derive benchmark directory from first output file
+benchmark_dir = os.path.dirname(output_files[0])
 
 # Parse per-tool output files by tool and type
 # Each tool gets 4 output files in its own directory:
@@ -64,14 +75,6 @@ for f in per_tool_output_files:
 
 # Get list of tools that need benchmark output
 benchmark_tools = set(tool_output_files.keys())
-
-# Define aggregated file paths (flat in benchmarks/ directory)
-aggregated_files = {
-    "by_mod_type": os.path.join(benchmark_dir, "accuracy_summary.tsv"),
-    "overall": os.path.join(benchmark_dir, "accuracy_summary_overall.tsv"),
-    "by_comparison": os.path.join(benchmark_dir, "accuracy_summary_by_comparison.tsv"),
-    "by_negative_type": os.path.join(benchmark_dir, "accuracy_summary_by_negative_type.tsv"),
-}
 
 window_param = snakemake.params.window
 

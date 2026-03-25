@@ -51,9 +51,13 @@ if config.get("benchmark", {}).get("truth_set", ""):
             results=get_all_result_tsvs,
             truth_set=config["benchmark"]["truth_set"],
         output:
-            # Use directory + touch file to track completion
-            # The script will create per-tool files and aggregated files
-            directory("{project}/results/benchmarks"),
+            # Explicit aggregated files (flat in benchmarks/ directory)
+            # These are what downstream rules depend on
+            "{project}/results/benchmarks/accuracy_summary.tsv",
+            "{project}/results/benchmarks/accuracy_summary_overall.tsv",
+            "{project}/results/benchmarks/accuracy_summary_by_comparison.tsv",
+            "{project}/results/benchmarks/accuracy_summary_by_negative_type.tsv",
+            # Touch file to track completion
             touch("{project}/results/benchmarks/.benchmark_complete"),
         params:
             window=config["benchmark"]["window"],
