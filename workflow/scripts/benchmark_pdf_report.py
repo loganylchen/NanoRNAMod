@@ -154,21 +154,88 @@ def add_table_of_contents(pdf):
             transform=ax.transAxes)
 
     toc_items = [
-        "1. Overall Summary",
-        "2. Tool Comparison Charts",
-        "3. Metrics by Window",
-        "4. Heatmaps",
-        "5. Tool Rankings",
-        "6. Per-Modification Type Analysis",
-        "7. Per-Tool Detailed Analysis",
-        "8. Optimal Thresholds",
-        "9. Score Distributions"
+        "1. Metrics Explanation",
+        "2. Overall Summary",
+        "3. Tool Comparison Charts",
+        "4. Metrics by Window",
+        "5. Heatmaps",
+        "6. Tool Rankings",
+        "7. Per-Modification Type Analysis",
+        "8. Per-Tool Detailed Analysis",
+        "9. Optimal Thresholds",
+        "10. Score Distributions"
     ]
 
     y_pos = 0.75
     for item in toc_items:
         ax.text(0.3, y_pos, item, fontsize=12, transform=ax.transAxes)
         y_pos -= 0.07
+
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
+
+
+def add_metrics_explanation_page(pdf):
+    """Add page explaining all metrics used in the report."""
+    fig = plt.figure(figsize=(PAGE_WIDTH, PAGE_HEIGHT))
+    ax = fig.add_subplot(111)
+    ax.axis('off')
+
+    ax.text(0.5, 0.95, 'Metrics Explanation',
+            fontsize=20, fontweight='bold', ha='center', va='center',
+            transform=ax.transAxes)
+
+    explanations = """
+Classification Metrics (range 0-1, higher is better):
+
+  • Precision (Positive Predictive Value)
+    TP / (TP + FP) - Fraction of predicted sites that are true modifications.
+    High precision = few false positives.
+
+  • Recall (Sensitivity, True Positive Rate)
+    TP / (TP + FN) - Fraction of true modifications that were detected.
+    High recall = few false negatives.
+
+  • F1 Score
+    2 × (Precision × Recall) / (Precision + Recall) - Harmonic mean of precision
+    and recall. Balances both metrics; useful when classes are imbalanced.
+
+  • AUPRC (Area Under Precision-Recall Curve)
+    Integral of precision vs recall across all thresholds. Better than AUROC
+    for imbalanced datasets where positive sites are rare.
+
+  • AUROC (Area Under ROC Curve)
+    Area under TPR vs FPR curve. Probability that a random positive site
+    scores higher than a random negative site.
+
+  • MCC (Matthews Correlation Coefficient)
+    Correlation coefficient between predicted and actual classifications.
+    Range -1 to +1. More robust for imbalanced data than accuracy.
+
+
+Positional Tolerance:
+
+  • Window (nt)
+    Positional tolerance in nucleotides. A predicted site at position P matches
+    a true site at position T if |P - T| ≤ window. window=0 requires exact match.
+
+
+Tool-Specific Scores:
+
+  • Score Column
+    Each tool outputs its own scoring metric (p-value, probability, effect size,
+    etc.). The benchmark uses these native scores for thresholding. Lower p-values
+    or higher probabilities indicate stronger modification signals.
+
+  • Threshold
+    The score cutoff used to call a site as modified. Optimal thresholds are
+    determined by maximizing F1 score across all tested thresholds.
+"""
+
+    ax.text(0.05, 0.85, explanations,
+            fontsize=9, family='monospace', va='top',
+            transform=ax.transAxes,
+            bbox=dict(boxstyle='round,pad=0.5', facecolor='#f8f9fa', alpha=0.8))
 
     pdf.savefig(fig, bbox_inches='tight')
     plt.close(fig)
@@ -743,6 +810,9 @@ def generate_pdf_report(data, output_path):
 
         # Table of contents
         add_table_of_contents(pdf)
+
+        # Metrics explanation
+        add_metrics_explanation_page(pdf)
 
         # Get windows to analyze
         windows = [0]
