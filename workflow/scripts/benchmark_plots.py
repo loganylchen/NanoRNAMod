@@ -305,6 +305,232 @@ def plot_metrics_heatmap(df, output_path, window=0):
     return output_path
 
 
+def plot_optimal_score_columns(optimal_df, output_path):
+    """Visualize optimal score columns selected for each tool.
+
+    Shows which score column is best for each tool and the F1 achieved.
+    """
+    if optimal_df.empty:
+        return None
+
+    required_cols = ['tool', 'score_column', 'f1']
+    if not all(c in optimal_df.columns for c in required_cols):
+        return None
+
+    fig, ax = plt.subplots(figsize=(12, max(6, len(optimal_df) * 0.5)))
+
+    # Sort by F1 score
+    df = optimal_df.sort_values('f1', ascending=True)
+
+    # Create horizontal bar chart
+    y_pos = np.arange(len(df))
+    bars = ax.barh(y_pos, df['f1'], color='steelblue', edgecolor='navy')
+
+    # Add score column names as annotations
+    for i, (idx, row) in enumerate(df.iterrows()):
+        ax.text(row['f1'] + 0.01, i,
+                f"{row['score_column']} (F1={row['f1']:.3f})",
+                va='center', fontsize=9)
+
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(df['tool'])
+    ax.set_xlabel('F1 Score')
+    ax.set_title('Optimal Score Column Selection by Tool')
+    ax.set_xlim(0, 1.1)
+    ax.grid(axis='x', alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    return output_path
+
+
+def plot_optimal_thresholds(threshold_df, output_path):
+    """Visualize optimal thresholds for each tool.
+
+    Shows the optimal threshold (in -log10 scale) and the original p-value.
+    """
+    if threshold_df.empty:
+        return None
+
+    required_cols = ['tool', 'optimal_threshold']
+    if not all(c in threshold_df.columns for c in required_cols):
+        return None
+
+    # Filter to valid thresholds
+    df = threshold_df.dropna(subset=['optimal_threshold']).copy()
+    if df.empty:
+        return None
+
+    # Sort by threshold
+    df = df.sort_values('optimal_threshold', ascending=True)
+
+    fig, ax = plt.subplots(figsize=(12, max(6, len(df) * 0.5)))
+
+    y_pos = np.arange(len(df))
+
+    # Plot thresholds
+    bars = ax.barh(y_pos, df['optimal_threshold'],
+                   color=['green' if t > 1.3 else 'orange' if t > 0.5 else 'red'
+                          for t in df['optimal_threshold']],
+                   edgecolor='navy')
+
+    # Add annotations with original threshold if available
+    for i, (idx, row) in enumerate(df.iterrows()):
+        threshold_text = f"{row['optimal_threshold']:.2f}"
+        if 'original_threshold' in df.columns and pd.notna(row.get('original_threshold')):
+            threshold_text += f" (p={row['original_threshold']:.2e})"
+        ax.text(row['optimal_threshold'] + 0.05, i, threshold_text,
+                va='center', fontsize=9)
+
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(df['tool'])
+    ax.set_xlabel('Optimal Threshold (-log10 p-value)')
+    ax.set_title('Optimal Score Thresholds by Tool')
+    ax.axvline(x=1.3, color='gray', linestyle='--', alpha=0.5, label='p=0.05')
+    ax.axvline(x=2.0, color='gray', linestyle=':', alpha=0.5, label='p=0.01')
+    ax.legend(loc='lower right', fontsize=8)
+    ax.grid(axis='x', alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    return output_path
+
+
+def plot_threshold_performance_curves(threshold_eval_df, output_path):
+    """Plot precision, recall, F1 as function of threshold for each tool."""
+    if threshold_eval_df.empty:
+        return None
+
+    required_cols = ['tool', 'threshold', 'precision', 'recall', 'f1']
+    if not all(c in threshold_eval_df.columns for c in required_cols):
+        return None
+
+    tools = threshold_eval_df['tool'].unique()
+    if len(tools) == 0:
+        return None
+
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+    metrics = ['precision', 'recall', 'f1']
+    colors = plt.cm.tab10(np.linspace(0, 1, len(tools)))
+    color_map = dict(zip(tools, colors))
+
+    for ax, metric in zip(axes, metrics):
+        for tool in tools:
+            tool_df = threshold_eval_df[threshold_eval_df['tool'] == tool].sort_values('threshold')
+            if not tool_df.empty:
+                ax.plot(tool_df['threshold'], tool_df[metric],
+                        label=tool, color=color_map[tool], alpha=0.7, linewidth=2)
+
+        ax.set_xlabel('Threshold (-log10 p-value)')
+        ax.set_ylabel(metric.capitalize())
+        ax.set_title(f'{metric.capitalize()} vs Threshold')
+        ax.grid(alpha=0.3)
+        ax.set_ylim(0, 1)
+
+    # Add legend to last plot
+    axes[-1].legend(loc='center left', bbox_to_anchor=(1.02, 0.5), fontsize=8)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    return output_path
+
+
+def plot_score_distributions(score_dist_df, output_path):
+    """Visualize score distribution statistics for each tool."""
+    if score_dist_df.empty:
+        return None
+
+    required_cols = ['tool', 'mean', 'std', 'min', 'max']
+    if not all(c in score_dist_df.columns for c in required_cols):
+        return None
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+    df = score_dist_df.sort_values('mean', ascending=False)
+
+    # Left plot: Mean ± std
+    ax = axes[0]
+    y_pos = np.arange(len(df))
+    ax.barh(y_pos, df['mean'], xerr=df['std'], color='steelblue',
+            edgecolor='navy', alpha=0.7, capsize=3)
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(df['tool'])
+    ax.set_xlabel('Score Value')
+    ax.set_title('Score Distribution: Mean ± Std')
+    ax.grid(axis='x', alpha=0.3)
+
+    # Right plot: Range (min to max)
+    ax = axes[1]
+    for i, (idx, row) in enumerate(df.iterrows()):
+        ax.plot([row['min'], row['max']], [i, i], 'o-', color='steelblue', alpha=0.7)
+        ax.plot(row['mean'], i, 'ro', markersize=8)
+
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(df['tool'])
+    ax.set_xlabel('Score Value')
+    ax.set_title('Score Range (min-mean-max)')
+    ax.grid(axis='x', alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    return output_path
+
+
+def plot_score_column_comparison(all_scores_df, output_path):
+    """Compare performance across different score columns for each tool."""
+    if all_scores_df.empty:
+        return None
+
+    required_cols = ['tool', 'score_column', 'f1']
+    if not all(c in all_scores_df.columns for c in required_cols):
+        return None
+
+    tools = all_scores_df['tool'].unique()
+    n_tools = len(tools)
+
+    if n_tools == 0:
+        return None
+
+    fig, axes = plt.subplots(n_tools, 1, figsize=(10, 4 * n_tools), squeeze=False)
+    axes = axes.flatten()
+
+    for i, tool in enumerate(tools):
+        tool_df = all_scores_df[all_scores_df['tool'] == tool].sort_values('f1', ascending=True)
+
+        if tool_df.empty:
+            continue
+
+        ax = axes[i]
+        y_pos = np.arange(len(tool_df))
+
+        # Color by whether it's the best
+        best_f1 = tool_df['f1'].max()
+        colors = ['green' if f == best_f1 else 'steelblue' for f in tool_df['f1']]
+
+        ax.barh(y_pos, tool_df['f1'], color=colors, edgecolor='navy')
+        ax.set_yticks(y_pos)
+        ax.set_yticklabels(tool_df['score_column'])
+        ax.set_xlabel('F1 Score')
+        ax.set_title(f'{tool}: Score Column Comparison')
+        ax.set_xlim(0, 1)
+        ax.grid(axis='x', alpha=0.3)
+
+        # Mark best
+        best_idx = tool_df['f1'].idxmax()
+        best_pos = y_pos[tool_df.index.get_loc(best_idx)]
+        ax.text(1.02, best_pos, '★ Best', va='center', fontsize=9, color='green')
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    return output_path
+
+
 def generate_html_report(accuracy_df, resource_df, figures_dir, output_path):
     """Generate self-contained HTML benchmark report."""
 
@@ -593,6 +819,33 @@ def main():
         if plot_resource_comparison(resource_df, resource_path):
             plots.append(resource_path)
 
+        # Generate optimal parameter visualizations if data exists
+        benchmark_dir = os.path.dirname(output_dir) if os.path.basename(output_dir) == 'viz' else output_dir
+
+        # Optimal score columns
+        optimal_scores_path = os.path.join(benchmark_dir, 'optimal_score_per_tool.tsv')
+        if os.path.exists(optimal_scores_path):
+            optimal_df = pd.read_csv(optimal_scores_path, sep='\t')
+            opt_scores_plot = os.path.join(figures_dir, 'optimal_score_columns.svg')
+            if plot_optimal_score_columns(optimal_df, opt_scores_plot):
+                plots.append(opt_scores_plot)
+
+        # All scores evaluation (for comparison plots)
+        all_scores_path = os.path.join(benchmark_dir, 'all_scores_evaluation.tsv')
+        if os.path.exists(all_scores_path):
+            all_scores_df = pd.read_csv(all_scores_path, sep='\t')
+            scores_comp_plot = os.path.join(figures_dir, 'score_column_comparison.svg')
+            if plot_score_column_comparison(all_scores_df, scores_comp_plot):
+                plots.append(scores_comp_plot)
+
+        # Optimal thresholds
+        optimal_thresh_path = os.path.join(benchmark_dir, 'optimal_thresholds_detailed.tsv')
+        if os.path.exists(optimal_thresh_path):
+            thresh_df = pd.read_csv(optimal_thresh_path, sep='\t')
+            thresh_plot = os.path.join(figures_dir, 'optimal_thresholds.svg')
+            if plot_optimal_thresholds(thresh_df, thresh_plot):
+                plots.append(thresh_plot)
+
         # Generate HTML report
         generate_html_report(accuracy_df, resource_df, figures_dir, html_output)
 
@@ -604,6 +857,7 @@ def main():
         parser.add_argument('--accuracy', required=True, help='accuracy_summary.tsv path')
         parser.add_argument('--resource', required=True, help='resource_summary.tsv path')
         parser.add_argument('--output', required=True, help='Output directory')
+        parser.add_argument('--benchmark-dir', default=None, help='Benchmark directory for optimal params')
         args = parser.parse_args()
 
         os.makedirs(os.path.join(args.output, 'figures'), exist_ok=True)
@@ -620,6 +874,23 @@ def main():
 
         plot_f1_by_window(accuracy_df, os.path.join(figures_dir, 'f1_by_window.svg'))
         plot_resource_comparison(resource_df, os.path.join(figures_dir, 'resource_comparison.svg'))
+
+        # Generate optimal parameter visualizations
+        benchmark_dir = args.benchmark_dir or args.output
+        optimal_scores_path = os.path.join(benchmark_dir, 'optimal_score_per_tool.tsv')
+        if os.path.exists(optimal_scores_path):
+            optimal_df = pd.read_csv(optimal_scores_path, sep='\t')
+            plot_optimal_score_columns(optimal_df, os.path.join(figures_dir, 'optimal_score_columns.svg'))
+
+        all_scores_path = os.path.join(benchmark_dir, 'all_scores_evaluation.tsv')
+        if os.path.exists(all_scores_path):
+            all_scores_df = pd.read_csv(all_scores_path, sep='\t')
+            plot_score_column_comparison(all_scores_df, os.path.join(figures_dir, 'score_column_comparison.svg'))
+
+        optimal_thresh_path = os.path.join(benchmark_dir, 'optimal_thresholds_detailed.tsv')
+        if os.path.exists(optimal_thresh_path):
+            thresh_df = pd.read_csv(optimal_thresh_path, sep='\t')
+            plot_optimal_thresholds(thresh_df, os.path.join(figures_dir, 'optimal_thresholds.svg'))
 
         generate_html_report(accuracy_df, resource_df, figures_dir,
                             os.path.join(args.output, 'benchmark_report.html'))
