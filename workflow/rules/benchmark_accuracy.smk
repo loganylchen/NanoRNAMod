@@ -51,6 +51,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
             results=get_all_result_tsvs,
             truth_set=config["benchmark"]["truth_set"],
         output:
+            directory("{project}/results/benchmarks"),
             touch("{project}/results/benchmarks/.benchmark_complete"),
         params:
             window=config["benchmark"]["window"],

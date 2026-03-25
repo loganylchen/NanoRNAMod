@@ -24,6 +24,7 @@ def get_per_tool_benchmark_files(wildcards, file_type):
 rule aggregate_benchmark_results:
     """Aggregate per-tool benchmark results into flat files for visualization."""
     input:
+        benchmark_complete="{project}/results/benchmarks/.benchmark_complete",
         accuracy=lambda wc: get_per_tool_benchmark_files(wc, 'accuracy'),
         overall=lambda wc: get_per_tool_benchmark_files(wc, 'overall'),
         by_comparison=lambda wc: get_per_tool_benchmark_files(wc, 'by_comparison'),
@@ -103,7 +104,6 @@ rule aggregate_benchmark_results:
 rule benchmark_visualization:
     """Generate PR curves, ROC curves, and HTML benchmark report."""
     input:
-        benchmark_complete="{project}/results/benchmarks/.benchmark_complete",
         aggregated=expand("{{project}}/results/benchmarks/{agg_file}", agg_file=[
             "accuracy_summary.tsv",
             "accuracy_summary_overall.tsv",
@@ -257,7 +257,6 @@ rule benchmark_score_optimization:
 rule benchmark_r_figures:
     """Generate Nature-quality figures using R ggplot2."""
     input:
-        benchmark_complete="{project}/results/benchmarks/.benchmark_complete",
         aggregated=expand("{{project}}/results/benchmarks/{agg_file}", agg_file=[
             "accuracy_summary.tsv",
             "accuracy_summary_overall.tsv",
@@ -286,7 +285,6 @@ rule benchmark_r_figures:
 rule benchmark_pdf_report:
     """Generate comprehensive PDF report with overall, per-comparison, and per-tool analysis."""
     input:
-        benchmark_complete="{project}/results/benchmarks/.benchmark_complete",
         aggregated=expand("{{project}}/results/benchmarks/{agg_file}", agg_file=[
             "accuracy_summary.tsv",
             "accuracy_summary_overall.tsv",
