@@ -51,11 +51,15 @@ if config.get("benchmark", {}).get("truth_set", ""):
             results=get_all_result_tsvs,
             truth_set=config["benchmark"]["truth_set"],
         output:
+            # Directory for downstream rules that depend on benchmarks/
+            benchdir=directory("{project}/results/benchmarks"),
             # Aggregated accuracy files (main outputs for downstream rules)
             summary="{project}/results/benchmarks/accuracy_summary.tsv",
             overall="{project}/results/benchmarks/accuracy_summary_overall.tsv",
             by_comparison="{project}/results/benchmarks/accuracy_summary_by_comparison.tsv",
             by_negative_type="{project}/results/benchmarks/accuracy_summary_by_negative_type.tsv",
+            # Completion marker for downstream rules
+            done=touch("{project}/results/benchmarks/.benchmark_complete"),
         params:
             window=config["benchmark"]["window"],
         resources:
