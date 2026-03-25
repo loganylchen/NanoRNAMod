@@ -103,6 +103,31 @@ rule benchmark_kmer_negatives:
         "../scripts/benchmark_kmer_negatives.py"
 
 
+rule benchmark_same_base_negatives:
+    """Same-base negative benchmarking - use sites with same nucleotide as negative controls (Strategy 2)."""
+    input:
+        results=lambda wc: get_all_result_tsvs(wc),
+        truth_set=config["benchmark"]["truth_set"],
+    output:
+        metrics="{project}/results/benchmarks/accuracy_summary_same_base_negatives.tsv",
+        negatives="{project}/results/benchmarks/same_base_negative_sites.tsv",
+    params:
+        window=config["benchmark"]["window"],
+        base_column=config.get("benchmark", {}).get("base_column", "auto"),
+    resources:
+        mem_mb=1024 * 8,
+    threads: 1
+    priority: 21
+    log:
+        "logs/{project}/benchmark_same_base_negatives/same_base_negatives.log",
+    benchmark:
+        "benchmarks/{project}/benchmark_same_base_negatives.benchmark.txt"
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_same_base_negatives.py"
+
+
 rule benchmark_multithreshold:
     """Multi-threshold evaluation with automatic threshold generation."""
     input:

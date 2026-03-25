@@ -337,4 +337,9 @@ def get_final_output():
         final_output += [f"{RESULT_ROOT}/benchmarks/threshold_evaluation.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/optimal_thresholds_detailed.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/score_distributions.tsv"]
+        # Negative control strategies (k-mer and same-base negatives)
+        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_kmer_negatives.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/kmer_negative_sites.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_same_base_negatives.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/same_base_negative_sites.tsv"]
     return final_output
