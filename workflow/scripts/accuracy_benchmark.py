@@ -32,51 +32,17 @@ import numpy as np
 
 result_files = snakemake.input.results
 truth_set_path = snakemake.input.truth_set
-output_files = snakemake.output
 
-# Parse per-tool output files from named output
-per_tool_output_files = snakemake.output.per_tool if hasattr(snakemake.output, 'per_tool') else []
-
-# Parse aggregated output files (first 4 positional outputs)
+# Named outputs from Snakemake rule
 aggregated_files = {
-    "by_mod_type": output_files[0],      # accuracy_summary.tsv
-    "overall": output_files[1],          # accuracy_summary_overall.tsv
-    "by_comparison": output_files[2],    # accuracy_summary_by_comparison.tsv
-    "by_negative_type": output_files[3], # accuracy_summary_by_negative_type.tsv
+    "by_mod_type": snakemake.output.summary,           # accuracy_summary.tsv
+    "overall": snakemake.output.overall,               # accuracy_summary_overall.tsv
+    "by_comparison": snakemake.output.by_comparison,   # accuracy_summary_by_comparison.tsv
+    "by_negative_type": snakemake.output.by_negative_type,  # accuracy_summary_by_negative_type.tsv
 }
 
 # Derive benchmark directory from first output file
-benchmark_dir = os.path.dirname(output_files[0])
-
-# Parse per-tool output files by tool and type
-# Each tool gets 4 output files in its own directory:
-# - accuracy_summary.tsv (by modification_type)
-# - accuracy_summary_overall.tsv (aggregated across all types)
-# - accuracy_summary_by_comparison.tsv (per-comparison metrics)
-# - accuracy_summary_by_negative_type.tsv (per-negative-type metrics)
-tool_output_files = {}  # tool -> {output_type: file_path}
-for f in per_tool_output_files:
-    # Extract tool name and output type from path like {project}/results/benchmarks/{tool}/accuracy_summary_*.tsv
-    parts = f.split(os.sep)
-    for i, part in enumerate(parts):
-        if part == "benchmarks" and i + 1 < len(parts):
-            tool = parts[i + 1]
-            filename = os.path.basename(f)
-            if tool not in tool_output_files:
-                tool_output_files[tool] = {}
-            # Map filename to output type
-            if filename == "accuracy_summary.tsv":
-                tool_output_files[tool]["by_mod_type"] = f
-            elif filename == "accuracy_summary_overall.tsv":
-                tool_output_files[tool]["overall"] = f
-            elif filename == "accuracy_summary_by_comparison.tsv":
-                tool_output_files[tool]["by_comparison"] = f
-            elif filename == "accuracy_summary_by_negative_type.tsv":
-                tool_output_files[tool]["by_negative_type"] = f
-            break
-
-# Get list of tools that need benchmark output
-benchmark_tools = set(tool_output_files.keys())
+benchmark_dir = os.path.dirname(snakemake.output.summary)
 
 window_param = snakemake.params.window
 
@@ -1038,13 +1004,6 @@ for tool, pred_df in tool_dfs.items():
                         "total_truth": len(truth_subset),
                     })
 
-# ── Write output: per-tool files ───────────────────────────────────────────────
-# Each tool gets its own directory under benchmarks/{tool}/ containing:
-# - accuracy_summary.tsv: Per-modification-type metrics
-# - accuracy_summary_overall.tsv: Aggregated across all modification types
-# - accuracy_summary_by_comparison.tsv: Per-comparison metrics
-# - accuracy_summary_by_negative_type.tsv: Per-negative-type metrics
-
 # Column definitions for output files
 mod_type_columns = [
     "tool", "modification_type", "window", "precision", "recall",
@@ -1068,154 +1027,6 @@ negtype_columns = [
     "called_sites", "total_truth", "total_negative", "total_predicted"
 ]
 
-for tool in sorted(benchmark_tools):
-    if tool not in tool_output_files:
-        continue
-
-    tool_files = tool_output_files[tool]
-    tool_records = [r for r in records if r["tool"] == tool]
-    tool_comparison_records = [r for r in records_by_comparison if r["tool"] == tool]
-    tool_negtype_records = records_by_negtype.get(tool, [])
-
-    # Create tool output directory if it doesn't exist
-    for output_type in ["by_mod_type", "overall", "by_comparison", "by_negative_type"]:
-        if output_type in tool_files:
-            os.makedirs(os.path.dirname(tool_files[output_type]), exist_ok=True)
-
-    # ── Write: accuracy_summary.tsv (by modification_type) ─────────────────────
-    if "by_mod_type" in tool_files:
-        if tool_records:
-            mod_df = pd.DataFrame(tool_records).sort_values(
-                ["modification_type", "window", "f1"],
-                ascending=[True, True, False]
-            )
-        else:
-            mod_df = pd.DataFrame(columns=mod_type_columns)
-        mod_df.to_csv(tool_files["by_mod_type"], sep='\t', index=False)
-        print(f"Saved per-modification-type metrics for {tool} to {tool_files['by_mod_type']}")
-
-    # ── Write: accuracy_summary_overall.tsv (aggregated across modification types) ──
-    if "overall" in tool_files:
-        overall_records = []
-        for window in windows:
-            tool_window_records = [r for r in tool_records if r["window"] == window]
-            if not tool_window_records:
-                continue
-
-            # Sum confusion matrix values
-            tp_sum = sum(r["tp"] for r in tool_window_records)
-            fp_sum = sum(r["fp"] for r in tool_window_records)
-            fn_sum = sum(r["fn"] for r in tool_window_records)
-            tn_sum = sum(r["tn"] for r in tool_window_records if not pd.isna(r["tn"]))
-            tn_sum = tn_sum if tn_sum > 0 else 0
-
-            total_truth_sum = sum(r["total_truth"] for r in tool_window_records)
-            total_predicted_sum = sum(r["total_predicted"] for r in tool_window_records)
-            total_negative_sum = sum(r["total_negative"] for r in tool_window_records)
-            called_sites_sum = sum(r["called_sites"] for r in tool_window_records)
-
-            # Check if any record has inferred negatives
-            any_inferred = any(pd.isna(r.get("specificity")) for r in tool_window_records)
-
-            # Calculate metrics
-            precision = tp_sum / (tp_sum + fp_sum) if (tp_sum + fp_sum) > 0 else 0
-            recall = tp_sum / (tp_sum + fn_sum) if (tp_sum + fn_sum) > 0 else 0
-            f1 = (2 * precision * recall / (precision + recall)
-                  if (precision + recall) > 0 else 0)
-
-            # Specificity and MCC
-            if any_inferred or total_negative_sum == 0:
-                specificity = np.nan
-                mcc = np.nan
-            else:
-                specificity = tn_sum / total_negative_sum if total_negative_sum > 0 else np.nan
-                mcc = compute_mcc(tp_sum, fp_sum, fn_sum, tn_sum)
-
-            # AUPRC/AUROC: weighted average across modification types
-            auprc_vals = [r["auprc"] for r in tool_window_records if not pd.isna(r["auprc"])]
-            auroc_vals = [r["auroc"] for r in tool_window_records if not pd.isna(r["auroc"])]
-            auprc_avg = np.mean(auprc_vals) if auprc_vals else np.nan
-            auroc_avg = np.mean(auroc_vals) if auroc_vals else np.nan
-
-            overall_records.append({
-                "tool": tool,
-                "window": window,
-                "precision": precision,
-                "recall": recall,
-                "f1": f1,
-                "tp": tp_sum, "fp": fp_sum, "fn": fn_sum, "tn": tn_sum,
-                "specificity": specificity,
-                "mcc": mcc,
-                "auprc": auprc_avg,
-                "auroc": auroc_avg,
-                "called_sites": called_sites_sum,
-                "total_truth": total_truth_sum,
-                "total_predicted": total_predicted_sum,
-                "total_negative": total_negative_sum,
-            })
-
-        if overall_records:
-            overall_df = pd.DataFrame(overall_records).sort_values(
-                ["window", "f1"],
-                ascending=[True, False]
-            )
-        else:
-            overall_df = pd.DataFrame(columns=overall_columns)
-        overall_df.to_csv(tool_files["overall"], sep='\t', index=False)
-        print(f"Saved overall metrics for {tool} to {tool_files['overall']}")
-
-    # ── Write: accuracy_summary_by_comparison.tsv ───────────────────────────────
-    if "by_comparison" in tool_files:
-        if tool_comparison_records:
-            comp_df = pd.DataFrame(tool_comparison_records).sort_values(
-                ["comparison", "window", "f1"],
-                ascending=[True, True, False]
-            )
-        else:
-            comp_df = pd.DataFrame(columns=comparison_columns)
-        comp_df.to_csv(tool_files["by_comparison"], sep='\t', index=False)
-        print(f"Saved per-comparison metrics for {tool} to {tool_files['by_comparison']}")
-
-    # ── Write: accuracy_summary_by_negative_type.tsv ────────────────────────────
-    if "by_negative_type" in tool_files:
-        if tool_negtype_records:
-            negtype_df = pd.DataFrame(tool_negtype_records).sort_values(
-                ["modification_type", "negative_type", "window", "f1"],
-                ascending=[True, True, True, False]
-            )
-        else:
-            negtype_df = pd.DataFrame(columns=negtype_columns)
-        negtype_df.to_csv(tool_files["by_negative_type"], sep='\t', index=False)
-        print(f"Saved per-negative-type metrics for {tool} to {tool_files['by_negative_type']}")
-
-# ── Print summary of negative site counts ───────────────────────────────────────
-# Flatten records_by_negtype into a single list
-all_negtype_records = []
-for tool, negtype_recs in records_by_negtype.items():
-    all_negtype_records.extend(negtype_recs)
-
-if all_negtype_records:
-    print("\n" + "="*60)
-    print("NEGATIVE SITE CATEGORIZATION SUMMARY")
-    print("="*60)
-    print("When groundtruth only has positive sites, negatives are categorized as:")
-    print("  1. all_other      : All positions not in positive sites (general negatives)")
-    print("  2. same_kmer      : Positions sharing k-mer with positive sites (harder negatives)")
-    print("  3. same_position  : Positions at exact same base position (FPs at modification sites)")
-    print("-"*60)
-    for tool in sorted(set(r["tool"] for r in all_negtype_records)):
-        print(f"\n{tool}:")
-        for mod_type in sorted(set(r["modification_type"] for r in all_negtype_records if r["tool"] == tool)):
-            records_for_tool_mod = [r for r in all_negtype_records
-                                     if r["tool"] == tool and r["modification_type"] == mod_type]
-            if records_for_tool_mod:
-                pos_count = records_for_tool_mod[0]["total_truth"]
-                print(f"  {mod_type}: {pos_count} positive sites")
-                for r in records_for_tool_mod:
-                    if r["window"] == 0:  # Show for window=0 only
-                        print(f"    {r['negative_type']}: {r['total_negative']} negative sites")
-    print("="*60)
-
 # ── Write aggregated files (combining all tools) ───────────────────────────────────
 print("\nWriting aggregated benchmark files...")
 
@@ -1225,10 +1036,7 @@ all_comparison_records = []
 all_negtype_records = []
 all_overall_records = []
 
-for tool in sorted(benchmark_tools):
-    if tool not in tool_output_files:
-        continue
-
+for tool in sorted(tool_dfs.keys()):
     # Collect per-modification-type records
     tool_records = [r for r in records if r["tool"] == tool]
     all_records.extend(tool_records)

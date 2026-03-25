@@ -51,10 +51,11 @@ if config.get("benchmark", {}).get("truth_set", ""):
             results=get_all_result_tsvs,
             truth_set=config["benchmark"]["truth_set"],
         output:
-            # Use directory output - tracks the benchmarks directory as a whole
-            # Combined with touch file for completion tracking
-            directory("{project}/results/benchmarks"),
-            touch("{project}/results/benchmarks/.benchmark_complete"),
+            # Aggregated accuracy files (main outputs for downstream rules)
+            summary="{project}/results/benchmarks/accuracy_summary.tsv",
+            overall="{project}/results/benchmarks/accuracy_summary_overall.tsv",
+            by_comparison="{project}/results/benchmarks/accuracy_summary_by_comparison.tsv",
+            by_negative_type="{project}/results/benchmarks/accuracy_summary_by_negative_type.tsv",
         params:
             window=config["benchmark"]["window"],
         resources:
