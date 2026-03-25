@@ -23,18 +23,38 @@ def get_all_result_tsvs(wildcards):
     return result_files
 
 
+def get_benchmark_output_files(wildcards):
+    """Generate per-tool output file paths for benchmark results.
+
+    Each tool gets its own directory under benchmarks/{tool}/ containing:
+    - accuracy_summary.tsv: Per-modification-type metrics
+    - accuracy_summary_overall.tsv: Aggregated across all modification types
+    - accuracy_summary_by_comparison.tsv: Per-comparison metrics
+    - accuracy_summary_by_negative_type.tsv: Per-negative-type metrics
+    """
+    tools = [t for t in config["tools"] if config["tools"][t]["activate"]]
+    outputs = []
+    for tool in tools:
+        tool_dir = f"{wildcards.project}/results/benchmarks/{tool}"
+        outputs.extend([
+            f"{tool_dir}/accuracy_summary.tsv",
+            f"{tool_dir}/accuracy_summary_overall.tsv",
+            f"{tool_dir}/accuracy_summary_by_comparison.tsv",
+            f"{tool_dir}/accuracy_summary_by_negative_type.tsv",
+        ])
+    return outputs
+
+
 if config.get("benchmark", {}).get("truth_set", ""):
     rule accuracy_benchmark:
         input:
             results=get_all_result_tsvs,
             truth_set=config["benchmark"]["truth_set"],
         output:
-            "{project}/results/benchmarks/accuracy_summary.tsv",
-            "{project}/results/benchmarks/accuracy_summary_overall.tsv",
-            "{project}/results/benchmarks/accuracy_summary_by_comparison.tsv",
-            "{project}/results/benchmarks/accuracy_summary_by_negative_type.tsv",
+            touch("{project}/results/benchmarks/.benchmark_complete"),
         params:
             window=config["benchmark"]["window"],
+            output_files=get_benchmark_output_files,
         resources:
             mem_mb=1024 * 8,
         threads: 1
