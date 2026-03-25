@@ -157,13 +157,15 @@ def add_table_of_contents(pdf):
         "1. Metrics Explanation",
         "2. Overall Summary",
         "3. Tool Comparison Charts",
-        "4. Metrics by Window",
-        "5. Heatmaps",
-        "6. Tool Rankings",
-        "7. Per-Modification Type Analysis",
-        "8. Per-Tool Detailed Analysis",
-        "9. Optimal Thresholds",
-        "10. Score Distributions"
+        "4. Called Sites Comparison",
+        "5. Metrics by Window",
+        "6. Heatmaps",
+        "7. Tool Rankings",
+        "8. Per-Modification Type Analysis",
+        "9. Per-Tool Detailed Analysis",
+        "10. Optimal Thresholds",
+        "11. Score Distributions",
+        "12. Data Sources"
     ]
 
     y_pos = 0.75
@@ -211,6 +213,19 @@ Classification Metrics (range 0-1, higher is better):
   • MCC (Matthews Correlation Coefficient)
     Correlation coefficient between predicted and actual classifications.
     Range -1 to +1. More robust for imbalanced data than accuracy.
+    NOTE: MCC is shown as "not available" when ground truth does not contain
+    explicit negative sites. In this case, TN cannot be computed accurately.
+
+
+Site Counts:
+
+  • Called Sites
+    Total number of modification sites reported by a tool. Important for
+    comparing tools - a tool calling 1000 sites vs one calling 10 sites
+    may have different precision/recall trade-offs even with similar scores.
+
+  • Total Truth Sites
+    Number of known modification sites in the ground truth.
 
 
 Positional Tolerance:
@@ -308,6 +323,136 @@ def plot_overall_metrics_bar(data, pdf, window=0):
                        f'{val:.3f}', va='center', fontsize=8)
 
     plt.tight_layout()
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
+
+
+def plot_called_sites_comparison(data, pdf, window=0):
+    """Create bar plot comparing total called sites per tool."""
+    df = data['overall'] if not data['overall'].empty else data['accuracy']
+
+    if df.empty:
+        return
+
+    # Filter by window if available
+    if 'window' in df.columns:
+        df = df[df['window'] == window].copy()
+
+    if df.empty:
+        return
+
+    # Check if called_sites column exists
+    if 'called_sites' not in df.columns:
+        return
+
+    # Aggregate by tool
+    agg_df = df.groupby('tool').agg({
+        'called_sites': 'sum',
+        'total_truth': 'first' if 'total_truth' in df.columns else 'sum'
+    }).reset_index()
+
+    fig, axes = plt.subplots(1, 2, figsize=(PAGE_WIDTH, PAGE_HEIGHT * 0.5))
+    fig.suptitle(f'Site Counts Comparison (window={window}nt)', fontsize=14, fontweight='bold')
+
+    tools = sorted(agg_df['tool'].unique())
+    colors = plt.cm.Set2(np.linspace(0, 1, max(len(tools), 1)))
+    color_map = dict(zip(tools, colors))
+
+    # Plot 1: Called sites
+    ax = axes[0]
+    plot_df = agg_df.sort_values('called_sites', ascending=True)
+    bars = ax.barh(plot_df['tool'], plot_df['called_sites'],
+                   color=[color_map.get(t, 'gray') for t in plot_df['tool']])
+    ax.set_xlabel('Number of Sites', fontsize=10)
+    ax.set_title('Total Called Sites per Tool', fontsize=12, fontweight='bold')
+    ax.grid(axis='x', alpha=0.3)
+
+    # Add value labels
+    for bar, val in zip(bars, plot_df['called_sites']):
+        ax.text(val + max(plot_df['called_sites']) * 0.01, bar.get_y() + bar.get_height()/2,
+               f'{int(val):,}', va='center', fontsize=8)
+
+    # Plot 2: Called sites vs truth sites
+    ax = axes[1]
+    if 'total_truth' in agg_df.columns and not agg_df['total_truth'].isna().all():
+        truth_sites = agg_df['total_truth'].iloc[0]  # Same for all tools
+        ax.axvline(truth_sites, color='red', linestyle='--', linewidth=2, label=f'Truth Sites: {int(truth_sites):,}')
+        ax.barh(plot_df['tool'], plot_df['called_sites'],
+                color=[color_map.get(t, 'gray') for t in plot_df['tool']], alpha=0.7)
+        ax.set_xlabel('Number of Sites', fontsize=10)
+        ax.set_title('Called Sites vs Truth Sites', fontsize=12, fontweight='bold')
+        ax.legend(loc='lower right', fontsize=8)
+        ax.grid(axis='x', alpha=0.3)
+    else:
+        ax.axis('off')
+        ax.text(0.5, 0.5, 'Truth sites count\nnot available', ha='center', va='center',
+               fontsize=10, color='gray')
+
+    plt.tight_layout()
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
+
+
+def add_data_sources_page(pdf, benchmark_dir):
+    """Add page listing all data source files."""
+    fig = plt.figure(figsize=(PAGE_WIDTH, PAGE_HEIGHT))
+    ax = fig.add_subplot(111)
+    ax.axis('off')
+
+    ax.text(0.5, 0.95, 'Data Sources',
+            fontsize=20, fontweight='bold', ha='center', va='center',
+            transform=ax.transAxes)
+
+    source_text = f"""
+All data used to generate this report is stored in the benchmark directory:
+
+  {benchmark_dir}/
+
+Key data files:
+
+  • accuracy_summary.tsv
+    Per-modification type metrics for each tool at each window tolerance.
+
+  • accuracy_summary_overall.tsv
+    Aggregated overall metrics for each tool at each window tolerance.
+
+  • threshold_evaluation.tsv
+    Detailed metrics (P/R/F1/AUPRC/AUROC) computed at multiple score thresholds
+    for each tool and modification type.
+
+  • optimal_thresholds.tsv
+    Optimal score thresholds determined by maximizing F1 score.
+
+  • optimal_thresholds_detailed.tsv
+    Detailed optimal threshold information including original score columns.
+
+  • score_distributions.tsv
+    Statistics (min/max/mean/std/median) of score distributions for each tool.
+
+  • resource_by_tool.tsv
+    Computational resource usage (time, memory, I/O) aggregated by tool.
+
+
+Report Generation:
+
+  • Report generated by: benchmark_pdf_report.py
+  • Date: {datetime.now().strftime("%Y-%m-%d %H:%M")}
+
+
+Reproducing the Analysis:
+
+  To reproduce this analysis or access the raw data:
+
+  1. Navigate to the benchmark directory
+  2. Load TSV files with pandas: pd.read_csv(file, sep='\\t')
+  3. Each file contains tool, modification_type, window columns for filtering
+"""
+
+    ax.text(0.05, 0.82, source_text,
+            fontsize=9, family='monospace', va='top',
+            transform=ax.transAxes,
+            bbox=dict(boxstyle='round,pad=0.5', facecolor='#f8f9fa', alpha=0.8))
+
     pdf.savefig(fig, bbox_inches='tight')
     plt.close(fig)
 
@@ -512,6 +657,10 @@ def add_metrics_table_page(pdf, title, df, window=None, max_rows=30):
         display_cols.append('modification_type')
     display_cols.extend(['precision', 'recall', 'f1', 'auprc', 'auroc'])
 
+    # Add called_sites if available
+    if 'called_sites' in df.columns:
+        display_cols.append('called_sites')
+
     # Filter to existing columns
     display_cols = [c for c in display_cols if c in df.columns]
 
@@ -527,6 +676,12 @@ def add_metrics_table_page(pdf, title, df, window=None, max_rows=30):
             table_df[col] = table_df[col].apply(
                 lambda x: f'{x:.3f}' if pd.notna(x) else '-'
             )
+
+    # Format called_sites as integer
+    if 'called_sites' in table_df.columns:
+        table_df['called_sites'] = table_df['called_sites'].apply(
+            lambda x: f'{int(x):,}' if pd.notna(x) else '-'
+        )
 
     # Create table
     table = ax.table(cellText=table_df.values,
@@ -802,8 +957,11 @@ def add_score_distributions_page(data, pdf):
     plt.close(fig)
 
 
-def generate_pdf_report(data, output_path):
+def generate_pdf_report(data, output_path, benchmark_dir=None):
     """Generate complete PDF report."""
+    if benchmark_dir is None:
+        benchmark_dir = os.path.dirname(output_path)
+
     with PdfPages(output_path) as pdf:
         # Title page
         add_title_page(pdf, data)
@@ -822,6 +980,10 @@ def generate_pdf_report(data, output_path):
         # Overall metrics comparison
         for window in windows:
             plot_overall_metrics_bar(data, pdf, window)
+
+        # Called sites comparison
+        for window in windows:
+            plot_called_sites_comparison(data, pdf, window)
 
         # Metrics by window (line plot)
         plot_metrics_by_window(data, pdf)
@@ -853,6 +1015,9 @@ def generate_pdf_report(data, output_path):
         # Score distributions
         add_score_distributions_page(data, pdf)
 
+        # Data sources page
+        add_data_sources_page(pdf, benchmark_dir)
+
     return output_path
 
 
@@ -877,7 +1042,7 @@ def main():
 
     # Generate report
     print(f"Generating PDF report: {output_pdf}")
-    generate_pdf_report(data, output_pdf)
+    generate_pdf_report(data, output_pdf, benchmark_dir)
     print(f"Done! Report saved to {output_pdf}")
 
 
