@@ -328,6 +328,9 @@ def get_final_output():
         final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_overall.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_by_comparison.tsv"]
+        # Dedicated count tables
+        final_output += [f"{RESULT_ROOT}/benchmarks/called_sites_by_comparison.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/called_sites_summary.tsv"]
         # Visualization and detailed reports (shared across all tools)
         final_output += [f"{RESULT_ROOT}/benchmarks/viz/benchmark_report.html"]
         final_output += [f"{RESULT_ROOT}/benchmarks/benchmark_report.pdf"]

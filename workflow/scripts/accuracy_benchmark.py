@@ -984,6 +984,28 @@ for tool, pred_df in tool_dfs.items():
                     f1_comp = (2 * precision_comp * recall_comp / (precision_comp + recall_comp)
                                if (precision_comp + recall_comp) > 0 else 0)
 
+                    # Calculate TN for this comparison
+                    tn_comp = 0
+                    if not truth_neg_subset.empty and not is_inferred_negative:
+                        for _, neg_row in truth_neg_subset.iterrows():
+                            tx = neg_row['transcript']
+                            pos = neg_row['position']
+                            nearby_preds = comp_subset[
+                                (comp_subset['transcript'] == tx) &
+                                (comp_subset['position'].between(pos - window, pos + window))
+                            ]
+                            if nearby_preds.empty:
+                                tn_comp += 1
+
+                    # Specificity and MCC
+                    total_negative_comp = len(truth_neg_subset)
+                    if is_inferred_negative or total_negative_comp == 0:
+                        specificity_comp = np.nan
+                        mcc_comp = np.nan
+                    else:
+                        specificity_comp = tn_comp / total_negative_comp
+                        mcc_comp = compute_mcc(tp_comp, fp_comp, fn_comp, tn_comp)
+
                     # Compute AUPRC/AUROC for this comparison
                     auprc_comp, auroc_comp = compute_ranking_metrics_with_fair_comparison(
                         comp_subset, comp_covered_sites, truth_subset, truth_neg_subset,
@@ -998,10 +1020,17 @@ for tool, pred_df in tool_dfs.items():
                         "precision": precision_comp,
                         "recall": recall_comp,
                         "f1": f1_comp,
+                        "tp": tp_comp,
+                        "fp": fp_comp,
+                        "fn": fn_comp,
+                        "tn": tn_comp,
+                        "specificity": specificity_comp,
+                        "mcc": mcc_comp,
                         "auprc": auprc_comp,
                         "auroc": auroc_comp,
                         "called_sites": len(comp_subset),
                         "total_truth": len(truth_subset),
+                        "total_negative": total_negative_comp,
                     })
 
 # Column definitions for output files
@@ -1019,7 +1048,8 @@ overall_columns = [
 ]
 comparison_columns = [
     "tool", "modification_type", "comparison", "window", "precision", "recall",
-    "f1", "auprc", "auroc", "called_sites", "total_truth"
+    "f1", "tp", "fp", "fn", "tn", "specificity", "mcc", "auprc", "auroc",
+    "called_sites", "total_truth", "total_negative"
 ]
 negtype_columns = [
     "tool", "modification_type", "negative_type", "window", "precision", "recall",
@@ -1158,5 +1188,31 @@ if "by_negative_type" in aggregated_files:
     os.makedirs(os.path.dirname(aggregated_files["by_negative_type"]), exist_ok=True)
     negtype_df.to_csv(aggregated_files["by_negative_type"], sep='\t', index=False)
     print(f"Saved aggregated per-negative-type metrics to {aggregated_files['by_negative_type']}")
+
+# ── Write dedicated count tables ─────────────────────────────────────────────
+# Create focused count tables for easier analysis of site calling behavior
+benchmark_dir = os.path.dirname(aggregated_files.get("by_mod_type", ""))
+
+# 1. called_sites_by_comparison.tsv - site counts per tool per comparison
+if all_comparison_records:
+    count_cols = ["tool", "modification_type", "comparison", "window",
+                  "tp", "fp", "fn", "tn", "called_sites", "total_truth", "total_negative"]
+    count_df = pd.DataFrame(all_comparison_records)[count_cols].sort_values(
+        ["tool", "modification_type", "comparison", "window"]
+    )
+    count_path = os.path.join(benchmark_dir, "called_sites_by_comparison.tsv")
+    count_df.to_csv(count_path, sep='\t', index=False)
+    print(f"Saved called sites by comparison to {count_path}")
+
+# 2. called_sites_summary.tsv - aggregated site counts per tool
+if all_overall_records:
+    summary_count_cols = ["tool", "window", "tp", "fp", "fn", "tn",
+                          "called_sites", "total_truth", "total_predicted", "total_negative"]
+    summary_count_df = pd.DataFrame(all_overall_records)[summary_count_cols].sort_values(
+        ["tool", "window"]
+    )
+    summary_count_path = os.path.join(benchmark_dir, "called_sites_summary.tsv")
+    summary_count_df.to_csv(summary_count_path, sep='\t', index=False)
+    print(f"Saved called sites summary to {summary_count_path}")
 
 print("\nBenchmark accuracy analysis complete!")
