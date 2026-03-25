@@ -4,106 +4,10 @@
 import os
 
 
-def get_per_tool_benchmark_files(wildcards, file_type):
-    """Get per-tool benchmark files for aggregation.
-
-    Args:
-        file_type: One of 'accuracy', 'overall', 'by_comparison', 'by_negative_type'
-    """
-    tools = [t for t in config["tools"] if config["tools"][t]["activate"]]
-    filename_map = {
-        'accuracy': 'accuracy_summary.tsv',
-        'overall': 'accuracy_summary_overall.tsv',
-        'by_comparison': 'accuracy_summary_by_comparison.tsv',
-        'by_negative_type': 'accuracy_summary_by_negative_type.tsv',
-    }
-    filename = filename_map[file_type]
-    return [f"{wildcards.project}/results/benchmarks/{tool}/{filename}" for tool in tools]
-
-
-rule aggregate_benchmark_results:
-    """Aggregate per-tool benchmark results into flat files for visualization."""
-    input:
-        benchmark_complete="{project}/results/benchmarks/.benchmark_complete",
-        accuracy=lambda wc: get_per_tool_benchmark_files(wc, 'accuracy'),
-        overall=lambda wc: get_per_tool_benchmark_files(wc, 'overall'),
-        by_comparison=lambda wc: get_per_tool_benchmark_files(wc, 'by_comparison'),
-        by_negative_type=lambda wc: get_per_tool_benchmark_files(wc, 'by_negative_type'),
-    output:
-        accuracy="{project}/results/benchmarks/accuracy_summary.tsv",
-        overall="{project}/results/benchmarks/accuracy_summary_overall.tsv",
-        by_comparison="{project}/results/benchmarks/accuracy_summary_by_comparison.tsv",
-        by_negative_type="{project}/results/benchmarks/accuracy_summary_by_negative_type.tsv",
-    run:
-        import pandas as pd
-        import os
-
-        # Aggregate accuracy_summary.tsv (per modification type)
-        dfs = []
-        for f in input.accuracy:
-            if os.path.exists(f):
-                df = pd.read_csv(f, sep='\t')
-                dfs.append(df)
-        if dfs:
-            combined = pd.concat(dfs, ignore_index=True).sort_values(
-                ["tool", "modification_type", "window", "f1"],
-                ascending=[True, True, True, False]
-            )
-        else:
-            combined = pd.DataFrame()
-        combined.to_csv(output.accuracy, sep='\t', index=False)
-
-        # Aggregate accuracy_summary_overall.tsv
-        dfs = []
-        for f in input.overall:
-            if os.path.exists(f):
-                df = pd.read_csv(f, sep='\t')
-                dfs.append(df)
-        if dfs:
-            combined = pd.concat(dfs, ignore_index=True).sort_values(
-                ["tool", "window", "f1"],
-                ascending=[True, True, False]
-            )
-        else:
-            combined = pd.DataFrame()
-        combined.to_csv(output.overall, sep='\t', index=False)
-
-        # Aggregate accuracy_summary_by_comparison.tsv
-        dfs = []
-        for f in input.by_comparison:
-            if os.path.exists(f):
-                df = pd.read_csv(f, sep='\t')
-                dfs.append(df)
-        if dfs:
-            combined = pd.concat(dfs, ignore_index=True).sort_values(
-                ["tool", "comparison", "window", "f1"],
-                ascending=[True, True, True, False]
-            )
-        else:
-            combined = pd.DataFrame()
-        combined.to_csv(output.by_comparison, sep='\t', index=False)
-
-        # Aggregate accuracy_summary_by_negative_type.tsv
-        dfs = []
-        for f in input.by_negative_type:
-            if os.path.exists(f):
-                df = pd.read_csv(f, sep='\t')
-                dfs.append(df)
-        if dfs:
-            combined = pd.concat(dfs, ignore_index=True).sort_values(
-                ["tool", "modification_type", "negative_type", "window", "f1"],
-                ascending=[True, True, True, True, False]
-            )
-        else:
-            combined = pd.DataFrame()
-        combined.to_csv(output.by_negative_type, sep='\t', index=False)
-
-        print(f"Aggregated benchmark results from {len(input.accuracy)} tools")
-
-
 rule benchmark_visualization:
     """Generate PR curves, ROC curves, and HTML benchmark report."""
     input:
+        # Depend on the aggregated files from accuracy_benchmark
         aggregated=expand("{{project}}/results/benchmarks/{agg_file}", agg_file=[
             "accuracy_summary.tsv",
             "accuracy_summary_overall.tsv",
