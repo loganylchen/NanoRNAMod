@@ -400,13 +400,18 @@ if not truth_neg.empty:
 else:
     same_base_negatives_df = generate_same_base_negatives(tool_dfs, truth_pos, tool_base_cols)
 
+# Always write the negative sites file (even if empty) to satisfy Snakemake output tracking
 if not same_base_negatives_df.empty:
     print(f"\nTotal same-base negative sites: {len(same_base_negatives_df)}")
-    # Save negative sites
-    same_base_negatives_df.to_csv(output_negatives, sep='\t', index=False)
-    print(f"Saved same-base negative sites to {output_negatives}")
 else:
     print("No same-base negative sites generated (using explicit negatives or empty)")
+    # Create empty DataFrame with expected columns
+    same_base_negatives_df = pd.DataFrame(columns=[
+        'transcript', 'position', 'modification_type', 'ref_base', 'site_type'
+    ])
+
+same_base_negatives_df.to_csv(output_negatives, sep='\t', index=False)
+print(f"Saved same-base negative sites to {output_negatives}")
 
 
 # ── Compute Metrics with Same-Base Negatives ──────────────────────────────────
