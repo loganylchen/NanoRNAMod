@@ -180,9 +180,77 @@ rule benchmark_score_optimization:
         "../scripts/benchmark_score_optimization.py"
 
 
-rule benchmark_r_figures:
-    """Generate Nature-quality figures using R ggplot2."""
+rule benchmark_statistics:
+    """Compute bootstrap confidence intervals, significance tests, and effect sizes.
+
+    Runs AFTER accuracy_benchmark to ensure metrics are available.
+    Computes 95% bootstrap CIs for all metrics, paired Wilcoxon tests,
+    permutation tests, FDR correction, and effect sizes (Cohen's d, Cliff's delta).
+    """
     input:
+        summary="{project}/results/benchmarks/accuracy_summary.tsv",
+        by_comparison="{project}/results/benchmarks/accuracy_summary_by_comparison.tsv",
+    output:
+        ci="{project}/results/benchmarks/statistics/bootstrap_ci.tsv",
+        significance="{project}/results/benchmarks/statistics/significance_tests.tsv",
+        fdr="{project}/results/benchmarks/statistics/fdr_corrected.tsv",
+        effects="{project}/results/benchmarks/statistics/effect_sizes.tsv",
+    params:
+        n_bootstrap=config.get("benchmark", {}).get("n_bootstrap", 1000),
+        alpha=config.get("benchmark", {}).get("alpha", 0.05),
+        fdr_method=config.get("benchmark", {}).get("fdr_method", "benjamini-hochberg"),
+    resources:
+        mem_mb=1024 * 8,
+    threads: 4
+    priority: 32
+    log:
+        "logs/{project}/benchmark_statistics/statistics.log",
+    benchmark:
+        "benchmarks/{project}/benchmark_statistics.benchmark.txt"
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_statistics.py"
+
+
+rule benchmark_sensitivity:
+    """Sensitivity analysis for coverage depth and threshold robustness.
+
+    Coverage data source: Uses depth information from alignment BAM files.
+    The detailed_predictions.tsv must include a 'coverage' column populated
+    by accuracy_benchmark.py from per-site depth calculations.
+
+    If coverage column is not present, the analysis falls back to using
+    read count as a proxy for coverage depth.
+    """
+    input:
+        predictions="{project}/results/benchmarks/detailed_predictions.tsv",
+        truth_set=config["benchmark"]["truth_set"],
+    output:
+        coverage="{project}/results/benchmarks/sensitivity/coverage_analysis.tsv",
+        score_dist="{project}/results/benchmarks/sensitivity/score_distribution.tsv",
+        threshold_robust="{project}/results/benchmarks/sensitivity/threshold_robustness.tsv",
+    params:
+        coverage_bins=config.get("benchmark", {}).get("coverage_bins", [0, 10, 20, 50, 100, 200, 500]),
+        n_splits=config.get("benchmark", {}).get("n_splits", 5),
+    resources:
+        mem_mb=1024 * 8,
+    threads: 2
+    priority: 33
+    log:
+        "logs/{project}/benchmark_sensitivity/sensitivity.log",
+    benchmark:
+        "benchmarks/{project}/benchmark_sensitivity.benchmark.txt"
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_sensitivity.py"
+
+
+rule benchmark_r_figures:
+    """Generate Nature-quality figures using R ggplot2 with statistical overlays."""
+    input:
+        # Aggregated accuracy metrics
         aggregated=expand("{{project}}/results/benchmarks/{agg_file}", agg_file=[
             "accuracy_summary.tsv",
             "accuracy_summary_overall.tsv",
@@ -192,14 +260,29 @@ rule benchmark_r_figures:
         optimal_scores="{project}/results/benchmarks/optimal_score_per_tool.tsv",
         thresholds="{project}/results/benchmarks/threshold_evaluation.tsv",
         resources="{project}/results/benchmarks/resource_summary.tsv",
+        # Statistical analysis results
+        bootstrap_ci="{project}/results/benchmarks/statistics/bootstrap_ci.tsv",
+        significance="{project}/results/benchmarks/statistics/significance_tests.tsv",
+        fdr="{project}/results/benchmarks/statistics/fdr_corrected.tsv",
+        effect_sizes="{project}/results/benchmarks/statistics/effect_sizes.tsv",
+        # Sensitivity analysis results
+        coverage="{project}/results/benchmarks/sensitivity/coverage_analysis.tsv",
+        score_dist="{project}/results/benchmarks/sensitivity/score_distribution.tsv",
+        threshold_robust="{project}/results/benchmarks/sensitivity/threshold_robustness.tsv",
     output:
         dir=directory("{project}/results/benchmarks/figures"),
+        main_dir=directory("{project}/results/benchmarks/figures/main"),
+        supp_dir=directory("{project}/results/benchmarks/figures/supplementary"),
+        data_dir=directory("{project}/results/benchmarks/data"),
     params:
         window=config["benchmark"]["window"],
+        theme=config.get("benchmark", {}).get("figure_theme", "nature"),
+        dpi=config.get("benchmark", {}).get("dpi", 300),
+        format=config.get("benchmark", {}).get("fig_format", "pdf"),
     resources:
         mem_mb=1024 * 8,
     threads: 1
-    priority: 30
+    priority: 34
     log:
         "logs/{project}/benchmark_r_figures/figures.log",
     container:

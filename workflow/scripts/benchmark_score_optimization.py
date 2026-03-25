@@ -389,12 +389,18 @@ def evaluate_score_column(pred_df, truth_pos, tool_name, mod_type,
             pred_df, truth_pos, thresh, score_col, is_pvalue, window
         )
 
+        # Reverse convert threshold for p-value columns
+        original_thresh = np.nan
+        if is_pvalue and not np.isnan(thresh):
+            original_thresh = 10 ** (-thresh)
+
         record = {
             'tool': tool_name,
             'modification_type': mod_type,
             'score_column': score_col,
             'score_type': 'p-value' if is_pvalue else 'probability',
             'threshold': thresh,
+            'original_threshold': original_thresh,
             **metrics
         }
         eval_records.append(record)
@@ -601,6 +607,12 @@ def main():
 
                     best = scored_results[0][0]
 
+                    # Reverse convert threshold for p-value columns
+                    original_threshold = np.nan
+                    if best['score_type'] == 'p-value' and not np.isnan(best['optimal_threshold']):
+                        # Threshold is in -log10 scale, convert back to original p-value
+                        original_threshold = 10 ** (-best['optimal_threshold'])
+
                     optimal_record = {
                         'tool': tool,
                         'modification_type': mod_type,
@@ -608,6 +620,7 @@ def main():
                         'score_column': best['score_column'],
                         'score_type': best['score_type'],
                         'optimal_threshold': best['optimal_threshold'],
+                        'original_threshold': original_threshold,
                         'optimal_f1': best['optimal_f1'],
                         'optimal_precision': best['optimal_precision'],
                         'optimal_recall': best['optimal_recall'],
@@ -627,7 +640,7 @@ def main():
     else:
         all_df = pd.DataFrame(columns=[
             'tool', 'modification_type', 'score_column', 'score_type',
-            'threshold', 'tp', 'fp', 'fn', 'precision', 'recall', 'f1', 'predictions'
+            'threshold', 'original_threshold', 'tp', 'fp', 'fn', 'precision', 'recall', 'f1', 'predictions'
         ])
 
     if optimal_per_tool:
@@ -639,7 +652,7 @@ def main():
     else:
         optimal_df = pd.DataFrame(columns=[
             'tool', 'modification_type', 'window', 'score_column', 'score_type',
-            'optimal_threshold', 'optimal_f1', 'optimal_precision',
+            'optimal_threshold', 'original_threshold', 'optimal_f1', 'optimal_precision',
             'optimal_recall', 'auprc', 'auroc', 'all_available_scores'
         ])
 

@@ -345,4 +345,32 @@ def get_final_output():
         final_output += [f"{RESULT_ROOT}/benchmarks/kmer_negative_sites.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_same_base_negatives.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/same_base_negative_sites.tsv"]
+        # Statistical analysis (bootstrap CIs, significance tests, effect sizes)
+        final_output += [f"{RESULT_ROOT}/benchmarks/statistics/bootstrap_ci.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/statistics/significance_tests.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/statistics/fdr_corrected.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/statistics/effect_sizes.tsv"]
+        # Sensitivity analysis (coverage, score distribution, threshold robustness)
+        final_output += [f"{RESULT_ROOT}/benchmarks/sensitivity/coverage_analysis.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/sensitivity/score_distribution.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/sensitivity/threshold_robustness.tsv"]
+        # Publication figures (ggplot2, Nature/Cell/Science themes)
+        final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig1_overall_accuracy.pdf"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig2_pr_curves.pdf"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig3_roc_curves.pdf"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig4_f1_comparison.pdf"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig5_coverage_sensitivity.pdf"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig6_resource_usage.pdf"]
+        # Supplementary figures
+        final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/sfig1_per_comparison.pdf"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/sfig2_score_distributions.pdf"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/sfig3_threshold_robustness.pdf"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/sfig4_effect_sizes.pdf"]
+        # Figure source data (for manuscript submission)
+        final_output += [f"{RESULT_ROOT}/benchmarks/data/fig1_source_data.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/data/fig2_source_data.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/data/fig3_source_data.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/data/fig4_source_data.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/data/fig5_source_data.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/data/fig6_source_data.tsv"]
     return final_output

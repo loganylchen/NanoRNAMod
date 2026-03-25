@@ -1,20 +1,22 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# Master Script: Generate All Benchmark Figures
+# Master Script: Generate Publication-Quality Benchmark Figures
 # =============================================================================
-# This script sources all individual figure scripts and generates
-# a complete set of Nature-quality benchmark visualizations.
+# Enhanced version with:
+# - Bootstrap CI overlays for error bars
+# - Significance annotations (Wilcoxon, permutation tests)
+# - Sensitivity analysis figures (coverage, threshold robustness)
+# - Main vs supplementary figure organization
+# - Source data export for manuscript submission
 #
 # Usage:
-#   Rscript run_all_figures.R --data-dir /path/to/benchmark/data --output figures/
-#   OR via Snakemake script directive (uses snakemake@input object)
+#   Rscript run_all_figures.R [options]
+#   OR via Snakemake script directive
 #
-# Expected files in data directory:
-#   - accuracy_summary.tsv
-#   - accuracy_summary_overall.tsv (optional)
-#   - resource_summary.tsv
-#   - threshold_evaluation.tsv
-#   - optimal_thresholds.tsv
+# Output structure:
+#   figures/main/          - Main figures (Nature-ready)
+#   figures/supplementary/ - Supplementary figures
+#   data/                  - Source data (TSV)
 # =============================================================================
 
 # Suppress startup messages
@@ -24,9 +26,8 @@ options(echo = FALSE, warn = 1)
 # Configuration - Handle both Snakemake script and command-line invocation
 # =============================================================================
 
-# Get script directory - use alternative method that doesn't require this.file package
+# Get script directory
 script_dir <- tryCatch({
-  # Try to get from script path if available
   args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", args, value = TRUE)
   if (length(file_arg) > 0) {
@@ -35,41 +36,68 @@ script_dir <- tryCatch({
   } else {
     "."
   }
-}, error = function(e) {
-  # Fallback to current working directory
-  "."
-})
+}, error = function(e) ".")
+
+# Source utilities
+source(file.path(script_dir, "00_utils.R"))
+
+# Initialize with defaults
+data_dir <- "."
+output_dir <- "figures"
+window_filter <- NULL
+theme <- "nature"
+dpi <- 300
+fig_format <- "pdf"
+
+# Initialize input file paths
+input_files <- list(
+  # Accuracy metrics
+  accuracy = NULL,
+  accuracy_overall = NULL,
+  accuracy_by_comparison = NULL,
+  accuracy_by_negative_type = NULL,
+  # Optimization results
+  optimal_scores = NULL,
+  thresholds = NULL,
+  resources = NULL,
+  # Statistical analysis
+  bootstrap_ci = NULL,
+  significance = NULL,
+  fdr_corrected = NULL,
+  effect_sizes = NULL,
+  # Sensitivity analysis
+  coverage = NULL,
+  score_dist = NULL,
+  threshold_robust = NULL
+)
 
 # Check if running as Snakemake script
 if (exists("snakemake")) {
   # Snakemake script directive - use snakemake object
-  input_files <- list(
-    accuracy = snakemake@input[["accuracy"]],
-    detailed = snakemake@input[["accuracy_overall"]],
-    overall = snakemake@input[["accuracy_overall"]],
-    optimal = snakemake@input[["optimal_scores"]],
-    thresholds = snakemake@input[["thresholds"]],
-    resources = snakemake@input[["resources"]]
-  )
+  input_files$accuracy <- snakemake@input[["aggregated"]][1]
+  input_files$accuracy_overall <- snakemake@input[["aggregated"]][2]
+  input_files$accuracy_by_comparison <- snakemake@input[["aggregated"]][3]
+  input_files$accuracy_by_negative_type <- snakemake@input[["aggregated"]][4]
+  input_files$optimal_scores <- snakemake@input[["optimal_scores"]]
+  input_files$thresholds <- snakemake@input[["thresholds"]]
+  input_files$resources <- snakemake@input[["resources"]]
+  input_files$bootstrap_ci <- snakemake@input[["bootstrap_ci"]]
+  input_files$significance <- snakemake@input[["significance"]]
+  input_files$fdr_corrected <- snakemake@input[["fdr"]]
+  input_files$effect_sizes <- snakemake@input[["effects"]]
+  input_files$coverage <- snakemake@input[["coverage"]]
+  input_files$score_dist <- snakemake@input[["score_dist"]]
+  input_files$threshold_robust <- snakemake@input[["threshold_robust"]]
+
   output_dir <- snakemake@output[["dir"]]
   window_filter <- snakemake@params[["window"]]
+  theme <- snakemake@params[["theme"]]
+  dpi <- snakemake@params[["dpi"]]
+  fig_format <- snakemake@params[["format"]]
+
   data_dir <- dirname(input_files$accuracy)
 } else {
   # Command-line invocation
-  data_dir <- "."
-  output_dir <- "figures"
-  window_filter <- NULL
-
-  # Initialize input_files list
-  input_files <- list(
-    accuracy = NULL,
-    detailed = NULL,
-    overall = NULL,
-    optimal = NULL,
-    thresholds = NULL,
-    resources = NULL
-  )
-
   args <- commandArgs(trailingOnly = TRUE)
   i <- 1
   while (i <= length(args)) {
@@ -82,304 +110,680 @@ if (exists("snakemake")) {
     } else if (args[i] == "--window" && i + 1 <= length(args)) {
       window_filter <- as.integer(args[i + 1])
       i <- i + 2
-    } else if (args[i] == "--accuracy" && i + 1 <= length(args)) {
-      input_files$accuracy <- args[i + 1]
+    } else if (args[i] == "--theme" && i + 1 <= length(args)) {
+      theme <- args[i + 1]
       i <- i + 2
-    } else if (args[i] == "--accuracy-detailed" && i + 1 <= length(args)) {
-      input_files$detailed <- args[i + 1]
+    } else if (args[i] == "--dpi" && i + 1 <= length(args)) {
+      dpi <- as.integer(args[i + 1])
       i <- i + 2
-    } else if (args[i] == "--accuracy-overall" && i + 1 <= length(args)) {
-      input_files$overall <- args[i + 1]
-      i <- i + 2
-    } else if (args[i] == "--optimal-scores" && i + 1 <= length(args)) {
-      input_files$optimal <- args[i + 1]
-      i <- i + 2
-    } else if (args[i] == "--thresholds" && i + 1 <= length(args)) {
-      input_files$thresholds <- args[i + 1]
-      i <- i + 2
-    } else if (args[i] == "--resources" && i + 1 <= length(args)) {
-      input_files$resources <- args[i + 1]
+    } else if (args[i] == "--format" && i + 1 <= length(args)) {
+      fig_format <- args[i + 1]
       i <- i + 2
     } else {
       i <- i + 1
     }
   }
 
-  # Set default paths based on data_dir if not specified
-  if (is.null(input_files$accuracy)) {
-    input_files$accuracy <- file.path(data_dir, "accuracy_summary.tsv")
-  }
-  if (is.null(input_files$detailed)) {
-    input_files$detailed <- file.path(data_dir, "accuracy_summary_overall.tsv")
-  }
-  if (is.null(input_files$overall)) {
-    input_files$overall <- input_files$detailed
-  }
-  if (is.null(input_files$optimal)) {
-    input_files$optimal <- file.path(data_dir, "optimal_score_per_tool.tsv")
-  }
-  if (is.null(input_files$thresholds)) {
-    input_files$thresholds <- file.path(data_dir, "threshold_evaluation.tsv")
-  }
-  if (is.null(input_files$resources)) {
-    input_files$resources <- file.path(data_dir, "resource_summary.tsv")
-  }
+  # Set default paths based on data_dir
+  input_files$accuracy <- file.path(data_dir, "accuracy_summary.tsv")
+  input_files$accuracy_overall <- file.path(data_dir, "accuracy_summary_overall.tsv")
+  input_files$accuracy_by_comparison <- file.path(data_dir, "accuracy_summary_by_comparison.tsv")
+  input_files$accuracy_by_negative_type <- file.path(data_dir, "accuracy_summary_by_negative_type.tsv")
+  input_files$optimal_scores <- file.path(data_dir, "optimal_score_per_tool.tsv")
+  input_files$thresholds <- file.path(data_dir, "threshold_evaluation.tsv")
+  input_files$resources <- file.path(data_dir, "resource_summary.tsv")
+  input_files$bootstrap_ci <- file.path(data_dir, "statistics/bootstrap_ci.tsv")
+  input_files$significance <- file.path(data_dir, "statistics/significance_tests.tsv")
+  input_files$fdr_corrected <- file.path(data_dir, "statistics/fdr_corrected.tsv")
+  input_files$effect_sizes <- file.path(data_dir, "statistics/effect_sizes.tsv")
+  input_files$coverage <- file.path(data_dir, "sensitivity/coverage_analysis.tsv")
+  input_files$score_dist <- file.path(data_dir, "sensitivity/score_distribution.tsv")
+  input_files$threshold_robust <- file.path(data_dir, "sensitivity/threshold_robustness.tsv")
 }
 
-# Define output subdirectories
-output_dirs <- list(
-  overview = file.path(output_dir, "01_performance_overview"),
-  modification = file.path(output_dir, "02_per_modification"),
-  threshold = file.path(output_dir, "03_threshold_optimization"),
-  resource = file.path(output_dir, "04_resource_comparison"),
-  summary = file.path(output_dir, "05_optimal_summary")
-)
+# Define output directories
+main_dir <- file.path(output_dir, "main")
+supp_dir <- file.path(output_dir, "supplementary")
+data_out_dir <- file.path(output_dir, "..", "data")
 
 # =============================================================================
-# Helper Functions
+# Data Loading Functions
 # =============================================================================
 
-check_file_exists <- function(path, required = TRUE) {
+load_with_fallback <- function(path, required = FALSE) {
   if (file.exists(path)) {
-    return(TRUE)
-  } else {
-    if (required) {
-      warning("Required file not found: ", path)
+    df <- tryCatch({
+      readr::read_tsv(path, show_col_types = FALSE)
+    }, error = function(e) {
+      warning("Error reading ", path, ": ", e$message)
+      NULL
+    })
+    if (!is.null(df) && nrow(df) > 0) {
+      message("  Loaded: ", basename(path), " (", nrow(df), " rows)")
+      return(df)
     }
-    return(FALSE)
   }
+  if (required) {
+    warning("Required file not found or empty: ", path)
+  }
+  NULL
 }
 
-run_script <- function(script_name, args, description) {
-  message(paste("\n", paste(rep("=", 60), collapse = "")))
-  message(paste("Running:", description))
-  message(paste(rep("=", 60), collapse = ""))
+# =============================================================================
+# Figure Generation Functions
+# =============================================================================
 
-  script_path <- file.path(script_dir, script_name)
+# -----------------------------------------------------------------------------
+# Figure 1: Overall Accuracy with Bootstrap CI
+# -----------------------------------------------------------------------------
+create_fig1_overall_accuracy <- function(accuracy_df, ci_df, tool_colors) {
+  if (is.null(accuracy_df)) return(NULL)
 
-  if (!file.exists(script_path)) {
-    warning("Script not found: ", script_path)
-    return(FALSE)
+  # Aggregate by tool
+  df_summary <- accuracy_df %>%
+    dplyr::group_by(tool) %>%
+    dplyr::summarise(
+      f1 = mean(f1, na.rm = TRUE),
+      precision = mean(precision, na.rm = TRUE),
+      recall = mean(recall, na.rm = TRUE),
+      n = dplyr::n(),
+      .groups = "drop"
+    ) %>%
+    dplyr::arrange(desc(f1))
+
+  df_summary$tool <- factor(df_summary$tool, levels = df_summary$tool)
+
+  # Add CI if available
+  if (!is.null(ci_df) && "metric" %in% names(ci_df)) {
+    ci_f1 <- ci_df %>%
+      dplyr::filter(metric == "f1") %>%
+      dplyr::select(tool, ci_lower, ci_upper)
+    df_summary <- df_summary %>%
+      dplyr::left_join(ci_f1, by = "tool")
   }
 
-  # Build command
-  cmd <- paste("Rscript", script_path, args)
+  # Determine y-axis limit
+  y_max <- if ("ci_upper" %in% names(df_summary)) {
+    max(c(1.1, max(df_summary$f1, na.rm = TRUE) * 1.1, max(df_summary$ci_upper, na.rm = TRUE) * 1.05))
+  } else {
+    max(c(1.1, max(df_summary$f1, na.rm = TRUE) * 1.1))
+  }
 
-  # Run script
-  result <- tryCatch({
-    system(cmd, intern = FALSE)
+  plot_colors <- tool_colors[match(levels(df_summary$tool), names(tool_colors))]
+
+  p <- ggplot(df_summary, aes(x = tool, y = f1, fill = tool)) +
+    geom_bar(stat = "identity", width = 0.7, color = "black", linewidth = 0.25)
+
+  # Add error bars if CI available
+  if ("ci_lower" %in% names(df_summary) && !all(is.na(df_summary$ci_lower))) {
+    p <- p + geom_errorbar(
+      aes(ymin = ci_lower, ymax = ci_upper),
+      width = 0.2, linewidth = 0.5
+    )
+  }
+
+  p <- p +
+    scale_fill_manual(values = plot_colors, guide = "none") +
+    geom_text(aes(label = sprintf("%.2f", f1)), vjust = -0.5, size = 2.5) +
+    labs(
+      title = "Tool Performance Comparison",
+      subtitle = "F1 Score with 95% Bootstrap CI",
+      x = "Tool",
+      y = "F1 Score"
+    ) +
+    scale_y_continuous(limits = c(0, y_max), expand = c(0, 0)) +
+    theme_nature() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+  p
+}
+
+# -----------------------------------------------------------------------------
+# Figure 2: PR Curves with AUPRC
+# -----------------------------------------------------------------------------
+create_fig2_pr_curves <- function(accuracy_df, tool_colors) {
+  if (is.null(accuracy_df)) return(NULL)
+
+  df_plot <- accuracy_df %>%
+    dplyr::select(tool, precision, recall, f1) %>%
+    dplyr::group_by(tool) %>%
+    dplyr::summarise(
+      precision = mean(precision, na.rm = TRUE),
+      recall = mean(recall, na.rm = TRUE),
+      f1 = mean(f1, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::arrange(desc(f1))
+
+  df_long <- df_plot %>%
+    tidyr::pivot_longer(
+      cols = c(precision, recall),
+      names_to = "metric",
+      values_to = "value"
+    )
+
+  df_long$tool <- factor(df_long$tool, levels = df_plot$tool)
+
+  p <- ggplot(df_long, aes(x = tool, y = value, fill = metric)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+    scale_fill_manual(
+      values = c("precision" = "#0072B2", "recall" = "#D55E00"),
+      labels = c("Precision", "Recall"),
+      name = NULL
+    ) +
+    geom_text(aes(label = sprintf("%.2f", value)),
+              position = position_dodge(width = 0.8), vjust = -0.5, size = 2) +
+    labs(
+      title = "Precision vs Recall Trade-off",
+      x = "Tool",
+      y = "Score"
+    ) +
+    scale_y_continuous(limits = c(0, 1.15), expand = c(0, 0)) +
+    theme_nature() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "top"
+    )
+
+  p
+}
+
+# -----------------------------------------------------------------------------
+# Figure 3: ROC Curves (AUROC comparison)
+# -----------------------------------------------------------------------------
+create_fig3_roc_curves <- function(accuracy_df, ci_df, tool_colors) {
+  if (is.null(accuracy_df) || !"auroc" %in% names(accuracy_df)) return(NULL)
+
+  df_summary <- accuracy_df %>%
+    dplyr::group_by(tool) %>%
+    dplyr::summarise(auroc = mean(auroc, na.rm = TRUE), .groups = "drop") %>%
+    dplyr::filter(!is.na(auroc)) %>%
+    dplyr::arrange(desc(auroc))
+
+  if (nrow(df_summary) == 0) return(NULL)
+
+  df_summary$tool <- factor(df_summary$tool, levels = df_summary$tool)
+  plot_colors <- tool_colors[match(levels(df_summary$tool), names(tool_colors))]
+
+  # Add CI if available
+  if (!is.null(ci_df) && "metric" %in% names(ci_df)) {
+    ci_auroc <- ci_df %>%
+      dplyr::filter(metric == "auroc") %>%
+      dplyr::select(tool, ci_lower, ci_upper)
+    df_summary <- df_summary %>%
+      dplyr::left_join(ci_auroc, by = "tool")
+  }
+
+  p <- ggplot(df_summary, aes(x = tool, y = auroc, fill = tool)) +
+    geom_bar(stat = "identity", width = 0.7, color = "black", linewidth = 0.25)
+
+  if ("ci_lower" %in% names(df_summary) && !all(is.na(df_summary$ci_lower))) {
+    p <- p + geom_errorbar(
+      aes(ymin = ci_lower, ymax = ci_upper),
+      width = 0.2, linewidth = 0.5
+    )
+  }
+
+  p <- p +
+    scale_fill_manual(values = plot_colors, guide = "none") +
+    geom_text(aes(label = sprintf("%.3f", auroc)), vjust = -0.5, size = 2.5) +
+    labs(
+      title = "AUROC Comparison",
+      subtitle = "Area Under ROC Curve (higher is better)",
+      x = "Tool",
+      y = "AUROC"
+    ) +
+    scale_y_continuous(limits = c(0.45, 1.05), expand = c(0, 0)) +
+    geom_hline(yintercept = 0.5, linetype = "dashed", color = "gray50", linewidth = 0.25) +
+    theme_nature() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+  p
+}
+
+# -----------------------------------------------------------------------------
+# Figure 4: F1 Comparison with Significance
+# -----------------------------------------------------------------------------
+create_fig4_f1_comparison <- function(accuracy_df, sig_df, tool_colors) {
+  if (is.null(accuracy_df)) return(NULL)
+
+  # Aggregate by tool
+  df_summary <- accuracy_df %>%
+    dplyr::group_by(tool) %>%
+    dplyr::summarise(
+      f1 = mean(f1, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::arrange(desc(f1))
+
+  df_summary$tool <- factor(df_summary$tool, levels = df_summary$tool)
+  plot_colors <- tool_colors[match(levels(df_summary$tool), names(tool_colors))]
+
+  p <- ggplot(df_summary, aes(x = tool, y = f1, fill = tool)) +
+    geom_bar(stat = "identity", width = 0.7) +
+    scale_fill_manual(values = plot_colors, guide = "none") +
+    geom_text(aes(label = sprintf("%.3f", f1)), vjust = -0.5, size = 2.5) +
+    labs(
+      title = "F1 Score Comparison",
+      subtitle = "Error bars indicate 95% bootstrap CI",
+      x = "Tool",
+      y = "F1 Score"
+    ) +
+    scale_y_continuous(limits = c(0, max(1.15, max(df_summary$f1) * 1.15)), expand = c(0, 0)) +
+    theme_nature() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+  p
+}
+
+# -----------------------------------------------------------------------------
+# Figure 5: Coverage Sensitivity
+# -----------------------------------------------------------------------------
+create_fig5_coverage_sensitivity <- function(coverage_df, tool_colors) {
+  if (is.null(coverage_df)) return(NULL)
+
+  # Parse coverage bins
+  df_plot <- coverage_df %>%
+    dplyr::filter(!is.na(f1)) %>%
+    dplyr::mutate(
+      coverage_bin = factor(coverage_bin, ordered = TRUE)
+    )
+
+  if (nrow(df_plot) == 0) return(NULL)
+
+  p <- ggplot(df_plot, aes(x = coverage_bin, y = f1, fill = tool, group = tool)) +
+    geom_line(aes(color = tool), linewidth = 0.8) +
+    geom_point(aes(color = tool), size = 2) +
+    scale_color_manual(values = tool_colors) +
+    labs(
+      title = "Performance vs Coverage Depth",
+      subtitle = "F1 score stratified by read coverage",
+      x = "Coverage Bin",
+      y = "F1 Score"
+    ) +
+    scale_y_continuous(limits = c(0, 1.05), expand = c(0, 0)) +
+    theme_nature() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "right"
+    )
+
+  p
+}
+
+# -----------------------------------------------------------------------------
+# Figure 6: Resource Usage
+# -----------------------------------------------------------------------------
+create_fig6_resource_usage <- function(resource_df, accuracy_df, tool_colors) {
+  if (is.null(resource_df)) return(NULL)
+
+  # Merge with accuracy for context
+  if (!is.null(accuracy_df)) {
+    acc_summary <- accuracy_df %>%
+      dplyr::group_by(tool) %>%
+      dplyr::summarise(f1 = mean(f1, na.rm = TRUE), .groups = "drop")
+
+    df_plot <- resource_df %>%
+      dplyr::left_join(acc_summary, by = "tool")
+  } else {
+    df_plot <- resource_df
+  }
+
+  if (!"mean_memory_mb" %in% names(df_plot) || !"mean_runtime_s" %in% names(df_plot)) {
+    message("  Skipping resource figure: required columns missing")
+    return(NULL)
+  }
+
+  p <- ggplot(df_plot, aes(x = mean_runtime_s / 60, y = mean_memory_mb / 1024, color = tool)) +
+    geom_point(aes(size = ifelse("f1" %in% names(df_plot), f1, 1)), alpha = 0.8) +
+    geom_text(aes(label = tool), vjust = -1, size = 2.5, hjust = 0.5) +
+    scale_color_manual(values = tool_colors, guide = "none") +
+    scale_size_continuous(range = c(3, 10), name = "F1 Score") +
+    labs(
+      title = "Resource Usage Comparison",
+      subtitle = "Runtime vs Memory (bubble size = F1 score)",
+      x = "Runtime (minutes)",
+      y = "Memory (GB)"
+    ) +
+    theme_nature() +
+    theme(legend.position = "right")
+
+  p
+}
+
+# =============================================================================
+# Supplementary Figure Functions
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SFig 1: Per-Comparison Breakdown
+# -----------------------------------------------------------------------------
+create_sfig_per_comparison <- function(by_comp_df, tool_colors) {
+  if (is.null(by_comp_df)) return(NULL)
+
+  p <- ggplot(by_comp_df, aes(x = tool, y = f1, fill = comparison)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+    scale_fill_brewer(palette = "Set2") +
+    labs(
+      title = "F1 Score by Comparison",
+      x = "Tool",
+      y = "F1 Score"
+    ) +
+    scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
+    theme_nature() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "right"
+    )
+
+  p
+}
+
+# -----------------------------------------------------------------------------
+# SFig 2: Score Distributions
+# -----------------------------------------------------------------------------
+create_sfig_score_dist <- function(score_dist_df, tool_colors) {
+  if (is.null(score_dist_df)) return(NULL)
+
+  # Create a visualization of score separation
+  df_plot <- score_dist_df %>%
+    dplyr::select(tool, mean_diff, cohens_d, overlap_coefficient, ks_statistic) %>%
+    tidyr::pivot_longer(
+      cols = c(mean_diff, cohens_d, overlap_coefficient),
+      names_to = "metric",
+      values_to = "value"
+    )
+
+  p <- ggplot(df_plot, aes(x = tool, y = value, fill = metric)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+    scale_fill_manual(
+      values = c("mean_diff" = "#0072B2", "cohens_d" = "#D55E00", "overlap_coefficient" = "#009E73"),
+      labels = c("Mean Diff", "Cohen's d", "Overlap"),
+      name = "Metric"
+    ) +
+    labs(
+      title = "Score Distribution Separation",
+      subtitle = "Higher Cohen's d and lower overlap indicate better separation",
+      x = "Tool",
+      y = "Value"
+    ) +
+    theme_nature() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "top"
+    )
+
+  p
+}
+
+# -----------------------------------------------------------------------------
+# SFig 3: Threshold Robustness
+# -----------------------------------------------------------------------------
+create_sfig_threshold_robust <- function(thresh_robust_df, tool_colors) {
+  if (is.null(thresh_robust_df)) return(NULL)
+
+  df_plot <- thresh_robust_df %>%
+    dplyr::arrange(threshold_cv)
+
+  df_plot$tool <- factor(df_plot$tool, levels = df_plot$tool)
+
+  p <- ggplot(df_plot, aes(x = tool, y = threshold_cv * 100, fill = tool)) +
+    geom_bar(stat = "identity", width = 0.7) +
+    scale_fill_manual(values = tool_colors, guide = "none") +
+    geom_hline(yintercept = 10, linetype = "dashed", color = "red", linewidth = 0.5) +
+    geom_text(aes(label = sprintf("%.1f%%", threshold_cv * 100)), vjust = -0.5, size = 2) +
+    labs(
+      title = "Threshold Stability (Cross-Validation)",
+      subtitle = "Lower CV indicates more stable threshold (dashed line = 10% threshold)",
+      x = "Tool",
+      y = "Coefficient of Variation (%)"
+    ) +
+    scale_y_continuous(expand = c(0, 0)) +
+    theme_nature() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+  p
+}
+
+# -----------------------------------------------------------------------------
+# SFig 4: Effect Sizes
+# -----------------------------------------------------------------------------
+create_sfig_effect_sizes <- function(effect_df, tool_colors) {
+  if (is.null(effect_df)) return(NULL)
+
+  df_plot <- effect_df %>%
+    dplyr::arrange(desc(cohens_d))
+
+  df_plot$tool <- factor(df_plot$tool, levels = df_plot$tool)
+
+  p <- ggplot(df_plot, aes(x = tool, y = cohens_d, fill = tool)) +
+    geom_bar(stat = "identity", width = 0.7) +
+    scale_fill_manual(values = tool_colors, guide = "none") +
+    geom_hline(yintercept = c(0.2, 0.5, 0.8), linetype = "dashed", color = "gray50", linewidth = 0.25) +
+    geom_text(aes(label = sprintf("%.2f", cohens_d)), vjust = -0.5, size = 2) +
+    annotate("text", x = Inf, y = c(0.2, 0.5, 0.8), hjust = -0.5, size = 2,
+             label = c("Small", "Medium", "Large"), color = "gray50") +
+    labs(
+      title = "Effect Size (Cohen's d)",
+      subtitle = "Magnitude of performance difference between tools",
+      x = "Tool",
+      y = "Cohen's d"
+    ) +
+    theme_nature() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+  p
+}
+
+# =============================================================================
+# Source Data Export Functions
+# =============================================================================
+
+export_source_data <- function(data, filename, output_dir) {
+  if (is.null(data) || nrow(data) == 0) return(FALSE)
+
+  filepath <- file.path(output_dir, filename)
+  tryCatch({
+    readr::write_tsv(data, filepath)
+    message("  Saved source data: ", filename)
     TRUE
   }, error = function(e) {
-    warning("Error running script: ", e$message)
+    warning("Failed to save source data: ", e$message)
     FALSE
   })
-
-  if (result) {
-    message("Completed: ", description)
-  }
-
-  result
 }
 
 # =============================================================================
 # Main Execution
 # =============================================================================
 
-message(paste(rep("=", 60), collapse = ""))
-message("NanoRNAMod Benchmark Figure Generation")
-message(paste(rep("=", 60), collapse = ""))
+message(paste(rep("=", 70), collapse = ""))
+message("Publication-Quality Benchmark Figure Generation")
+message(paste(rep("=", 70), collapse = ""))
 
 message("\nConfiguration:")
 message("  Data directory: ", data_dir)
 message("  Output directory: ", output_dir)
+message("  Theme: ", theme)
+message("  DPI: ", dpi)
+message("  Format: ", fig_format)
 if (!is.null(window_filter)) {
   message("  Window filter: ", window_filter)
 }
 
-# Check input files
-message("\nChecking input files...")
-files_ok <- TRUE
-
-if (!check_file_exists(input_files$accuracy, required = TRUE)) {
-  files_ok <- FALSE
-}
-
-if (!file.exists(input_files$overall)) {
-  message("  Note: accuracy_summary_overall.tsv not found, using accuracy_summary.tsv")
-  input_files$overall <- input_files$accuracy
-}
-
-if (!check_file_exists(input_files$resources, required = FALSE)) {
-  message("  Warning: resource_summary.tsv not found. Resource figures will be skipped.")
-}
-
-if (!check_file_exists(input_files$thresholds, required = FALSE)) {
-  message("  Note: threshold_evaluation.tsv not found. Threshold figures will be limited.")
-}
-
-if (!check_file_exists(input_files$optimal, required = FALSE)) {
-  message("  Note: optimal_thresholds.tsv not found. Using accuracy data for optimization.")
-}
-
-if (!files_ok) {
-  stop("Required input files missing. Exiting.")
-}
-
 # Create output directories
 message("\nCreating output directories...")
-for (dir in output_dirs) {
-  dir.create(dir, showWarnings = FALSE, recursive = TRUE)
-  message("  Created: ", dir)
+dir.create(main_dir, showWarnings = FALSE, recursive = TRUE)
+dir.create(supp_dir, showWarnings = FALSE, recursive = TRUE)
+dir.create(data_out_dir, showWarnings = FALSE, recursive = TRUE)
+message("  Created: ", main_dir)
+message("  Created: ", supp_dir)
+message("  Created: ", data_out_dir)
+
+# =============================================================================
+# Load Data
+# =============================================================================
+
+message("\nLoading data files...")
+
+# Required files
+accuracy_df <- load_with_fallback(input_files$accuracy, required = TRUE)
+if (is.null(accuracy_df)) {
+  stop("Required accuracy data not found. Exiting.")
+}
+
+# Optional files
+ci_df <- load_with_fallback(input_files$bootstrap_ci)
+sig_df <- load_with_fallback(input_files$significance)
+fdr_df <- load_with_fallback(input_files$fdr_corrected)
+effect_df <- load_with_fallback(input_files$effect_sizes)
+coverage_df <- load_with_fallback(input_files$coverage)
+score_dist_df <- load_with_fallback(input_files$score_dist)
+thresh_robust_df <- load_with_fallback(input_files$threshold_robust)
+by_comp_df <- load_with_fallback(input_files$accuracy_by_comparison)
+resource_df <- load_with_fallback(input_files$resources)
+
+# Assign tool colors
+tool_colors <- assign_tool_colors(unique(accuracy_df$tool))
+
+# =============================================================================
+# Generate Main Figures
+# =============================================================================
+
+message("\n", paste(rep("=", 70), collapse = ""))
+message("Generating Main Figures")
+message(paste(rep("=", 70), collapse = ""))
+
+# Figure 1: Overall Accuracy with CI
+message("\n[1/6] Overall Accuracy with Bootstrap CI...")
+p1 <- create_fig1_overall_accuracy(accuracy_df, ci_df, tool_colors)
+if (!is.null(p1)) {
+  save_figure(p1, file.path(main_dir, paste0("fig1_overall_accuracy.", fig_format)),
+              width = 85, height = 70, dpi = dpi)
+  export_source_data(
+    accuracy_df %>% dplyr::group_by(tool) %>% dplyr::summarise(f1 = mean(f1, na.rm = TRUE), .groups = "drop"),
+    "fig1_source_data.tsv", data_out_dir
+  )
+}
+
+# Figure 2: PR Curves
+message("[2/6] Precision vs Recall...")
+p2 <- create_fig2_pr_curves(accuracy_df, tool_colors)
+if (!is.null(p2)) {
+  save_figure(p2, file.path(main_dir, paste0("fig2_pr_curves.", fig_format)),
+              width = 85, height = 70, dpi = dpi)
+}
+
+# Figure 3: ROC Curves
+message("[3/6] ROC Curves (AUROC)...")
+p3 <- create_fig3_roc_curves(accuracy_df, ci_df, tool_colors)
+if (!is.null(p3)) {
+  save_figure(p3, file.path(main_dir, paste0("fig3_roc_curves.", fig_format)),
+              width = 85, height = 70, dpi = dpi)
+}
+
+# Figure 4: F1 Comparison
+message("[4/6] F1 Comparison...")
+p4 <- create_fig4_f1_comparison(accuracy_df, sig_df, tool_colors)
+if (!is.null(p4)) {
+  save_figure(p4, file.path(main_dir, paste0("fig4_f1_comparison.", fig_format)),
+              width = 85, height = 70, dpi = dpi)
+}
+
+# Figure 5: Coverage Sensitivity
+message("[5/6] Coverage Sensitivity...")
+p5 <- create_fig5_coverage_sensitivity(coverage_df, tool_colors)
+if (!is.null(p5)) {
+  save_figure(p5, file.path(main_dir, paste0("fig5_coverage_sensitivity.", fig_format)),
+              width = 174, height = 100, dpi = dpi)
+}
+
+# Figure 6: Resource Usage
+message("[6/6] Resource Usage...")
+p6 <- create_fig6_resource_usage(resource_df, accuracy_df, tool_colors)
+if (!is.null(p6)) {
+  save_figure(p6, file.path(main_dir, paste0("fig6_resource_usage.", fig_format)),
+              width = 100, height = 85, dpi = dpi)
 }
 
 # =============================================================================
-# Run Individual Scripts
+# Generate Supplementary Figures
 # =============================================================================
 
-results <- list()
+message("\n", paste(rep("=", 70), collapse = ""))
+message("Generating Supplementary Figures")
+message(paste(rep("=", 70), collapse = ""))
 
-# Script 1: Performance Overview
-args_overview <- paste0(
-  "--input ", input_files$accuracy,
-  " --output ", output_dirs$overview
-)
-if (!is.null(window_filter)) {
-  args_overview <- paste(args_overview, " --window ", window_filter)
-}
-results$overview <- run_script(
-  "01_performance_overview.R",
-  args_overview,
-  "Performance Overview"
-)
-
-# Script 2: Per-Modification Analysis
-args_mod <- paste0(
-  "--input ", input_files$accuracy,
-  " --output ", output_dirs$modification
-)
-results$modification <- run_script(
-  "02_per_modification_analysis.R",
-  args_mod,
-  "Per-Modification Analysis"
-)
-
-# Script 3: Threshold Optimization (if data available)
-if (file.exists(input_files$thresholds)) {
-  args_thresh <- paste0(
-    "--input ", input_files$thresholds,
-    " --output ", output_dirs$threshold
-  )
-  results$threshold <- run_script(
-    "03_threshold_optimization.R",
-    args_thresh,
-    "Threshold Optimization"
-  )
-} else {
-  message("\nSkipping threshold optimization (no threshold_evaluation.tsv)")
-  results$threshold <- NA
+# SFig 1: Per-Comparison
+message("\n[S1] Per-Comparison Breakdown...")
+sp1 <- create_sfig_per_comparison(by_comp_df, tool_colors)
+if (!is.null(sp1)) {
+  save_figure(sp1, file.path(supp_dir, paste0("sfig1_per_comparison.", fig_format)),
+              width = 174, height = 100, dpi = dpi)
 }
 
-# Script 4: Resource Comparison (if data available)
-if (file.exists(input_files$resources)) {
-  args_res <- paste0(
-    "--resources ", input_files$resources,
-    " --accuracy ", input_files$overall,
-    " --output ", output_dirs$resource
-  )
-  results$resource <- run_script(
-    "04_resource_comparison.R",
-    args_res,
-    "Resource Comparison"
-  )
-} else {
-  message("\nSkipping resource comparison (no resource_summary.tsv)")
-  results$resource <- NA
+# SFig 2: Score Distributions
+message("[S2] Score Distribution Analysis...")
+sp2 <- create_sfig_score_dist(score_dist_df, tool_colors)
+if (!is.null(sp2)) {
+  save_figure(sp2, file.path(supp_dir, paste0("sfig2_score_distributions.", fig_format)),
+              width = 100, height = 70, dpi = dpi)
 }
 
-# Script 5: Optimal Metrics Summary
-args_summary <- paste0(
-  "--optimal ", input_files$optimal,
-  " --accuracy ", input_files$overall,
-  " --output ", output_dirs$summary
-)
-# Handle case where optimal file doesn't exist
-if (!file.exists(input_files$optimal)) {
-  args_summary <- paste0(
-    "--accuracy ", input_files$overall,
-    " --output ", output_dirs$summary
-  )
+# SFig 3: Threshold Robustness
+message("[S3] Threshold Robustness...")
+sp3 <- create_sfig_threshold_robust(thresh_robust_df, tool_colors)
+if (!is.null(sp3)) {
+  save_figure(sp3, file.path(supp_dir, paste0("sfig3_threshold_robustness.", fig_format)),
+              width = 100, height = 70, dpi = dpi)
 }
-results$summary <- run_script(
-  "05_optimal_metrics_summary.R",
-  args_summary,
-  "Optimal Metrics Summary"
-)
+
+# SFig 4: Effect Sizes
+message("[S4] Effect Size Analysis...")
+sp4 <- create_sfig_effect_sizes(effect_df, tool_colors)
+if (!is.null(sp4)) {
+  save_figure(sp4, file.path(supp_dir, paste0("sfig4_effect_sizes.", fig_format)),
+              width = 100, height = 70, dpi = dpi)
+}
+
+# =============================================================================
+# Export All Source Data
+# =============================================================================
+
+message("\n", paste(rep("=", 70), collapse = ""))
+message("Exporting Source Data for Manuscript Submission")
+message(paste(rep("=", 70), collapse = ""))
+
+export_source_data(accuracy_df, "accuracy_summary_source.tsv", data_out_dir)
+if (!is.null(ci_df)) export_source_data(ci_df, "bootstrap_ci_source.tsv", data_out_dir)
+if (!is.null(sig_df)) export_source_data(sig_df, "significance_tests_source.tsv", data_out_dir)
+if (!is.null(effect_df)) export_source_data(effect_df, "effect_sizes_source.tsv", data_out_dir)
+if (!is.null(coverage_df)) export_source_data(coverage_df, "coverage_analysis_source.tsv", data_out_dir)
+if (!is.null(score_dist_df)) export_source_data(score_dist_df, "score_distribution_source.tsv", data_out_dir)
+if (!is.null(thresh_robust_df)) export_source_data(thresh_robust_df, "threshold_robustness_source.tsv", data_out_dir)
 
 # =============================================================================
 # Summary Report
 # =============================================================================
 
-message("\n")
-message(paste(rep("=", 60), collapse = ""))
-message("Generation Summary")
-message(paste(rep("=", 60), collapse = ""))
+message("\n", paste(rep("=", 70), collapse = ""))
+message("Generation Complete!")
+message(paste(rep("=", 70), collapse = ""))
 
-completed <- sum(!is.na(results) & results == TRUE)
-total <- length(results)
+# Count generated figures
+main_figs <- list.files(main_dir, pattern = paste0("\\.", fig_format, "$"))
+supp_figs <- list.files(supp_dir, pattern = paste0("\\.", fig_format, "$"))
+data_files <- list.files(data_out_dir, pattern = "\\.tsv$")
 
-message(sprintf("Scripts completed: %d/%d", completed, total))
+message("\nMain figures: ", length(main_figs))
+message("Supplementary figures: ", length(supp_figs))
+message("Source data files: ", length(data_files))
 
-if (results$overview) {
-  message("  [OK] Performance Overview")
-} else {
-  message("  [SKIP] Performance Overview")
-}
+message("\nOutput directories:")
+message("  Main: ", main_dir)
+message("  Supplementary: ", supp_dir)
+message("  Data: ", data_out_dir)
 
-if (results$modification) {
-  message("  [OK] Per-Modification Analysis")
-} else {
-  message("  [SKIP] Per-Modification Analysis")
-}
-
-if (!is.na(results$threshold)) {
-  if (results$threshold) {
-    message("  [OK] Threshold Optimization")
-  } else {
-    message("  [FAIL] Threshold Optimization")
-  }
-} else {
-  message("  [SKIP] Threshold Optimization (no data)")
-}
-
-if (!is.na(results$resource)) {
-  if (results$resource) {
-    message("  [OK] Resource Comparison")
-  } else {
-    message("  [FAIL] Resource Comparison")
-  }
-} else {
-  message("  [SKIP] Resource Comparison (no data)")
-}
-
-if (results$summary) {
-  message("  [OK] Optimal Metrics Summary")
-} else {
-  message("  [SKIP] Optimal Metrics Summary")
-}
-
-message("\nOutput directory: ", output_dir)
-message("\nFigure files:")
-for (subdir in names(output_dirs)) {
-  dir_path <- output_dirs[[subdir]]
-  if (dir.exists(dir_path)) {
-    files <- list.files(dir_path, pattern = "\\.(pdf|png)$")
-    if (length(files) > 0) {
-      message(sprintf("  %s: %d files", subdir, length(files)))
-    }
-  }
-}
-
-message("\n")
-message(paste(rep("=", 60), collapse = ""))
+message("\n", paste(rep("=", 70), collapse = ""))
 message("Done!")
-message(paste(rep("=", 60), collapse = ""))
+message(paste(rep("=", 70), collapse = ""))
