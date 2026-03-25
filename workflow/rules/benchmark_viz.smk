@@ -270,10 +270,25 @@ rule benchmark_r_figures:
         score_dist="{project}/results/benchmarks/sensitivity/score_distribution.tsv",
         threshold_robust="{project}/results/benchmarks/sensitivity/threshold_robustness.tsv",
     output:
-        dir=directory("{project}/results/benchmarks/figures"),
-        main_dir=directory("{project}/results/benchmarks/figures/main"),
-        supp_dir=directory("{project}/results/benchmarks/figures/supplementary"),
-        data_dir=directory("{project}/results/benchmarks/data"),
+        # Main figures (explicit file tracking)
+        fig1="{project}/results/benchmarks/figures/main/fig1_overall_accuracy.pdf",
+        fig2="{project}/results/benchmarks/figures/main/fig2_pr_curves.pdf",
+        fig3="{project}/results/benchmarks/figures/main/fig3_roc_curves.pdf",
+        fig4="{project}/results/benchmarks/figures/main/fig4_f1_comparison.pdf",
+        fig5="{project}/results/benchmarks/figures/main/fig5_coverage_sensitivity.pdf",
+        fig6="{project}/results/benchmarks/figures/main/fig6_resource_usage.pdf",
+        # Supplementary figures
+        sfig1="{project}/results/benchmarks/figures/supplementary/sfig1_per_comparison.pdf",
+        sfig2="{project}/results/benchmarks/figures/supplementary/sfig2_score_distributions.pdf",
+        sfig3="{project}/results/benchmarks/figures/supplementary/sfig3_threshold_robustness.pdf",
+        sfig4="{project}/results/benchmarks/figures/supplementary/sfig4_effect_sizes.pdf",
+        # Source data files
+        data1="{project}/results/benchmarks/data/fig1_source_data.tsv",
+        data2="{project}/results/benchmarks/data/fig2_source_data.tsv",
+        data3="{project}/results/benchmarks/data/fig3_source_data.tsv",
+        data4="{project}/results/benchmarks/data/fig4_source_data.tsv",
+        data5="{project}/results/benchmarks/data/fig5_source_data.tsv",
+        data6="{project}/results/benchmarks/data/fig6_source_data.tsv",
     params:
         window=config["benchmark"]["window"],
         theme=config.get("benchmark", {}).get("figure_theme", "nature"),

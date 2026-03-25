@@ -17,7 +17,6 @@ rule qc_qualimap:
         "logs/{project}/qc/{sample}_qualimap.log",
     priority: 50
     resources:
-        mem_mb=1024 * 50,
         javaopt=" -Djava.awt.headless=true ",
         mem=50,  # Java heap size in GB for qualimap
     shell:
