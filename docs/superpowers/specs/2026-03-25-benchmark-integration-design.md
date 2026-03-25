@@ -167,10 +167,19 @@ benchmark_report (enhanced PDF)                              │
 **Functions**:
 
 ```python
-def compute_bootstrap_ci(df, metric_col, n_bootstrap=1000, ci=95):
-    """Compute bootstrap confidence intervals for a metric."""
-    # Stratified bootstrap by comparison
-    # Returns: (lower, upper, point_estimate)
+def compute_bootstrap_ci(df, metric_col, group_col="comparison", n_bootstrap=1000, ci=95):
+    """Compute bootstrap confidence intervals for a metric, stratified by group.
+
+    Args:
+        df: DataFrame with metric values
+        metric_col: Column name for the metric (e.g., 'f1', 'precision')
+        group_col: Column to stratify by (default: 'comparison')
+        n_bootstrap: Number of bootstrap iterations
+        ci: Confidence interval width (default: 95)
+
+    Returns:
+        tuple: (lower_bound, upper_bound, point_estimate)
+    """
 
 def paired_wilcoxon_test(df, tool1, tool2, metric_col):
     """Paired Wilcoxon signed-rank test between tools."""
@@ -343,7 +352,10 @@ def generate_legend(figure_name, context):
 
 ```python
 rule benchmark_statistics:
-    """Compute bootstrap CIs and significance tests."""
+    """Compute bootstrap CIs and significance tests.
+
+    Runs AFTER accuracy_benchmark (priority 30) to ensure metrics are available.
+    """
     input:
         summary="{project}/results/benchmarks/accuracy_summary.tsv",
         by_comparison="{project}/results/benchmarks/accuracy_summary_by_comparison.tsv",
@@ -358,7 +370,7 @@ rule benchmark_statistics:
     resources:
         mem_mb=1024 * 8,
     threads: 4
-    priority: 18
+    priority: 32  # After accuracy_benchmark (30), before visualization
     log:
         "logs/{project}/benchmark_statistics/statistics.log",
     container:
@@ -371,10 +383,24 @@ rule benchmark_statistics:
 
 ```python
 rule benchmark_sensitivity:
-    """Sensitivity analysis for coverage and threshold robustness."""
+    """Sensitivity analysis for coverage and threshold robustness.
+
+    Coverage data source: Uses depth information from alignment BAM files.
+    The detailed_predictions.tsv must include a 'coverage' column populated
+    by accuracy_benchmark.py from per-site depth calculations.
+
+    If coverage column is not present, the analysis falls back to using
+    read count as a proxy for coverage depth.
+    """
     input:
         predictions="{project}/results/benchmarks/detailed_predictions.tsv",
         truth_set=config["benchmark"]["truth_set"],
+        # Optional: per-sample depth files for accurate coverage
+        depth_files=lambda wildcards: expand(
+            "{project}/results/depth/{sample}.depth.tsv",
+            project=wildcards.project,
+            sample=list(samples.index)
+        ) if config.get("qc", False) else [],
     output:
         coverage="{project}/results/benchmarks/sensitivity/coverage_analysis.tsv",
         score_dist="{project}/results/benchmarks/sensitivity/score_distribution.tsv",
@@ -385,7 +411,7 @@ rule benchmark_sensitivity:
     resources:
         mem_mb=1024 * 8,
     threads: 2
-    priority: 17
+    priority: 33  # After benchmark_statistics
     log:
         "logs/{project}/benchmark_sensitivity/sensitivity.log",
     container:
@@ -398,7 +424,12 @@ rule benchmark_sensitivity:
 
 ```python
 rule benchmark_figures:
-    """Generate publication-ready figures with Nature theme."""
+    """Generate publication-ready figures with Nature theme.
+
+    Note: This rule generates Python-based figures. The existing R-based
+    benchmark_r_figures rule (priority 30) can be used as an alternative
+    or supplement for ggplot2-based visualizations.
+    """
     input:
         summary="{project}/results/benchmarks/accuracy_summary.tsv",
         ci="{project}/results/benchmarks/statistics/bootstrap_ci.tsv",
@@ -407,17 +438,22 @@ rule benchmark_figures:
         resources="{project}/results/benchmarks/resource_summary.tsv",
         thresholds="{project}/results/benchmarks/threshold_evaluation.tsv",
     output:
-        main=expand("{{project}}/results/benchmarks/figures/main/fig{n}.pdf", n=[1,2,3,4,5]),
+        main=lambda wildcards: expand(
+            "{{project}}/results/benchmarks/figures/main/fig{{n}}.{{ext}}",
+            n=[1,2,3,4,5],
+            ext=config.get("benchmark", {}).get("fig_format", "pdf")
+        ),
         supplementary=directory("{project}/results/benchmarks/figures/supplementary/"),
         legends=expand("{{project}}/results/benchmarks/figures/legends/fig{n}_legend.md", n=[1,2,3,4,5]),
         data=directory("{project}/results/benchmarks/data/"),
     params:
         theme=config.get("benchmark", {}).get("figure_theme", "nature"),
         dpi=config.get("benchmark", {}).get("dpi", 300),
+        fig_format=config.get("benchmark", {}).get("fig_format", "pdf"),
     resources:
         mem_mb=1024 * 4,
     threads: 1
-    priority: 40
+    priority: 40  # After all analysis rules complete
     log:
         "logs/{project}/benchmark_figures/figures.log",
     container:
@@ -430,9 +466,10 @@ rule benchmark_figures:
 
 ```python
 rule benchmark_supplementary:
-    """Generate supplementary materials."""
+    """Generate supplementary materials including methods documentation."""
     input:
         summary="{project}/results/benchmarks/accuracy_summary.tsv",
+        by_negative_type="{project}/results/benchmarks/accuracy_summary_by_negative_type.tsv",
         predictions="{project}/results/benchmarks/detailed_predictions.tsv",
         statistics=expand("{{project}}/results/benchmarks/statistics/{f}",
                          f=["bootstrap_ci.tsv", "significance_tests.tsv", "effect_sizes.tsv"]),
@@ -443,10 +480,11 @@ rule benchmark_supplementary:
     params:
         tools=lambda: [t for t in config["tools"] if config["tools"][t]["activate"]],
         truth_set=config["benchmark"]["truth_set"],
+        workflow_version=lambda: get_workflow_version(),  # From git or version file
     resources:
         mem_mb=1024 * 2,
     threads: 1
-    priority: 45
+    priority: 45  # After figures
     log:
         "logs/{project}/benchmark_supplementary/supplementary.log",
     container:
@@ -455,7 +493,7 @@ rule benchmark_supplementary:
         "../scripts/benchmark_supplementary.py"
 ```
 
-### 4.5 Modified Rule: get_final_output
+### 4.5 Modified: get_final_output
 
 Add new outputs to `workflow/rules/common.smk`:
 
@@ -465,6 +503,9 @@ def get_final_output():
 
     if config.get("benchmark", {}).get("truth_set", ""):
         # ... existing benchmark outputs ...
+
+        # EXISTING: Per-negative-type metrics (already in current codebase)
+        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_by_negative_type.tsv"]
 
         # NEW: Statistical analysis
         final_output += [f"{RESULT_ROOT}/benchmarks/statistics/bootstrap_ci.tsv"]
@@ -477,8 +518,9 @@ def get_final_output():
         final_output += [f"{RESULT_ROOT}/benchmarks/sensitivity/score_distribution.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/sensitivity/threshold_robustness.tsv"]
 
-        # NEW: Publication figures
-        final_output += expand(f"{RESULT_ROOT}/benchmarks/figures/main/fig{{n}}.pdf", n=[1,2,3,4,5])
+        # NEW: Publication figures (format from config)
+        fig_format = config.get("benchmark", {}).get("fig_format", "pdf")
+        final_output += expand(f"{RESULT_ROOT}/benchmarks/figures/main/fig{{n}}.{fig_format}", n=[1,2,3,4,5])
         final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/"]
         final_output += expand(f"{RESULT_ROOT}/benchmarks/figures/legends/fig{{n}}_legend.md", n=[1,2,3,4,5])
         final_output += [f"{RESULT_ROOT}/benchmarks/data/"]
@@ -491,11 +533,67 @@ def get_final_output():
     return final_output
 ```
 
+### 4.6 Priority Ordering Summary
+
+| Rule | Priority | Dependencies | Notes |
+|------|----------|--------------|-------|
+| accuracy_benchmark | 30 | tool_results | Core metrics computation |
+| benchmark_kmer_negatives | 22 | accuracy_benchmark | K-mer negative strategy |
+| benchmark_same_base_negatives | 21 | accuracy_benchmark | Same-base negative strategy |
+| benchmark_multithreshold | 15 | accuracy_benchmark | Multi-threshold analysis |
+| benchmark_score_optimization | 16 | accuracy_benchmark | Score column optimization |
+| **benchmark_statistics** | **32** | accuracy_benchmark | NEW: Bootstrap CIs + significance |
+| **benchmark_sensitivity** | **33** | benchmark_statistics | NEW: Coverage/threshold analysis |
+| benchmark_visualization | 25 | accuracy_benchmark | HTML report |
+| benchmark_r_figures | 30 | aggregated metrics | R-based figures (existing) |
+| **benchmark_figures** | **40** | benchmark_sensitivity | NEW: Python publication figures |
+| **benchmark_supplementary** | **45** | benchmark_figures | NEW: Supplementary materials |
+| benchmark_pdf_report | 35 | threshold data | PDF report |
+| benchmark_resource_by_tool | 36 | benchmark_dir | Resource analysis |
+
 ---
 
-## 5. Configuration Schema Updates
+## 5. R vs Python Figure Strategy
 
-### 5.1 config/config.yaml additions
+### 5.1 Current State
+
+The codebase has TWO figure generation systems:
+
+1. **Python-based** (`workflow/scripts/benchmark_plots.py` - 904 lines):
+   - Used by `benchmark_visualization` rule
+   - Generates HTML report and intermediate plots
+   - Good for development and debugging
+
+2. **R-based** (`workflow/scripts/R/run_all_figures.R`):
+   - Used by `benchmark_r_figures` rule
+   - ggplot2-based with Nature-ready aesthetics
+   - Better for publication-quality figures
+
+### 5.2 Integration Strategy
+
+**Decision**: Both systems coexist. The new `benchmark_figures` rule produces **Python-based publication figures** as a complement to the existing R figures.
+
+| Use Case | Recommended System |
+|----------|-------------------|
+| Quick exploration | Python (benchmark_visualization) |
+| Publication figures (ggplot2) | R (benchmark_r_figures) |
+| Publication figures (matplotlib) | Python (benchmark_figures) |
+| HTML interactive report | Python (benchmark_visualization) |
+
+### 5.3 Configuration
+
+```yaml
+benchmark:
+  figure_backend: "python"  # Options: "python", "r", "both"
+```
+
+When `figure_backend: "r"`, the `benchmark_figures` rule delegates to the existing R system. When `"both"`, both Python and R figures are generated.
+
+---
+
+## 6. Configuration Schema Updates
+
+### 6.1 config/config.yaml additions
 
 ```yaml
 benchmark:
@@ -503,6 +601,9 @@ benchmark:
   window: [0, 1, 2, 5]
   n_thresholds: 50
   custom_thresholds: []
+
+  # NEW: Figure backend selection
+  figure_backend: "python"  # Options: "python", "r", "both"
 
   # NEW: Statistical analysis
   n_bootstrap: 1000
@@ -523,7 +624,7 @@ benchmark:
   data_export_format: "tsv"  # Options: tsv, csv, parquet
 ```
 
-### 5.2 Schema validation updates
+### 6.2 Schema validation updates
 
 Add to `schemas/config.schema.yaml`:
 
@@ -587,7 +688,7 @@ benchmark:
 
 ---
 
-## 6. Implementation Plan
+## 7. Implementation Plan
 
 ### Phase 1: Statistical Foundation (Priority: High)
 1. Create `benchmark_statistics.py` with bootstrap CI and significance tests
@@ -598,7 +699,7 @@ benchmark:
 ### Phase 2: Sensitivity Analysis (Priority: High)
 1. Create `benchmark_sensitivity.py` with coverage and threshold analysis
 2. Add `benchmark_sensitivity` rule
-3. Integrate coverage data from alignment steps
+3. Integrate coverage data from alignment steps (depth files from QC rules)
 4. Update final outputs
 
 ### Phase 3: Publication Figures (Priority: High)
@@ -621,22 +722,53 @@ benchmark:
 
 ---
 
-## 7. Dependencies
+## 8. Dependencies
 
-### 7.1 New Python packages
+### 8.1 Python Environment Update
 
-Add to `workflow/envs/python3.yaml`:
+Update `workflow/envs/python3.yaml`:
 
 ```yaml
+name: python3
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
 dependencies:
-  # ... existing ...
-  - scipy>=1.10.0      # For statistical tests
-  - statsmodels>=0.14  # For FDR correction
-  - seaborn>=0.12      # For enhanced visualizations
-  - matplotlib>=3.7    # For publication figures
+  - python>=3.10
+  - pandas>=2.0
+  - numpy>=1.24
+  - matplotlib>=3.7      # NEW: For publication figures
+  - seaborn>=0.12        # NEW: For enhanced visualizations
+  - scipy>=1.10.0        # NEW: For statistical tests (wilcoxon, ks_2samp)
+  - statsmodels>=0.14    # NEW: For FDR correction (multipletests)
+  - scikit-learn>=1.3    # NEW: For ROC/PR curve computation
+  - pyyaml>=6.0
+  - tqdm>=4.65           # NEW: Progress bars for bootstrap
+  - joblib>=1.3          # NEW: Parallel bootstrap computation
 ```
 
-### 7.2 Optional: R integration
+### 8.2 R Environment (Existing)
+
+The R environment (`workflow/envs/r_viz.yaml`) already contains:
+- ggplot2
+- ggpubr
+- pheatmap
+- RColorBrewer
+
+No changes needed for R-based figures.
+
+### 8.3 Dependency Check Before Implementation
+
+Run these checks before starting implementation:
+
+```bash
+# Check if packages are already in the environment
+conda env export -n python3 | grep -E "(scipy|statsmodels|seaborn|joblib)"
+
+# If not present, update the environment
+conda env update -f workflow/envs/python3.yaml --prune
+```
 
 For advanced statistical visualizations, consider adding R support:
 - `ggplot2` for additional figure options
@@ -645,23 +777,23 @@ For advanced statistical visualizations, consider adding R support:
 
 ---
 
-## 8. Testing Strategy
+## 9. Testing Strategy
 
-### 8.1 Unit tests
+### 9.1 Unit tests
 
 - Bootstrap CI: Known distribution (normal, binomial)
 - Significance tests: Known differences
 - FDR correction: Known p-value sets
 - Figure generation: Visual inspection + size validation
 
-### 8.2 Integration tests
+### 9.2 Integration tests
 
 - Full workflow run in `.test/`
 - Verify all outputs generated
 - Check figure dimensions and DPI
 - Validate legend content
 
-### 8.3 Validation criteria
+### 9.3 Validation criteria
 
 - Bootstrap CIs contain true value 95% of time
 - Significance tests detect known differences
@@ -670,7 +802,7 @@ For advanced statistical visualizations, consider adding R support:
 
 ---
 
-## 9. Future Extensions
+## 10. Future Extensions
 
 1. **Per-sample tool benchmarking**: Extend to tandemmod, directrm, m6atm, rnano
 2. **Cross-dataset comparison**: Aggregate benchmarks across multiple runs
@@ -680,7 +812,7 @@ For advanced statistical visualizations, consider adding R support:
 
 ---
 
-## 10. Acceptance Criteria
+## 11. Acceptance Criteria
 
 - [ ] Bootstrap CIs computed for all metrics with configurable iterations
 - [ ] Paired significance tests between all tool pairs with FDR correction
