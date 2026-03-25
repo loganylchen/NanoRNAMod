@@ -230,20 +230,15 @@ def detect_score_column(df, tool_name=None):
         return None
 
     df_columns = list(df.columns)
-    print(f"[DEBUG] detect_score_column for {tool_name}: columns = {df_columns}")
 
     # If tool name is provided, try tool-specific columns first
     if tool_name and tool_name in tool_score_patterns:
-        print(f"[DEBUG] {tool_name}: trying tool-specific patterns: {tool_score_patterns[tool_name]}")
         for pattern in tool_score_patterns[tool_name]:
             matched = match_column(df_columns, pattern)
             if matched:
-                print(f"[DEBUG] {tool_name}: matched pattern '{pattern}' -> column '{matched}'")
                 return matched
-        print(f"[DEBUG] {tool_name}: no tool-specific patterns matched")
 
     # Generic score columns (fallback)
-    print(f"[DEBUG] {tool_name}: falling back to generic patterns")
     generic_patterns = [
         'p_value', 'pvalue', 'pval', '-log10_pvalue', '-log10 P value',
         'score', 'probability', 'prob', 'mod_score', 'mod_prob',
@@ -253,10 +248,8 @@ def detect_score_column(df, tool_name=None):
     for pattern in generic_patterns:
         matched = match_column(df_columns, pattern)
         if matched:
-            print(f"[DEBUG] {tool_name}: matched generic pattern '{pattern}' -> column '{matched}'")
             return matched
 
-    print(f"[DEBUG] {tool_name}: No score column found in columns: {df_columns}")
     return None
 
 # ── Helper: compute AUPRC and AUROC ───────────────────────────────────────
@@ -268,12 +261,10 @@ def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_c
     Score is converted to -log10(p-value) if it's a p-value column.
     """
     if score_col is None or pred_df.empty:
-        print(f"[DEBUG] {tool_name}: No score column or empty predictions")
         return np.nan, np.nan
 
     # Check if score column exists and has valid values
     if score_col not in pred_df.columns:
-        print(f"[DEBUG] {tool_name}: Score column '{score_col}' not found in columns: {list(pred_df.columns)}")
         return np.nan, np.nan
 
     # Determine if this is a p-value column (needs -log10 transformation)
@@ -281,8 +272,6 @@ def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_c
     score_col_lower = score_col.lower().replace(' ', '_')
     is_log_transformed = '-log10' in score_col_lower or 'log10_pvalue' in score_col_lower
     is_pvalue_col = not is_log_transformed and any(x in score_col_lower for x in ['p_value', 'pvalue', 'pval', 'padj', 'q_value', 'qval', 'fdr', 'adj'])
-
-    print(f"[DEBUG] {tool_name}: Using score column '{score_col}' (pvalue={is_pvalue_col}, log_transformed={is_log_transformed})")
 
     # Create labels and scores arrays
     labels = []
@@ -328,21 +317,16 @@ def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_c
     n_positive = sum(labels)
     n_negative = n_valid - n_positive
 
-    print(f"[DEBUG] {tool_name}: {n_valid} valid scores (NaN={nan_count}, non-numeric={non_numeric_count}), positives={n_positive}, negatives={n_negative}")
-
     # Need at least one positive and one negative sample
     if len(set(labels)) < 2 or len(scores) == 0:
-        print(f"[DEBUG] {tool_name}: Cannot compute metrics - need at least 1 positive and 1 negative sample")
         return np.nan, np.nan
 
     try:
         from sklearn.metrics import roc_auc_score, average_precision_score
         auroc = roc_auc_score(labels, scores)
         auprc = average_precision_score(labels, scores)
-        print(f"[DEBUG] {tool_name}: Successfully computed AUROC={auroc:.4f}, AUPRC={auprc:.4f}")
         return auprc, auroc
-    except Exception as e:
-        print(f"[DEBUG] {tool_name}: Error computing metrics: {e}")
+    except Exception:
         return np.nan, np.nan
 
 # ── Load all tool results (preserving all columns for scores) ────────────────

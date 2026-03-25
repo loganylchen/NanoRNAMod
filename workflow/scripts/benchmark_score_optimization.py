@@ -106,11 +106,9 @@ def get_available_score_columns(df, tool_name=None):
     """
     available = []
     df_columns = list(df.columns)
-    print(f"[DEBUG] get_available_score_columns for {tool_name}: columns = {df_columns}")
 
     if tool_name and tool_name in TOOL_SCORE_COLUMNS:
         potential_patterns = TOOL_SCORE_COLUMNS[tool_name]
-        print(f"[DEBUG] {tool_name}: using tool-specific patterns: {potential_patterns}")
     else:
         # Generic score columns if tool not recognized
         potential_patterns = [
