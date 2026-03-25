@@ -100,7 +100,7 @@ The current benchmark system provides solid foundational metrics but lacks:
 │
 ├── threshold_evaluation.tsv         # Existing
 ├── optimal_thresholds_detailed.tsv  # Existing
-├──── optimal_score_per_tool.tsv     # Existing
+├── optimal_score_per_tool.tsv     # Existing
 ├── score_distributions.tsv          # Existing
 ├── detailed_predictions.tsv         # Existing
 ├── resource_summary.tsv             # Existing
@@ -535,13 +535,15 @@ def get_final_output():
 
 ### 4.6 Priority Ordering Summary
 
+**Note**: In Snakemake, file dependencies are resolved before priority. Priority only affects execution order when multiple rules are ready. All rules below depend on files from `accuracy_benchmark`, so they will wait regardless of priority value.
+
 | Rule | Priority | Dependencies | Notes |
 |------|----------|--------------|-------|
 | accuracy_benchmark | 30 | tool_results | Core metrics computation |
-| benchmark_kmer_negatives | 22 | accuracy_benchmark | K-mer negative strategy |
-| benchmark_same_base_negatives | 21 | accuracy_benchmark | Same-base negative strategy |
-| benchmark_multithreshold | 15 | accuracy_benchmark | Multi-threshold analysis |
-| benchmark_score_optimization | 16 | accuracy_benchmark | Score column optimization |
+| benchmark_kmer_negatives | 31 | accuracy_benchmark | K-mer negative strategy |
+| benchmark_same_base_negatives | 31 | accuracy_benchmark | Same-base negative strategy |
+| benchmark_multithreshold | 31 | accuracy_benchmark | Multi-threshold analysis |
+| benchmark_score_optimization | 31 | accuracy_benchmark | Score column optimization |
 | **benchmark_statistics** | **32** | accuracy_benchmark | NEW: Bootstrap CIs + significance |
 | **benchmark_sensitivity** | **33** | benchmark_statistics | NEW: Coverage/threshold analysis |
 | benchmark_visualization | 25 | accuracy_benchmark | HTML report |
