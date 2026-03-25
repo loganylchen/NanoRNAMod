@@ -322,14 +322,12 @@ def get_final_output():
     final_output += [f"{RESULT_ROOT}/benchmarks/resource_summary.tsv"]
     final_output += [f"{RESULT_ROOT}/benchmarks/resource_by_tool.tsv"]
     final_output += [f"{RESULT_ROOT}/benchmarks/resource_by_tool.pdf"]
-    # Per-tool accuracy benchmarking outputs
+    # Aggregated accuracy benchmarking outputs (produced by accuracy_benchmark.py)
     if config.get("benchmark", {}).get("truth_set", ""):
-        # Each tool gets its own directory under benchmarks/{tool}/
-        for tool in tools:
-            final_output += [f"{RESULT_ROOT}/benchmarks/{tool}/accuracy_summary.tsv"]
-            final_output += [f"{RESULT_ROOT}/benchmarks/{tool}/accuracy_summary_overall.tsv"]
-            final_output += [f"{RESULT_ROOT}/benchmarks/{tool}/accuracy_summary_by_comparison.tsv"]
-            final_output += [f"{RESULT_ROOT}/benchmarks/{tool}/accuracy_summary_by_negative_type.tsv"]
+        # Aggregated metrics across all tools
+        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_overall.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_by_comparison.tsv"]
         # Visualization and detailed reports (shared across all tools)
         final_output += [f"{RESULT_ROOT}/benchmarks/viz/benchmark_report.html"]
         final_output += [f"{RESULT_ROOT}/benchmarks/benchmark_report.pdf"]

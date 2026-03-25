@@ -7,17 +7,14 @@ import os
 rule benchmark_visualization:
     """Generate PR curves, ROC curves, and HTML benchmark report."""
     input:
-        # Depend on the aggregated files from accuracy_benchmark
-        aggregated=expand("{{project}}/results/benchmarks/{agg_file}", agg_file=[
-            "accuracy_summary.tsv",
-            "accuracy_summary_overall.tsv",
-            "accuracy_summary_by_comparison.tsv",
-            "accuracy_summary_by_negative_type.tsv",
-        ]),
+        # Depend on the benchmarks directory and touch file from accuracy_benchmark
+        # This ensures the accuracy_benchmark rule has completed
+        benchmarks="{project}/results/benchmarks",
+        done="{project}/results/benchmarks/.benchmark_complete",
         resource="{project}/results/benchmarks/resource_summary.tsv",
     output:
         html="{project}/results/benchmarks/viz/benchmark_report.html",
-        done=touch("{project}/results/benchmarks/viz/.done"),
+        done_viz=touch("{project}/results/benchmarks/viz/.done"),
     params:
         window=lambda wc: config["benchmark"].get("window", [0]),
         output_dir="{project}/results/benchmarks/viz",
@@ -189,12 +186,9 @@ rule benchmark_r_figures:
 rule benchmark_pdf_report:
     """Generate comprehensive PDF report with overall, per-comparison, and per-tool analysis."""
     input:
-        aggregated=expand("{{project}}/results/benchmarks/{agg_file}", agg_file=[
-            "accuracy_summary.tsv",
-            "accuracy_summary_overall.tsv",
-            "accuracy_summary_by_comparison.tsv",
-            "accuracy_summary_by_negative_type.tsv",
-        ]),
+        # Depend on benchmarks directory and touch file
+        benchmarks="{project}/results/benchmarks",
+        done="{project}/results/benchmarks/.benchmark_complete",
         thresholds="{project}/results/benchmarks/threshold_evaluation.tsv",
         optimal="{project}/results/benchmarks/optimal_thresholds_detailed.tsv",
         distributions="{project}/results/benchmarks/score_distributions.tsv",

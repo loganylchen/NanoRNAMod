@@ -32,10 +32,12 @@ import numpy as np
 
 result_files = snakemake.input.results
 truth_set_path = snakemake.input.truth_set
-output_files = snakemake.output  # 4 aggregated files + touch file
-per_tool_output_files = snakemake.params.per_tool_files  # Per-tool file paths from params
+output_files = snakemake.output
 
-# Parse aggregated output files (first 4 outputs)
+# Parse per-tool output files from named output
+per_tool_output_files = snakemake.output.per_tool if hasattr(snakemake.output, 'per_tool') else []
+
+# Parse aggregated output files (first 4 positional outputs)
 aggregated_files = {
     "by_mod_type": output_files[0],      # accuracy_summary.tsv
     "overall": output_files[1],          # accuracy_summary_overall.tsv
