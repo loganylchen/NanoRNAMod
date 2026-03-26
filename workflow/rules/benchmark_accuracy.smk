@@ -146,7 +146,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
             overall="{project}/results/benchmarks/aggregated/accuracy_summary_overall.tsv",
             by_comparison="{project}/results/benchmarks/aggregated/accuracy_summary_by_comparison.tsv",
             by_negative_type="{project}/results/benchmarks/aggregated/accuracy_summary_by_negative_type.tsv",
-            by_tool="{project}/results/benchmarks/aggregated/accuracy_summary_by_tool.tsv",
+            by_tool="{project}/results/benchmarks/aggregated/by_tool.tsv",
             best_scores="{project}/results/benchmarks/aggregated/best_scores.tsv",
             called_sites_comp="{project}/results/benchmarks/aggregated/called_sites_by_comparison.tsv",
             called_sites_sum="{project}/results/benchmarks/aggregated/called_sites_summary.tsv",
