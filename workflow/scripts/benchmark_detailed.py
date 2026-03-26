@@ -12,7 +12,8 @@ import pandas as pd
 import numpy as np
 
 # Import shared utilities
-# Snakemake adds workflow root to sys.path, so workflow.scripts.* works
+# Snakemake adds project root (containing workflow/) to sys.path
+# So the full module path is workflow.scripts.benchmark_utils
 # For direct execution, fall back to same-directory import
 try:
     from workflow.scripts.benchmark_utils import tool_from_path, normalize_columns
