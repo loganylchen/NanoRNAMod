@@ -20,3 +20,8 @@ logs/**
 .test/results/
 .DS_Store
 .claude/
+
+# Python cache
+__pycache__/
+*.pyc
+firebase-debug.log
