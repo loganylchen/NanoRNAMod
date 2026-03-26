@@ -7,10 +7,10 @@ import os
 rule benchmark_visualization:
     """Generate PR curves, ROC curves, and HTML benchmark report."""
     input:
-        # Depend on the benchmarks directory and touch file from accuracy_benchmark
+        # Depend on the touch file from accuracy_benchmark
         # This ensures the accuracy_benchmark rule has completed
-        benchmarks="{project}/results/benchmarks",
         done="{project}/results/benchmarks/.benchmark_complete",
+        summary="{project}/results/benchmarks/aggregated/accuracy_summary.tsv",
         resource="{project}/results/benchmarks/resource_summary.tsv",
     output:
         html="{project}/results/benchmarks/viz/benchmark_report.html",
@@ -188,8 +188,8 @@ rule benchmark_statistics:
     permutation tests, FDR correction, and effect sizes (Cohen's d, Cliff's delta).
     """
     input:
-        summary="{project}/results/benchmarks/accuracy_summary.tsv",
-        by_comparison="{project}/results/benchmarks/accuracy_summary_by_comparison.tsv",
+        summary="{project}/results/benchmarks/aggregated/accuracy_summary.tsv",
+        by_comparison="{project}/results/benchmarks/aggregated/accuracy_summary_by_comparison.tsv",
     output:
         ci="{project}/results/benchmarks/statistics/bootstrap_ci.tsv",
         significance="{project}/results/benchmarks/statistics/significance_tests.tsv",
@@ -251,13 +251,13 @@ rule benchmark_r_figures:
     """Generate Nature-quality figures using R ggplot2 with statistical overlays."""
     input:
         # Aggregated accuracy metrics
-        aggregated=expand("{{project}}/results/benchmarks/{agg_file}", agg_file=[
+        aggregated=expand("{{project}}/results/benchmarks/aggregated/{agg_file}", agg_file=[
             "accuracy_summary.tsv",
             "accuracy_summary_overall.tsv",
             "accuracy_summary_by_comparison.tsv",
             "accuracy_summary_by_negative_type.tsv",
         ]),
-        optimal_scores="{project}/results/benchmarks/optimal_score_per_tool.tsv",
+        optimal_scores="{project}/results/benchmarks/aggregated/best_scores.tsv",
         thresholds="{project}/results/benchmarks/threshold_evaluation.tsv",
         resources="{project}/results/benchmarks/resource_summary.tsv",
         # Statistical analysis results
@@ -309,8 +309,7 @@ rule benchmark_r_figures:
 rule benchmark_pdf_report:
     """Generate comprehensive PDF report with overall, per-comparison, and per-tool analysis."""
     input:
-        # Depend on benchmarks directory and touch file
-        benchmarks="{project}/results/benchmarks",
+        # Depend on touch file
         done="{project}/results/benchmarks/.benchmark_complete",
         thresholds="{project}/results/benchmarks/threshold_evaluation.tsv",
         optimal="{project}/results/benchmarks/optimal_thresholds_detailed.tsv",
@@ -318,7 +317,7 @@ rule benchmark_pdf_report:
     output:
         pdf="{project}/results/benchmarks/benchmark_report.pdf",
     params:
-        benchmark_dir="{project}/results/benchmarks",
+        benchmark_dir="{project}/results/benchmarks/aggregated",
     resources:
         mem_mb=1024 * 8,
     threads: 1
