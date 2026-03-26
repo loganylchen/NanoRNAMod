@@ -11,13 +11,20 @@ import pandas as pd
 import numpy as np
 
 # Import shared utilities
-# Snakemake adds the project root (containing workflow/) to sys.path
-# So the full module path is workflow.scripts.benchmark_utils
-# For direct execution, fall back to same-directory import
-try:
-    from workflow.scripts.benchmark_utils import tool_from_path, normalize_columns
-except ImportError:
-    from benchmark_utils import tool_from_path, normalize_columns
+# When Snakemake copies script to temp location, we need to find original scripts dir
+# Use __file__ to get script directory and search for benchmark_utils.py
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_workflow_scripts = os.path.join(os.getcwd(), "workflow", "scripts")
+
+# Try script's directory first (direct execution), then workflow/scripts (Snakemake execution)
+if os.path.exists(os.path.join(_script_dir, "benchmark_utils.py")):
+    if _script_dir not in sys.path:
+        sys.path.insert(0, _script_dir)
+elif os.path.exists(os.path.join(_workflow_scripts, "benchmark_utils.py")):
+    if _workflow_scripts not in sys.path:
+        sys.path.insert(0, _workflow_scripts)
+
+from benchmark_utils import tool_from_path, normalize_columns
 
 
 def detect_score_column(df, tool_name=None):
