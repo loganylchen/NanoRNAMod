@@ -334,13 +334,36 @@ def get_final_output():
     final_output += [f"{RESULT_ROOT}/benchmarks/resource_by_tool.pdf"]
     # Aggregated accuracy benchmarking outputs (produced by accuracy_benchmark.py)
     if config.get("benchmark", {}).get("truth_set", ""):
-        # Aggregated metrics across all tools
-        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_overall.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_by_comparison.tsv"]
-        # Dedicated count tables
-        final_output += [f"{RESULT_ROOT}/benchmarks/called_sites_by_comparison.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/called_sites_summary.tsv"]
+        active_tools = get_active_comparison_tools()
+
+        # Per-tool coverage
+        final_output += expand(
+            f"{RESULT_ROOT}/benchmarks/coverage/{{comp}}/{{tool}}_covered.tsv",
+            comp=comparisons, tool=active_tools,
+        )
+        final_output += expand(
+            f"{RESULT_ROOT}/benchmarks/coverage/{{comp}}/union.tsv",
+            comp=comparisons,
+        )
+
+        # Per-tool native and fair evaluation
+        final_output += expand(
+            f"{RESULT_ROOT}/benchmarks/native/{{tool}}/{{comp}}/best_metrics.tsv",
+            tool=active_tools, comp=comparisons,
+        )
+        final_output += expand(
+            f"{RESULT_ROOT}/benchmarks/fair/{{tool}}/{{comp}}/best_metrics.tsv",
+            tool=active_tools, comp=comparisons,
+        )
+
+        # Aggregated summaries (moved to aggregated/ subdir)
+        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/accuracy_summary.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/accuracy_summary_overall.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/accuracy_summary_by_comparison.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/by_tool.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/best_scores.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/called_sites_by_comparison.tsv"]
+        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/called_sites_summary.tsv"]
         # Visualization and detailed reports (shared across all tools)
         final_output += [f"{RESULT_ROOT}/benchmarks/viz/benchmark_report.html"]
         final_output += [f"{RESULT_ROOT}/benchmarks/benchmark_report.pdf"]
