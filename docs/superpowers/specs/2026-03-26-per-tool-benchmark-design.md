@@ -94,9 +94,11 @@ Params: None (aggregates all activated tools)
 **Output format** (`union.tsv`):
 ```
 transcript    position    covered_by_tools
-ENST0001      1234        xpore,nanocompore,baleen
-ENST0001      5678        xpore,baleen
+ENST0001      1234        baleen,nanocompore,xpore
+ENST0001      5678        baleen,xpore
 ...
+```
+**Note**: `covered_by_tools` is a comma-separated list of tool names in **alphabetical order** (for reproducibility). Sites not covered by any tool are excluded from union.tsv.
 ```
 
 **Logic**:
@@ -139,6 +141,7 @@ p_value         True                 0.92     0.88     2.5               0.00316
 ```
 p_value
 ```
+(Plain text file containing only the score column name that achieved highest AUROC. No header, just the column name.)
 
 ### 3.4 Fair Benchmark Rules
 
@@ -193,6 +196,13 @@ tool_score_map = {
     'penguin': ['probability', 'score', 'pvalue'],
     'pybaleen': ['mod_score', 'score'],
 }
+
+# Allow user to override via config
+if config.get("benchmark", {}).get("score_columns", {}).get(tool):
+    score_columns = config["benchmark"]["score_columns"][tool]
+```
+
+**Note**: Only columns that actually exist in the tool's output are evaluated. Missing columns are silently skipped.
 ```
 
 ### 4.2 Score Column Processing
@@ -464,11 +474,29 @@ nanocompore  logit_pvalue  1
 
 ### 8.1 Backward Compatibility
 
-The new structure should coexist with the existing benchmark system during transition. Consider:
+The new structure should coexist with the existing benchmark system during transition:
 
+**Phase 1: Parallel deployment**
 1. Keep existing `accuracy_summary.tsv` outputs for downstream rules
-2. Add new outputs in parallel
-3. Gradually migrate downstream rules to use new structure
+2. Add new outputs in parallel (new directory structure)
+3. Verify new outputs match existing results
+
+**Phase 2: Aggregation compatibility**
+4. Create `aggregate_to_legacy_format` rule that produces old-style outputs from new structure:
+   - `accuracy_summary.tsv` ← aggregated from `by_comparison.tsv`
+   - `accuracy_summary_overall.tsv` ← aggregated from `by_tool.tsv`
+
+**Phase 3: Gradual migration**
+5. Update downstream rules (plots, reports) to read from new structure
+6. Deprecate old benchmark rules once migration complete
+
+**Output mapping**:
+| Legacy output | New source | Notes |
+|---------------|------------|-------|
+| `accuracy_summary.tsv` | `summary/by_comparison.tsv` | Different format, same data |
+| `accuracy_summary_overall.tsv` | `summary/by_tool.tsv` | Different format, same data |
+| `optimal_thresholds.tsv` | `native/{tool}/{comparison}/best_metrics.tsv` | Now per-tool, per-comparison |
+| `detailed_predictions.tsv` | `native/{tool}/{comparison}/predictions.tsv` | Now per-tool, per-comparison |
 
 ### 8.2 Configuration
 
