@@ -1,7 +1,7 @@
-# Per-Tool Benchmark System Design
+# Per-Tool Benchmark System Design (Revised)
 
-**Date**: 2026-03-26
-**Status**: Draft
+**Date**: 2026-03-26 (revised)
+**Status**: Approved
 **Author**: Claude (with user collaboration)
 
 ## 1. Overview
@@ -16,15 +16,22 @@ The current benchmark system uses a single aggregated rule (`accuracy_benchmark`
 
 ### 1.2 Proposed Solution
 
-Refactor into per-tool benchmark rules that can run independently and in parallel, with a coverage-first approach for fair comparison across tools.
+Refactor into per-tool benchmark rules using `{tool}` wildcards that run independently and in parallel, with a coverage-first approach for fair cross-tool comparison.
 
 ### 1.3 Design Goals
 
-- **Parallelization**: Each tool's benchmark runs independently
+- **Parallelization**: Each tool's benchmark runs independently via Snakemake wildcards
 - **Incremental updates**: Re-run only affected tools when data changes
-- **Modularity**: Clear separation between tool-specific and aggregation logic
+- **Modularity**: Clear separation between coverage, evaluation, and aggregation
 - **Fair comparison**: Coverage union ensures all tools evaluated on same sites
 - **Native evaluation**: Tools also evaluated on only their covered sites
+- **Clean break**: Replaces old monolithic rule directly; no legacy adapters
+
+### 1.4 Scope
+
+**In scope**: 9 comparison-based tools (xpore, nanocompore, baleen, differr, drummer, eligos2, epinano, psipore, pybaleen)
+
+**Out of scope**: Per-sample tools (tandemmod, directrm, m6atm, rnano, nanopsu, nanomud, penguin) — deferred to a future phase
 
 ## 2. Coverage-First Design
 
@@ -39,9 +46,7 @@ For each comparison (native_sample vs control_sample):
 
 ### 2.2 Coverage Definition
 
-A site is "covered" by a tool if:
-- The tool produces any prediction (with score) for that transcript/position
-- No distinction between modification types - all treated as "modified base"
+A site is "covered" by a tool if the tool produces any prediction (with score) for that transcript/position within the configured positional tolerance window. No distinction between modification types.
 
 ### 2.3 Evaluation Modes
 
@@ -52,25 +57,53 @@ A site is "covered" by a tool if:
 
 ## 3. Rule Structure
 
-### 3.1 Coverage Rules
-
-**Rule**: `benchmark_{tool}_coverage`
+### 3.1 Execution DAG
 
 ```
-Input:  {project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv
-        config["benchmark"]["truth_set"]
+Layer 1: benchmark_tool_coverage        (per tool × per comparison, parallel)
+Layer 2: benchmark_coverage_union        (per comparison, waits for all L1)
+Layer 3a: benchmark_tool_native          (per tool × per comparison, parallel)
+Layer 3b: benchmark_tool_fair            (per tool × per comparison, parallel, depends on L2)
+Layer 4: benchmark_aggregate             (single rule, collects all L3 outputs)
+Layer 5: existing downstream             (statistics, sensitivity, R figures — path updates only)
+```
 
-Output: {project}/results/benchmarks/coverage/{comparison}/{tool}_covered.tsv
+All rules use `{tool}` and `{comparison}` wildcards. Snakemake resolves via `expand()` in `get_final_output()`.
 
-Params: window (positional tolerance)
+`PER_COMPARISON_TOOLS` is defined in `common.smk`:
+```python
+PER_COMPARISON_TOOLS = ["xpore", "nanocompore", "baleen", "differr", "drummer",
+                        "eligos2", "epinano", "psipore", "pybaleen"]
+```
+
+### 3.2 Layer 1: benchmark_tool_coverage
+
+```python
+rule benchmark_tool_coverage:
+    input:
+        results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
+        truth_set=config["benchmark"]["truth_set"],
+    output:
+        covered="{project}/results/benchmarks/coverage/{comparison}/{tool}_covered.tsv",
+    params:
+        window=config["benchmark"]["window"],
+    resources:
+        mem_mb=1024 * 4,
+    threads: 1
+    priority: 30
+    log:
+        "logs/{project}/benchmark_tool_coverage/{comparison}/{tool}.log",
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_coverage.py"
 ```
 
 **Output format** (`{tool}_covered.tsv`):
 ```
-transcript    position
-ENST0001      1234
-ENST0001      5678
-...
+transcript	position
+ENST0001	1234
+ENST0001	5678
 ```
 
 **Logic**:
@@ -79,248 +112,165 @@ ENST0001      5678
 3. For each truth site, check if tool has prediction within window
 4. Output covered sites
 
-### 3.2 Coverage Union Rule
+### 3.3 Layer 2: benchmark_coverage_union
 
-**Rule**: `benchmark_coverage_union`
-
-```
-Input:  {project}/results/benchmarks/coverage/{comparison}/{tool}_covered.tsv (for all tools)
-
-Output: {project}/results/benchmarks/coverage/{comparison}/union.tsv
-
-Params: None (aggregates all activated tools)
+```python
+rule benchmark_coverage_union:
+    input:
+        covered=lambda wc: expand(
+            "{project}/results/benchmarks/coverage/{comparison}/{tool}_covered.tsv",
+            project=wc.project, comparison=wc.comparison,
+            tool=[t for t in config["tools"] if config["tools"][t]["activate"]
+                  and t in PER_COMPARISON_TOOLS],
+        ),
+    output:
+        union="{project}/results/benchmarks/coverage/{comparison}/union.tsv",
+        called_sites="{project}/results/benchmarks/coverage/{comparison}/called_sites.tsv",
+    resources:
+        mem_mb=1024 * 2,
+    threads: 1
+    priority: 31
+    log:
+        "logs/{project}/benchmark_coverage_union/{comparison}.log",
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_coverage.py"
 ```
 
 **Output format** (`union.tsv`):
 ```
-transcript    position    covered_by_tools
-ENST0001      1234        baleen,nanocompore,xpore
-ENST0001      5678        baleen,xpore
-...
+transcript	position	covered_by_tools
+ENST0001	1234	baleen,nanocompore,xpore
+ENST0001	5678	baleen,xpore
 ```
-**Note**: `covered_by_tools` is a comma-separated list of tool names in **alphabetical order** (for reproducibility). Sites not covered by any tool are excluded from union.tsv.
+
+`covered_by_tools` is comma-separated, alphabetical order for reproducibility.
+
+**Output format** (`called_sites.tsv`):
+```
+tool	n_covered
+baleen	142
+nanocompore	98
+xpore	115
 ```
 
 **Logic**:
-1. Collect all covered sites from each tool
-2. Take union across all tools
+1. Collect all covered sites from each tool's `_covered.tsv`
+2. Union across all tools
 3. Track which tools cover each site
+4. Count covered sites per tool
 
-### 3.3 Native Benchmark Rules
+**Mode detection**: The script detects union mode by checking for `union` in `snakemake.output` keys.
 
-**Rule**: `benchmark_{tool}_native`
-
-```
-Input:  {project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv
-        config["benchmark"]["truth_set"]
-
-Output: {project}/results/benchmarks/native/{tool}/{comparison}/score_comparison.tsv
-        {project}/results/benchmarks/native/{tool}/{comparison}/best_metrics.tsv
-        {project}/results/benchmarks/native/{tool}/{comparison}/best_score.txt
-
-Params: window (positional tolerance)
-```
-
-**Can run in parallel with coverage rules** - does not depend on union.
-
-**Output format** (`score_comparison.tsv`):
-```
-score_column    is_pvalue    transform    auroc    prauc    best_threshold    best_threshold_original    f1    precision    recall
-p_value         True         -log10       0.92     0.88     2.5               0.00316                    0.85  0.88         0.82
-diff_mod        False        none         0.78     0.71     0.45              0.45                       0.71  0.75         0.68
-...
-```
-
-**Output format** (`best_metrics.tsv`):
-```
-score_column    p_value_transform    auroc    prauc    best_threshold    best_threshold_original    f1    precision    recall
-p_value         True                 0.92     0.88     2.5               0.00316                    0.85  0.88         0.82
-```
-
-**Output format** (`best_score.txt`):
-```
-p_value
-```
-(Plain text file containing only the score column name that achieved highest AUROC. No header, just the column name.)
-
-### 3.4 Fair Benchmark Rules
-
-**Rule**: `benchmark_{tool}_fair`
-
-```
-Input:  {project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv
-        {project}/results/benchmarks/coverage/{comparison}/union.tsv
-        config["benchmark"]["truth_set"]
-
-Output: {project}/results/benchmarks/fair/{tool}/{comparison}/score_comparison.tsv
-        {project}/results/benchmarks/fair/{tool}/{comparison}/best_metrics.tsv
-        {project}/results/benchmarks/fair/{tool}/{comparison}/best_score.txt
-
-Params: window (positional tolerance)
-```
-
-**Depends on**: `benchmark_coverage_union` (must wait for all coverage rules)
-
-**Output format**: Same as native benchmark rules
-
-**Logic**:
-1. Load union coverage sites
-2. Load tool predictions
-3. For sites in union but not covered by tool: assign score = 0 (negative prediction)
-4. Evaluate all candidate score columns
-5. Report best column by AUROC
-
-## 4. Score Column Handling
-
-### 4.1 Score Column Detection
-
-Each tool has multiple columns that could serve as scores. The system automatically detects and evaluates all candidates.
-
-**Per-tool score column priority** (from existing `detect_score_column()`):
-```python
-tool_score_map = {
-    'xpore': ['p_value', 'diff_mod', 'diff_mod_frac', 'mod_ratio'],
-    'nanocompore': ['pvalue', 'logit_pvalue', 'logit', 'p_value'],
-    'baleen': ['mod_score', 'score', 'kmer_score'],
-    'differr': ['-log10 P value', '-log10_pvalue', 'score', 'pvalue'],
-    'eligos2': ['pvalue', 'p_value', 'esb', 'oddsR'],
-    'epinano': ['z_score_prediction', 'z_scores', 'delta_sum_err'],
-    'drummer': ['p_value', 'pvalue', 'z_score'],
-    'psipore': ['pvalue', 'p_value', 'score'],
-    'tandemmod': ['probability', 'prob', 'score', 'mod_prob'],
-    'directrm': ['probability', 'prob', 'mod_prob'],
-    'm6atm': ['stoichiometry', 'probability', 'prob'],
-    'rnano': ['probability', 'score', 'prob'],
-    'nanopsu': ['pvalue', 'p_value', 'score'],
-    'nanomud': ['probability', 'pvalue', 'score'],
-    'penguin': ['probability', 'score', 'pvalue'],
-    'pybaleen': ['mod_score', 'score'],
-}
-
-# Allow user to override via config
-if config.get("benchmark", {}).get("score_columns", {}).get(tool):
-    score_columns = config["benchmark"]["score_columns"][tool]
-```
-
-**Note**: Only columns that actually exist in the tool's output are evaluated. Missing columns are silently skipped.
-```
-
-### 4.2 Score Column Processing
-
-For each candidate score column:
+### 3.4 Layer 3a: benchmark_tool_native
 
 ```python
-def process_score_column(df, score_col):
-    # 1. Type conversion
-    scores = pd.to_numeric(df[score_col], errors='coerce')
-
-    # 2. Handle special values
-    scores = scores.replace([np.inf], 1e10)
-    scores = scores.replace([-np.inf], -1e10)
-    # NA/NaN and strings already coerced to NaN
-
-    # 3. P-value detection and transformation
-    is_pvalue = is_pvalue_column(score_col)
-    if is_pvalue:
-        scores = -np.log10(scores)
-
-    return scores, is_pvalue
+rule benchmark_tool_native:
+    input:
+        results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
+        truth_set=config["benchmark"]["truth_set"],
+    output:
+        scores="{project}/results/benchmarks/native/{tool}/{comparison}/score_comparison.tsv",
+        best_metrics="{project}/results/benchmarks/native/{tool}/{comparison}/best_metrics.tsv",
+        best_score="{project}/results/benchmarks/native/{tool}/{comparison}/best_score.txt",
+    params:
+        window=config["benchmark"]["window"],
+    resources:
+        mem_mb=1024 * 8,
+    threads: 1
+    priority: 32
+    log:
+        "logs/{project}/benchmark_tool_native/{tool}/{comparison}.log",
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_per_tool.py"
 ```
 
-**P-value detection**:
-```python
-def is_pvalue_column(col_name):
-    pvalue_keywords = ['p_value', 'pvalue', 'pval', 'p.value']
-    col_lower = col_name.lower().replace(' ', '_')
-    return any(kw in col_lower for kw in pvalue_keywords)
-```
+**Can run in parallel with Layer 2** — does not depend on coverage union.
 
-### 4.3 Threshold Optimization
-
-For each score column, find the optimal threshold that maximizes F1:
+### 3.5 Layer 3b: benchmark_tool_fair
 
 ```python
-def find_optimal_threshold(scores, labels, is_pvalue):
-    """
-    Args:
-        scores: Array of scores (higher = better after transformation)
-        labels: Binary labels (1 = modified, 0 = unmodified)
-        is_pvalue: Whether this was -log10 transformed
-
-    Returns:
-        dict with threshold, metrics
-    """
-    # Generate thresholds from score distribution
-    thresholds = np.linspace(scores.min(), scores.max(), 100)
-
-    best_f1 = 0
-    best_threshold = None
-    best_metrics = None
-
-    for thresh in thresholds:
-        predictions = (scores >= thresh).astype(int)
-        metrics = compute_metrics(predictions, labels)
-
-        if metrics['f1'] > best_f1:
-            best_f1 = metrics['f1']
-            best_threshold = thresh
-            best_metrics = metrics
-
-    # Convert threshold back to original scale
-    if is_pvalue:
-        original_threshold = 10 ** (-best_threshold)
-    else:
-        original_threshold = best_threshold
-
-    return {
-        'threshold': best_threshold,
-        'threshold_original': original_threshold,
-        'f1': best_metrics['f1'],
-        'precision': best_metrics['precision'],
-        'recall': best_metrics['recall'],
-    }
+rule benchmark_tool_fair:
+    input:
+        results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
+        union="{project}/results/benchmarks/coverage/{comparison}/union.tsv",
+        truth_set=config["benchmark"]["truth_set"],
+    output:
+        scores="{project}/results/benchmarks/fair/{tool}/{comparison}/score_comparison.tsv",
+        best_metrics="{project}/results/benchmarks/fair/{tool}/{comparison}/best_metrics.tsv",
+        best_score="{project}/results/benchmarks/fair/{tool}/{comparison}/best_score.txt",
+    params:
+        window=config["benchmark"]["window"],
+    resources:
+        mem_mb=1024 * 8,
+    threads: 1
+    priority: 33
+    log:
+        "logs/{project}/benchmark_tool_fair/{tool}/{comparison}.log",
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_per_tool.py"
 ```
 
-### 4.4 Metric Computation
+**Depends on Layer 2**: Must wait for coverage union.
 
-For each score column:
+**Mode detection**: Script checks if `union` is present in `snakemake.input` keys. If present → fair mode (load union, fill missing with score=0). If absent → native mode (evaluate tool's own sites only).
+
+### 3.6 Layer 4: benchmark_aggregate
 
 ```python
-def compute_all_metrics(scores, labels):
-    """
-    Compute all metrics for a score column.
-
-    Args:
-        scores: Array of scores (higher = better)
-        labels: Binary labels
-
-    Returns:
-        dict with auroc, prauc, f1, precision, recall, best_threshold, etc.
-    """
-    from sklearn.metrics import roc_auc_score, average_precision_score
-
-    auroc = roc_auc_score(labels, scores)
-    prauc = average_precision_score(labels, scores)
-
-    # Find optimal threshold
-    threshold_result = find_optimal_threshold(scores, labels, is_pvalue=False)
-
-    return {
-        'auroc': auroc,
-        'prauc': prauc,
-        'f1': threshold_result['f1'],
-        'precision': threshold_result['precision'],
-        'recall': threshold_result['recall'],
-        'best_threshold': threshold_result['threshold'],
-        'best_threshold_original': threshold_result['threshold_original'],
-    }
+rule benchmark_aggregate:
+    input:
+        native=lambda wc: expand(
+            "{project}/results/benchmarks/native/{tool}/{comparison}/best_metrics.tsv",
+            project=wc.project,
+            tool=[t for t in config["tools"] if config["tools"][t]["activate"]
+                  and t in PER_COMPARISON_TOOLS],
+            comparison=comparisons,
+        ),
+        fair=lambda wc: expand(
+            "{project}/results/benchmarks/fair/{tool}/{comparison}/best_metrics.tsv",
+            project=wc.project,
+            tool=[t for t in config["tools"] if config["tools"][t]["activate"]
+                  and t in PER_COMPARISON_TOOLS],
+            comparison=comparisons,
+        ),
+        called_sites=lambda wc: expand(
+            "{project}/results/benchmarks/coverage/{comparison}/called_sites.tsv",
+            project=wc.project,
+            comparison=comparisons,
+        ),
+        truth_set=config["benchmark"]["truth_set"],
+    output:
+        summary="{project}/results/benchmarks/aggregated/accuracy_summary.tsv",
+        overall="{project}/results/benchmarks/aggregated/accuracy_summary_overall.tsv",
+        by_comparison="{project}/results/benchmarks/aggregated/accuracy_summary_by_comparison.tsv",
+        by_negative_type="{project}/results/benchmarks/aggregated/accuracy_summary_by_negative_type.tsv",
+        by_tool="{project}/results/benchmarks/aggregated/by_tool.tsv",
+        best_scores="{project}/results/benchmarks/aggregated/best_scores.tsv",
+        called_sites_comp="{project}/results/benchmarks/aggregated/called_sites_by_comparison.tsv",
+        called_sites_sum="{project}/results/benchmarks/aggregated/called_sites_summary.tsv",
+        done=touch("{project}/results/benchmarks/.benchmark_complete"),
+    resources:
+        mem_mb=1024 * 4,
+    threads: 1
+    priority: 34
+    log:
+        "logs/{project}/benchmark_aggregate/aggregate.log",
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_aggregation.py"
 ```
 
-### 4.5 Score Comparison Output
+## 4. Output Formats
 
-All score columns are evaluated and ranked by AUROC. The best score column is identified, but all results are retained.
+### 4.1 score_comparison.tsv (per-tool, per-comparison)
 
-**`score_comparison.tsv`** columns:
 | Column | Description |
 |--------|-------------|
 | score_column | Name of the score column |
@@ -334,65 +284,114 @@ All score columns are evaluated and ranked by AUROC. The best score column is id
 | precision | Precision at optimal threshold |
 | recall | Recall at optimal threshold |
 
-## 5. Aggregation Rules
+### 4.2 best_metrics.tsv (per-tool, per-comparison)
 
-### 5.1 Coverage Union Aggregation
+Single row with the best score column's metrics. Same columns as score_comparison.tsv.
 
-**Rule**: `aggregate_coverage_union`
+### 4.3 best_score.txt (per-tool, per-comparison)
 
-Already covered by `benchmark_coverage_union` - produces per-comparison union files.
+Plain text file containing only the score column name that achieved highest AUROC. No header.
 
-### 5.2 Tool-Level Aggregation
+### 4.4 Aggregated Outputs
 
-**Rule**: `aggregate_tool_results`
+`accuracy_summary.tsv` — per tool × modification type, matching the format consumed by downstream rules (statistics, sensitivity, R figures).
 
+`accuracy_summary_overall.tsv` — per tool, averaged across comparisons and modification types.
+
+`accuracy_summary_by_comparison.tsv` — per tool × comparison.
+
+`accuracy_summary_by_negative_type.tsv` — per negative control strategy.
+
+`by_tool.tsv`:
 ```
-Input:  {project}/results/benchmarks/native/{tool}/{comparison}/*.tsv
-        {project}/results/benchmarks/fair/{tool}/{comparison}/*.tsv
-
-Output: {project}/results/benchmarks/aggregated/{tool}/native_summary.tsv
-        {project}/results/benchmarks/aggregated/{tool}/fair_summary.tsv
-```
-
-**Output format** (`native_summary.tsv`):
-```
-tool    best_score    mean_auroc    std_auroc    mean_prauc    std_prauc    mean_f1    std_f1    n_comparisons
-xpore   p_value       0.89          0.05         0.85          0.06         0.82       0.04      3
+tool	best_score	mean_auroc	std_auroc	mean_prauc	std_prauc	mean_f1	std_f1	n_comparisons
+xpore	p_value	0.89	0.05	0.85	0.06	0.82	0.04	3
 ```
 
-### 5.3 Cross-Tool Comparison
-
-**Rule**: `aggregate_benchmark_comparison`
-
+`best_scores.tsv`:
 ```
-Input:  {project}/results/benchmarks/aggregated/{tool}/*_summary.tsv (for all tools)
-
-Output: {project}/results/benchmarks/summary/by_comparison.tsv
-        {project}/results/benchmarks/summary/by_tool.tsv
-        {project}/results/benchmarks/summary/best_scores.tsv
+tool	best_score	n_comparisons_best
+xpore	p_value	2
+nanocompore	logit_pvalue	1
 ```
 
-**Output format** (`by_comparison.tsv`):
-```
-comparison    xpore_auroc    nanocompore_auroc    baleen_auroc    ...    best_tool
-A_F           0.92           0.88                 0.85            ...    xpore
-B_G           0.85           0.90                 0.82            ...    nanocompore
+## 5. Script Design
+
+### 5.1 benchmark_coverage.py
+
+Two modes, detected by output keys:
+
+**Per-tool mode** (output has `covered`):
+1. Load truth set, load tool results TSV
+2. Normalize columns using inlined helpers from benchmark_utils.py
+3. For each truth site, check if tool has a prediction within window nucleotides
+4. Output matched sites as `transcript\tposition` TSV
+
+**Union mode** (output has `union` and `called_sites`):
+1. Read all `{tool}_covered.tsv` files from the input list
+2. Union all (transcript, position) pairs
+3. Track which tools cover each site → `covered_by_tools` column (alphabetical)
+4. Write `union.tsv`
+5. Count covered sites per tool → `called_sites.tsv`
+
+### 5.2 benchmark_per_tool.py
+
+Single script, two modes detected by presence of `union` in inputs:
+
+**Core logic (shared)**:
+1. Load tool results, load truth set
+2. Detect candidate score columns using `tool_score_map`
+3. For each score column: type conversion, p-value detection, -log10 transform
+4. Compute AUROC, AUPRC via sklearn
+5. Find optimal threshold (maximize F1) with 100 linearly-spaced thresholds
+6. Compute precision/recall/F1 at optimal threshold
+7. Rank columns by AUROC, pick best
+8. Write score_comparison.tsv, best_metrics.tsv, best_score.txt
+
+**Native mode** (no `union` in input):
+- Evaluate only on sites where tool has predictions matching truth sites within window
+
+**Fair mode** (`union` in input):
+- Load union sites
+- For union sites not in tool's predictions: assign score = 0
+- Evaluate on all union sites
+
+**P-value handling**:
+```python
+def is_pvalue_column(col_name):
+    pvalue_keywords = ['p_value', 'pvalue', 'pval', 'p.value']
+    col_lower = col_name.lower().replace(' ', '_')
+    return any(kw in col_lower for kw in pvalue_keywords)
 ```
 
-**Output format** (`by_tool.tsv`):
-```
-tool         mean_auroc    std_auroc    mean_prauc    mean_f1    n_comparisons
-xpore        0.88          0.05         0.84          0.80       3
-nanocompore  0.87          0.04         0.83          0.79       3
-baleen       0.82          0.06         0.78          0.75       3
+P-value columns get -log10 transformed so higher = better. Thresholds are converted back to original scale for reporting.
+
+**Score column candidates** (from existing tool_score_map):
+```python
+tool_score_map = {
+    'xpore': ['p_value', 'diff_mod', 'diff_mod_frac', 'mod_ratio'],
+    'nanocompore': ['pvalue', 'logit_pvalue', 'logit', 'p_value'],
+    'baleen': ['mod_score', 'score', 'kmer_score'],
+    'differr': ['-log10 P value', '-log10_pvalue', 'score', 'pvalue'],
+    'eligos2': ['pvalue', 'p_value', 'esb', 'oddsR'],
+    'epinano': ['z_score_prediction', 'z_scores', 'delta_sum_err'],
+    'drummer': ['p_value', 'pvalue', 'z_score'],
+    'psipore': ['pvalue', 'p_value', 'score'],
+    'pybaleen': ['mod_score', 'score'],
+}
 ```
 
-**Output format** (`best_scores.tsv`):
-```
-tool         best_score    n_comparisons_best
-xpore        p_value       2
-nanocompore  logit_pvalue  1
-```
+Only columns that actually exist in the tool's output are evaluated. Missing columns are silently skipped.
+
+### 5.3 benchmark_aggregation.py
+
+1. Collect all `best_metrics.tsv` from native and fair modes across tools and comparisons
+2. Parse tool name and comparison from file paths
+3. Produce aggregated summaries matching the format downstream rules expect
+4. Aggregate called_sites from coverage layer
+5. Touch `.benchmark_complete` marker
+
+**Import strategy**: All three scripts inline the needed utility functions (same pattern used by existing benchmark scripts to avoid Singularity/Snakemake import issues).
 
 ## 6. Directory Structure
 
@@ -401,7 +400,8 @@ nanocompore  logit_pvalue  1
 ├── coverage/
 │   └── {comparison}/
 │       ├── {tool}_covered.tsv
-│       └── union.tsv
+│       ├── union.tsv
+│       └── called_sites.tsv
 ├── native/
 │   └── {tool}/
 │       └── {comparison}/
@@ -415,158 +415,85 @@ nanocompore  logit_pvalue  1
 │           ├── best_metrics.tsv
 │           └── best_score.txt
 ├── aggregated/
-│   └── {tool}/
-│       ├── native_summary.tsv
-│       └── fair_summary.tsv
-└── summary/
-    ├── by_comparison.tsv
-    ├── by_tool.tsv
-    └── best_scores.tsv
+│   ├── accuracy_summary.tsv
+│   ├── accuracy_summary_overall.tsv
+│   ├── accuracy_summary_by_comparison.tsv
+│   ├── accuracy_summary_by_negative_type.tsv
+│   ├── by_tool.tsv
+│   ├── best_scores.tsv
+│   ├── called_sites_by_comparison.tsv
+│   └── called_sites_summary.tsv
+├── .benchmark_complete
+├── statistics/                        (unchanged)
+├── sensitivity/                       (unchanged)
+├── figures/                           (unchanged)
+├── data/                              (unchanged)
+└── viz/                               (unchanged)
 ```
 
-## 7. Execution DAG
+## 7. Downstream Rule Updates
 
+Path-only changes — no logic modifications.
+
+| Rule | Change |
+|------|--------|
+| `benchmark_statistics` | Input paths: `benchmarks/` → `benchmarks/aggregated/` |
+| `benchmark_sensitivity` | No change (reads `detailed_predictions.tsv` from `benchmark_detailed` rule) |
+| `benchmark_visualization` | Input: explicit aggregated file paths instead of directory |
+| `benchmark_r_figures` | Input paths: `benchmarks/` → `benchmarks/aggregated/` |
+| `benchmark_pdf_report` | Input: explicit aggregated file paths instead of directory |
+| `benchmark_kmer_negatives` | No change (reads raw tool results directly) |
+| `benchmark_same_base_negatives` | No change |
+| `benchmark_multithreshold` | No change |
+| `benchmark_score_optimization` | No change |
+| `benchmark_threshold` | No change |
+| `benchmark_detailed` | No change |
+
+### get_final_output() changes
+
+Replace current benchmark output list with:
+- Per-tool coverage files via `expand()`
+- Per-comparison union and called_sites files
+- Per-tool native/fair metrics via `expand()`
+- Aggregated summary files under `aggregated/`
+- All downstream outputs (statistics, sensitivity, figures) with updated paths where needed
+
+### Deletions
+
+- Old `accuracy_benchmark` rule in `benchmark_accuracy.smk`
+- `get_benchmark_output_files()` helper function
+- Old per-tool subdirectory outputs pattern (`benchmarks/{tool}/accuracy_summary.tsv`)
+
+## 8. Wildcard Constraints
+
+Add to Snakefile wildcard_constraints:
+```python
+wildcard_constraints:
+    tool="[a-z0-9]+",
 ```
-                    ┌─────────────────────────────────────┐
-                    │  benchmark_{tool}_coverage          │
-                    │  (parallel per tool)                │
-                    └──────────────┬──────────────────────┘
-                                   │
-                    ┌──────────────▼──────────────────────┐
-                    │  benchmark_coverage_union           │
-                    │  (waits for all coverage rules)     │
-                    └──────────────┬──────────────────────┘
-                                   │
-          ┌────────────────────────┼────────────────────────┐
-          │                        │                        │
-          ▼                        ▼                        ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ benchmark_xpore │    │benchmark_nanocom│    │ benchmark_baleen│
-│    _native      │    │   pore_native   │    │    _native      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-          │                        │                        │
-          ▼                        ▼                        ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ benchmark_xpore │    │benchmark_nanocom│    │ benchmark_baleen│
-│    _fair        │    │   pore_fair     │    │    _fair        │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-          │                        │                        │
-          └────────────────────────┼────────────────────────┘
-                                   │
-                    ┌──────────────▼──────────────────────┐
-                    │  aggregate_tool_results             │
-                    │  (per tool, parallel)               │
-                    └──────────────┬──────────────────────┘
-                                   │
-                    ┌──────────────▼──────────────────────┐
-                    │  aggregate_benchmark_comparison     │
-                    │  (final summary)                    │
-                    └─────────────────────────────────────┘
-```
 
-**Parallelization opportunities**:
-- All `benchmark_{tool}_coverage` rules run in parallel
-- All `benchmark_{tool}_native` rules run in parallel
-- All `benchmark_{tool}_fair` rules run in parallel
-- All `aggregate_tool_results` rules run in parallel
+This prevents the `{tool}` wildcard from matching path separators or unexpected patterns in benchmark rules.
 
-## 8. Implementation Notes
+## 9. Configuration
 
-### 8.1 Backward Compatibility
-
-The new structure should coexist with the existing benchmark system during transition:
-
-**Phase 1: Parallel deployment**
-1. Keep existing `accuracy_summary.tsv` outputs for downstream rules
-2. Add new outputs in parallel (new directory structure)
-3. Verify new outputs match existing results
-
-**Phase 2: Aggregation compatibility**
-4. Create `aggregate_to_legacy_format` rule that produces old-style outputs from new structure:
-   - `accuracy_summary.tsv` ← aggregated from `by_comparison.tsv`
-   - `accuracy_summary_overall.tsv` ← aggregated from `by_tool.tsv`
-
-**Phase 3: Gradual migration**
-5. Update downstream rules (plots, reports) to read from new structure
-6. Deprecate old benchmark rules once migration complete
-
-**Output mapping**:
-| Legacy output | New source | Notes |
-|---------------|------------|-------|
-| `accuracy_summary.tsv` | `summary/by_comparison.tsv` | Different format, same data |
-| `accuracy_summary_overall.tsv` | `summary/by_tool.tsv` | Different format, same data |
-| `optimal_thresholds.tsv` | `native/{tool}/{comparison}/best_metrics.tsv` | Now per-tool, per-comparison |
-| `detailed_predictions.tsv` | `native/{tool}/{comparison}/predictions.tsv` | Now per-tool, per-comparison |
-
-### 8.2 Configuration
-
-Add to `config/config.yaml`:
-
+No config schema changes needed. The existing `benchmark` section already has all required fields:
 ```yaml
 benchmark:
-  truth_set: "path/to/truth.tsv"
-  window: 0  # positional tolerance
-  criterion: "f1"  # threshold optimization criterion
-  modes:  # which modes to run
-    - native
-    - fair
+  truth_set: "config/benchmark_ecoli_rRNA.tsv"
+  window: [0, 1, 2, 5]
+  n_thresholds: 50
+  custom_thresholds: []
 ```
 
-### 8.3 Rule Organization
+## 10. Testing Strategy
 
-Create new rule files:
-- `workflow/rules/benchmark_coverage.smk` - coverage and union rules
-- `workflow/rules/benchmark_per_tool.smk` - native and fair per-tool rules
-- `workflow/rules/benchmark_aggregation.smk` - aggregation rules
+### Integration test
+- Run full pipeline on `.test/` dataset
+- Verify all output files created with correct format
+- Verify parallelization works (multiple tools execute concurrently)
 
-Or keep in existing `benchmark_accuracy.smk` with clear sections.
-
-### 8.4 Script Organization
-
-Create new scripts:
-- `workflow/scripts/benchmark_coverage.py` - coverage computation
-- `workflow/scripts/benchmark_per_tool.py` - per-tool native/fair evaluation
-- `workflow/scripts/benchmark_aggregation.py` - result aggregation
-
-## 9. Testing Strategy
-
-### 9.1 Unit Tests
-
-- Score column detection and transformation
-- Threshold optimization
-- Coverage union computation
-- Metric computation
-
-### 9.2 Integration Tests
-
-- Run full pipeline on test dataset
-- Verify output format compliance
-- Check parallelization works correctly
-
-### 9.3 Validation
-
-- Compare results with existing benchmark system
-- Verify AUROC/PRAUC calculations match sklearn
-- Confirm threshold conversion is correct
-
-## 10. Future Enhancements
-
-### 10.1 Additional Metrics
-
-- MCC (Matthews Correlation Coefficient)
-- Balanced accuracy
-- Specificity
-- NPV (Negative Predictive Value)
-
-### 10.2 Visualization
-
-- Per-tool ROC/PR curves
-- Coverage heatmaps
-- Score distribution plots
-- Threshold sensitivity analysis
-
-### 10.3 Statistical Analysis
-
-- Bootstrap confidence intervals
-- Significance testing between tools
-- Effect size calculations
+### Validation
+- Compare aggregated output metrics with old `accuracy_benchmark` results on same data
+- Verify AUROC/AUPRC calculations match sklearn
+- Confirm threshold conversion (transformed ↔ original scale) is correct
+- Check that fair mode score=0 assignment produces expected penalty behavior
