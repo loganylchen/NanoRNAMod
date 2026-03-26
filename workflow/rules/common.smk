@@ -57,6 +57,15 @@ else:
     comparisons = [f"{ns}_{cs}" for ns in native_samples for cs in control_samples]
 
 
+PER_COMPARISON_TOOLS = ["xpore", "nanocompore", "baleen", "differr", "drummer",
+                        "eligos2", "epinano", "psipore", "pybaleen"]
+
+
+def get_active_comparison_tools():
+    return [t for t in config["tools"]
+            if config["tools"][t]["activate"] and t in PER_COMPARISON_TOOLS]
+
+
 def get_raw_fastq(wildcards):
     if os.path.exists(f"data/{wildcards.sample}/fastq/pass.fq.gz"):
         return f"data/{wildcards.sample}/fastq/pass.fq.gz"

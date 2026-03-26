@@ -154,6 +154,7 @@ wildcard_constraints:
     sample_size="[0-9]+",
     n="[0-9]+",
     project="[\da-zA-Z]+_?[0-9]*",
+    tool="[a-z0-9]+",
 
 
 ##### setup report #####
