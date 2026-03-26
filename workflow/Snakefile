@@ -67,17 +67,28 @@ def get_workflow_version():
     if not workflow_dir:
         return "unknown"
 
-    # Try git describe (works for git clones and snakedeploy)
+    # Try git rev-parse to get full commit SHA
     try:
         result = subprocess.run(
-            ["git", "describe", "--always", "--dirty"],
+            ["git", "rev-parse", "HEAD"],
             cwd=workflow_dir,
             capture_output=True,
             text=True,
             timeout=5
         )
         if result.returncode == 0:
-            return result.stdout.strip()
+            commit_sha = result.stdout.strip()
+            # Check if dirty
+            status_result = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=workflow_dir,
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if status_result.returncode == 0 and status_result.stdout.strip():
+                return f"{commit_sha}-dirty"
+            return commit_sha
     except (subprocess.TimeoutExpired, FileNotFoundError):
         pass
 
