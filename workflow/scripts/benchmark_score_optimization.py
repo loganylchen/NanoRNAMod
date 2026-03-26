@@ -214,6 +214,8 @@ def generate_thresholds(scores, n_thresholds=100):
     """
     Generate threshold values based on score distribution.
     """
+    # Convert to numeric, coercing errors to NaN
+    scores = pd.to_numeric(scores, errors='coerce')
     scores = scores.dropna()
 
     if scores.empty:
@@ -368,8 +370,27 @@ def evaluate_score_column(pred_df, truth_pos, tool_name, mod_type,
             'evaluation_records': []
         }
 
-    # Generate thresholds
-    scores = pred_df[score_col]
+    # Convert score column to numeric, coercing errors to NaN
+    pred_df = pred_df.copy()
+    pred_df['_numeric_score'] = pd.to_numeric(pred_df[score_col], errors='coerce')
+
+    # Filter to rows with valid numeric scores
+    valid_pred_df = pred_df[pred_df['_numeric_score'].notna()].copy()
+    if valid_pred_df.empty:
+        return {
+            'score_column': score_col,
+            'score_type': 'p-value' if is_pvalue else 'probability',
+            'optimal_threshold': np.nan,
+            'optimal_f1': 0.0,
+            'optimal_precision': 0.0,
+            'optimal_recall': 0.0,
+            'auprc': np.nan,
+            'auroc': np.nan,
+            'evaluation_records': []
+        }
+
+    # Use numeric scores for threshold generation
+    scores = valid_pred_df['_numeric_score']
     thresholds = generate_thresholds(scores, n_thresholds=n_thresholds)
 
     if not thresholds:

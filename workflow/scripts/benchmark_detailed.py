@@ -7,40 +7,45 @@ Output includes:
 """
 
 import os
-import sys
 import pandas as pd
 import numpy as np
 
-# Import shared utilities
-# When Snakemake runs script via `script:` directive, it copies to temp location.
-# Use snakemake.scriptdir (injected by Snakemake) to get original script directory.
-# For direct execution, use __file__ to get script directory.
 
-print(f"[DEBUG] snakemake in globals: {'snakemake' in globals()}", file=sys.stderr)
-print(f"[DEBUG] hasattr(snakemake, 'scriptdir'): {hasattr(snakemake, 'scriptdir') if 'snakemake' in globals() else 'N/A'}", file=sys.stderr)
-if 'snakemake' in globals() and hasattr(snakemake, 'scriptdir'):
-    print(f"[DEBUG] snakemake.scriptdir value: {snakemake.scriptdir}", file=sys.stderr)
-print(f"[DEBUG] __file__: {__file__}", file=sys.stderr)
+# ============================================================
+# Utility functions (copied inline to avoid import issues in Singularity/Snakemake)
+# ============================================================
 
-if 'snakemake' in globals() and hasattr(snakemake, 'scriptdir') and snakemake.scriptdir:
-    # Running under Snakemake - use original script directory
-    original_script_dir = snakemake.scriptdir
-    print(f"[DEBUG] Using snakemake.scriptdir: {original_script_dir}", file=sys.stderr)
-else:
-    # Direct execution - use script's own directory
-    original_script_dir = os.path.dirname(os.path.abspath(__file__))
-    print(f"[DEBUG] Using __file__ dirname: {original_script_dir}", file=sys.stderr)
+def tool_from_path(path):
+    """Extract tool name from file path."""
+    parts = path.split(os.sep)
+    for i, part in enumerate(parts):
+        if part == "modifications" and i + 1 < len(parts):
+            return parts[i + 1]
+    return os.path.basename(os.path.dirname(os.path.dirname(path)))
 
-# Add to sys.path if not already present
-print(f"[DEBUG] sys.path before: {sys.path[:3]}...", file=sys.stderr)
-if original_script_dir not in sys.path:
-    sys.path.insert(0, original_script_dir)
-    print(f"[DEBUG] Added to sys.path: {original_script_dir}", file=sys.stderr)
-else:
-    print(f"[DEBUG] Already in sys.path: {original_script_dir}", file=sys.stderr)
-print(f"[DEBUG] sys.path after: {sys.path[:3]}...", file=sys.stderr)
 
-from benchmark_utils import tool_from_path, normalize_columns
+def normalize_columns(df):
+    """Normalize various column names to standard 'transcript' and 'position'."""
+    col_mapping = {}
+
+    transcript_cols = ['transcript', 'id', 'ref_id', 'chrom', 'transcript_id']
+    for col in transcript_cols:
+        if col in df.columns:
+            col_mapping[col] = 'transcript'
+            break
+
+    position_cols = ['position', 'pos', 'start', 'start_loc', 'transcript_pos', 'transcript_loc']
+    for col in position_cols:
+        if col in df.columns and col not in col_mapping.values():
+            col_mapping[col] = 'position'
+            break
+
+    if col_mapping:
+        df = df.rename(columns=col_mapping)
+
+    return df
+
+# ============================================================
 
 
 def detect_score_column(df, tool_name=None):
