@@ -11,49 +11,20 @@ import pandas as pd
 import numpy as np
 
 # Import shared utilities
-# When Snakemake copies script to temp location, we need to find original scripts dir
-# Strategy: Check multiple possible locations for benchmark_utils.py
+# When Snakemake runs script via `script:` directive, it copies to temp location.
+# Use snakemake.scriptdir (injected by Snakemake) to get original script directory.
+# For direct execution, use __file__ to get script directory.
 
-def find_benchmark_utils():
-    """Find the directory containing benchmark_utils.py."""
-    # 1. Check script's own directory (direct execution or when copied together)
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    if os.path.exists(os.path.join(script_dir, "benchmark_utils.py")):
-        return script_dir
+if 'snakemake' in globals():
+    # Running under Snakemake - use original script directory
+    original_script_dir = snakemake.scriptdir
+else:
+    # Direct execution - use script's own directory
+    original_script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # 2. Check relative to current working directory
-    cwd = os.getcwd()
-    candidates = [
-        os.path.join(cwd, "workflow", "scripts"),
-        os.path.join(cwd, "scripts"),
-        cwd,  # If running directly from workflow/scripts
-    ]
-    for candidate in candidates:
-        if os.path.exists(os.path.join(candidate, "benchmark_utils.py")):
-            return candidate
-
-    # 3. Search upward from cwd for workflow/scripts structure
-    search_dir = cwd
-    for _ in range(5):  # Max 5 levels up
-        scripts_path = os.path.join(search_dir, "workflow", "scripts")
-        if os.path.exists(os.path.join(scripts_path, "benchmark_utils.py")):
-            return scripts_path
-        parent = os.path.dirname(search_dir)
-        if parent == search_dir:
-            break
-        search_dir = parent
-
-    # 4. Check if it's a sibling of the temp script (same .snakemake/scripts dir)
-    if ".snakemake" in script_dir:
-        # Try to find original workflow/scripts from snakemake metadata
-        # The original Snakefile location might be available
-        pass
-
-    return None
-
-_utils_dir = find_benchmark_utils()
-if _utils_dir and _utils_dir not in sys.path:
-    sys.path.insert(0, _utils_dir)
+# Add to sys.path if not already present
+if original_script_dir not in sys.path:
+    sys.path.insert(0, original_script_dir)
 
 from benchmark_utils import tool_from_path, normalize_columns
 
