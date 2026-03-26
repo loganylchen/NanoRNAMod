@@ -24,12 +24,65 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from scipy.stats import wilcoxon, mannwhitneyu, ks_2samp
-from statsmodels.stats.multitest import multipletests
 from tqdm import tqdm
 import warnings
 
 # Suppress warnings for cleaner output
 warnings.filterwarnings('ignore', category=RuntimeWarning)
+
+
+# =============================================================================
+# Native FDR Correction (replaces statsmodels dependency)
+# =============================================================================
+
+def benjamini_hochberg_correction(p_values: np.ndarray, alpha: float = 0.05) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Apply Benjamini-Hochberg FDR correction natively.
+
+    Args:
+        p_values: Array of p-values (may contain NaN)
+        alpha: Significance level
+
+    Returns:
+        Tuple of (rejected, adjusted_p_values)
+    """
+    p_values = np.asarray(p_values)
+    n = len(p_values)
+
+    if n == 0:
+        return np.array([], dtype=bool), np.array([])
+
+    # Handle NaN values
+    valid_mask = ~np.isnan(p_values)
+    valid_p = p_values[valid_mask].copy()
+
+    if len(valid_p) == 0:
+        return np.zeros(n, dtype=bool), p_values.copy()
+
+    # Sort p-values and get ranks
+    sorted_indices = np.argsort(valid_p)
+    sorted_p = valid_p[sorted_indices]
+    ranks = np.arange(1, len(sorted_p) + 1)
+
+    # BH formula: adjusted p = p * n / rank
+    adjusted = sorted_p * n / ranks
+
+    # Ensure monotonicity (cumulative minimum from right to left)
+    for i in range(len(adjusted) - 2, -1, -1):
+        adjusted[i] = min(adjusted[i], adjusted[i + 1])
+
+    # Cap at 1.0
+    adjusted = np.minimum(adjusted, 1.0)
+
+    # Map back to original order
+    full_adj = np.full(n, np.nan)
+    full_adj[valid_mask] = adjusted[np.argsort(sorted_indices)]
+
+    # Determine significance
+    rejected = full_adj <= alpha
+
+    return rejected, full_adj
+
 
 # Configure logging
 logging.basicConfig(
@@ -393,37 +446,19 @@ def apply_fdr_correction(
     alpha: float = 0.05
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Apply FDR correction to p-values.
+    Apply FDR correction to p-values using native implementation.
 
     Args:
         p_values: Array of p-values
-        method: Correction method ('benjamini-hochberg', 'bonferroni', 'holm')
+        method: Correction method ('benjamini-hochberg' supported)
         alpha: Significance level
 
     Returns:
         Tuple of (adjusted_p_values, rejected, significance_level)
     """
-    valid_mask = ~np.isnan(p_values)
-    valid_p = p_values[valid_mask]
-
-    if len(valid_p) == 0:
-        return p_values, np.zeros(len(p_values), dtype=bool), np.full(len(p_values), np.nan)
-
-    # Apply correction
-    rejected, adj_p, _, _ = multipletests(
-        valid_p,
-        alpha=alpha,
-        method=method
-    )
-
-    # Reconstruct full arrays
-    full_adj_p = np.full(len(p_values), np.nan)
-    full_adj_p[valid_mask] = adj_p
-
-    full_rejected = np.zeros(len(p_values), dtype=bool)
-    full_rejected[valid_mask] = rejected
-
-    return full_adj_p, full_rejected, full_adj_p
+    # Use native BH implementation
+    rejected, adj_p = benjamini_hochberg_correction(p_values, alpha)
+    return adj_p, rejected, adj_p
 
 
 # =============================================================================
