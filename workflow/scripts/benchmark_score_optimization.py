@@ -307,19 +307,20 @@ def compute_auc_metrics(pred_df, truth_pos, score_col, is_pvalue, window=0):
             truth_dict[tx] = []
         truth_dict[tx].append(pos)
 
-    for idx, row in pred_df.iterrows():
+    for i, (_, row) in enumerate(pred_df.iterrows()):
         tx = row['transcript']
         pos = row['position']
 
         if tx in truth_dict:
-            for truth_pos in truth_dict[tx]:
-                if abs(pos - truth_pos) <= window:
-                    labels[idx] = 1
+            for truth_pos_val in truth_dict[tx]:
+                if abs(pos - truth_pos_val) <= window:
+                    labels[i] = 1
                     break
 
     # Filter to rows with valid scores
     valid_mask = pred_df[score_col].notna()
-    y_true = labels[valid_mask]
+    valid_mask_values = valid_mask.values
+    y_true = labels[valid_mask_values]
     y_scores = pred_df.loc[valid_mask, score_col].values
 
     if len(np.unique(y_true)) < 2:
