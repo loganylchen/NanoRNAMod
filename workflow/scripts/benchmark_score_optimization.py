@@ -396,17 +396,17 @@ def evaluate_score_column(pred_df, truth_pos, tool_name, mod_type,
     if not thresholds:
         thresholds = [scores.median()]
 
-    # Compute AUC metrics
-    auc_metrics = compute_auc_metrics(pred_df, truth_pos, score_col, is_pvalue, window)
+    # Compute AUC metrics using numeric scores
+    auc_metrics = compute_auc_metrics(valid_pred_df, truth_pos, '_numeric_score', is_pvalue, window)
 
-    # Evaluate at each threshold
+    # Evaluate at each threshold - use valid_pred_df with _numeric_score column
     best_f1 = -1
     best_record = None
     eval_records = []
 
     for thresh in thresholds:
         metrics = compute_metrics_at_threshold(
-            pred_df, truth_pos, thresh, score_col, is_pvalue, window
+            valid_pred_df, truth_pos, thresh, '_numeric_score', is_pvalue, window
         )
 
         # Reverse convert threshold for p-value columns
