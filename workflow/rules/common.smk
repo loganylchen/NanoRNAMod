@@ -81,7 +81,8 @@ def get_nanocompore_list(sample_list):
 
 def get_final_output():
     tools = [tool for tool in config["tools"] if config["tools"][tool]["activate"]]
-    final_output = [f"{RESULT_ROOT}/depth_table.tsv"]
+    final_output = [f"{RESULT_ROOT}/workflow_version.json"]  # Always record version first
+    final_output += [f"{RESULT_ROOT}/depth_table.tsv"]
     final_output += expand(
         "{RESULT_ROOT}/quantification/{sample}.tx_counts.tsv",
         sample=list(samples.index),
@@ -374,3 +375,40 @@ def get_final_output():
         final_output += [f"{RESULT_ROOT}/benchmarks/data/fig5_source_data.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/data/fig6_source_data.tsv"]
     return final_output
+
+
+##### version tracking rule #####
+
+rule workflow_version:
+    """
+    Record workflow version information for reproducibility.
+
+    Creates a JSON file with:
+    - workflow version (git commit SHA or snakedeploy version)
+    - project name
+    - timestamp of workflow run
+
+    Uses WORKFLOW_VERSION from Snakefile (computed at startup).
+    """
+    output:
+        touch(f"{RESULT_ROOT}/workflow_version.json")
+    run:
+        import json
+        from datetime import datetime
+
+        # Use WORKFLOW_VERSION from the Snakefile (passed via globals)
+        version = WORKFLOW_VERSION
+
+        version_info = {
+            "workflow": "NanoRNAMod",
+            "version": version,
+            "project": PROJECT,
+            "config_file": str(configfile if 'configfile' in dir() else config.get("configfile", "unknown")),
+            "timestamp": datetime.now().isoformat(),
+        }
+
+        with open(output[0], "w") as f:
+            json.dump(version_info, f, indent=2)
+
+        logger.info(f"Workflow version saved: {version}")
+

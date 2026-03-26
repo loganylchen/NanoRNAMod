@@ -1,9 +1,126 @@
 # libraries
 
 import os
+import subprocess
 from snakemake.utils import min_version
 
 min_version("6.4.1")
+
+
+##### version tracking #####
+
+def find_workflow_directory():
+    """
+    Find the workflow directory using multiple heuristics.
+
+    When Snakemake loads a Snakefile, __file__ may point to unexpected locations.
+    This function tries several methods to find the actual workflow directory.
+    """
+    # Method 1: Check current working directory
+    cwd = os.getcwd()
+    snakefile_in_cwd = os.path.join(cwd, "workflow", "Snakefile")
+    if os.path.exists(snakefile_in_cwd):
+        return os.path.dirname(snakefile_in_cwd)
+
+    # Method 2: Check if we're already in workflow directory
+    snakefile_here = os.path.join(cwd, "Snakefile")
+    if os.path.exists(snakefile_here):
+        return cwd
+
+    # Method 3: Walk up from cwd looking for workflow/Snakefile
+    search_dir = cwd
+    for _ in range(10):  # Max 10 levels up
+        candidate = os.path.join(search_dir, "workflow", "Snakefile")
+        if os.path.exists(candidate):
+            return os.path.dirname(candidate)
+        parent = os.path.dirname(search_dir)
+        if parent == search_dir:  # Reached root
+            break
+        search_dir = parent
+
+    # Method 4: Look for .snakemake directory which indicates workflow root
+    search_dir = cwd
+    for _ in range(10):
+        if os.path.exists(os.path.join(search_dir, ".snakemake")):
+            candidate = os.path.join(search_dir, "workflow", "Snakefile")
+            if os.path.exists(candidate):
+                return os.path.dirname(candidate)
+        parent = os.path.dirname(search_dir)
+        if parent == search_dir:
+            break
+        search_dir = parent
+
+    return None
+
+
+def get_workflow_version():
+    """
+    Get workflow version (commit SHA) for tracking.
+
+    Works with:
+    - git clone (direct development)
+    - snakedeploy deployments
+    - archived releases
+    """
+    workflow_dir = find_workflow_directory()
+
+    if not workflow_dir:
+        return "unknown"
+
+    # Try git describe (works for git clones and snakedeploy)
+    try:
+        result = subprocess.run(
+            ["git", "describe", "--always", "--dirty"],
+            cwd=workflow_dir,
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+    # Try git rev-parse (fallback)
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=workflow_dir,
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+    # Check for VERSION file (can be created manually or by CI)
+    version_file = os.path.join(workflow_dir, "VERSION")
+    if os.path.exists(version_file):
+        with open(version_file) as f:
+            return f.read().strip()
+
+    # Check for .snakedeploy metadata
+    snakedeploy_file = os.path.join(workflow_dir, ".snakedeploy")
+    if os.path.exists(snakedeploy_file):
+        with open(snakedeploy_file) as f:
+            import json
+            try:
+                data = json.load(f)
+                return data.get("commit", "snakedeploy-unknown")
+            except json.JSONDecodeError:
+                pass
+
+    return "unknown"
+
+
+# Print version at workflow startup
+WORKFLOW_VERSION = get_workflow_version()
+print(f"\n{'='*60}")
+print(f"NanoRNAMod Workflow Version: {WORKFLOW_VERSION}")
+print(f"Started at: {__import__('datetime').datetime.now().isoformat()}")
+print(f"{'='*60}\n")
 
 
 wildcard_constraints:
