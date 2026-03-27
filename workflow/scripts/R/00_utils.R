@@ -10,7 +10,7 @@
 # =============================================================================
 
 required_packages <- c("ggplot2", "grid", "gridExtra", "scales",
-                       "RColorBrewer", "viridis", "readr", "dplyr",
+                       "RColorBrewer", "viridis", "dplyr",
                        "tidyr", "purrr")
 
 install_if_missing <- function(packages) {
@@ -235,7 +235,7 @@ load_accuracy_summary <- function(path) {
   if (!file.exists(path)) {
     stop(paste("File not found:", path))
   }
-  df <- readr::read_tsv(path, show_col_types = FALSE)
+  df <- as.data.frame(read.table(path, sep = "\t", header = TRUE, quote = "", stringsAsFactors = FALSE, check.names = FALSE))
 
   # Ensure required columns exist
   required_cols <- c("tool", "f1", "precision", "recall")
@@ -254,7 +254,7 @@ load_optimal_thresholds <- function(path) {
   if (!file.exists(path)) {
     stop(paste("File not found:", path))
   }
-  readr::read_tsv(path, show_col_types = FALSE)
+  as.data.frame(read.table(path, sep = "\t", header = TRUE, quote = "", stringsAsFactors = FALSE, check.names = FALSE))
 }
 
 #' Load resource summary TSV
@@ -264,7 +264,7 @@ load_resource_summary <- function(path) {
   if (!file.exists(path)) {
     stop(paste("File not found:", path))
   }
-  df <- readr::read_tsv(path, show_col_types = FALSE)
+  df <- as.data.frame(read.table(path, sep = "\t", header = TRUE, quote = "", stringsAsFactors = FALSE, check.names = FALSE))
 
   # Convert memory from MB to GB if needed
   if ("max_rss" %in% names(df)) {
@@ -281,7 +281,7 @@ load_threshold_evaluation <- function(path) {
   if (!file.exists(path)) {
     stop(paste("File not found:", path))
   }
-  readr::read_tsv(path, show_col_types = FALSE)
+  as.data.frame(read.table(path, sep = "\t", header = TRUE, quote = "", stringsAsFactors = FALSE, check.names = FALSE))
 }
 
 #' Load all benchmark data from a directory

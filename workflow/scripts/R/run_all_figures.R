@@ -157,7 +157,7 @@ data_out_dir <- file.path(output_dir, "..", "data")
 load_with_fallback <- function(path, required = FALSE) {
   if (file.exists(path)) {
     df <- tryCatch({
-      readr::read_tsv(path, show_col_types = FALSE)
+      as.data.frame(read.table(path, sep = "\t", header = TRUE, quote = "", stringsAsFactors = FALSE, check.names = FALSE))
     }, error = function(e) {
       warning("Error reading ", path, ": ", e$message)
       NULL
@@ -588,7 +588,7 @@ export_source_data <- function(data, filename, output_dir) {
 
   filepath <- file.path(output_dir, filename)
   tryCatch({
-    readr::write_tsv(data, filepath)
+    write.table(data, filepath, sep = "\t", row.names = FALSE, quote = FALSE)
     message("  Saved source data: ", filename)
     TRUE
   }, error = function(e) {
