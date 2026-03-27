@@ -1,5 +1,31 @@
+"""
+Aggregate per-tool benchmark results into summary tables.
+
+Logic:
+1. Load best_metrics.tsv from each tool × comparison (native + fair modes)
+2. For each tool, select the best score column by highest mean AUROC across comparisons
+3. Using the selected score column, compute cross-comparison aggregated metrics
+4. Merge coverage data from called_sites files
+5. Produce multiple output views for downstream visualization
+
+Inputs (from Snakemake rule benchmark_aggregate):
+    native_metrics: list of best_metrics.tsv paths (native evaluation)
+    fair_metrics: list of best_metrics.tsv paths (fair evaluation)
+    called_sites: list of called_sites.tsv paths (per-comparison)
+    truth_set: path to truth set TSV
+
+Outputs:
+    summary: Full accuracy table (all tools × comparisons, using selected score column)
+    overall: Cross-comparison aggregated metrics per tool
+    by_comparison: Per-comparison metrics per tool
+    by_negative_type: Metrics by negative site type (from truth set labels)
+    by_tool: Final per-tool summary with best score, metrics, and coverage
+    best_scores: Best score column selection rationale per tool
+    called_sites_comp: Coverage by tool × comparison (for colored bar chart)
+    called_sites_sum: Coverage summary per tool
+"""
+
 import os
-import re
 import pandas as pd
 import numpy as np
 
@@ -10,8 +36,154 @@ def to_list(x):
     return list(x)
 
 
-native_files = to_list(snakemake.input.native)
-fair_files = to_list(snakemake.input.fair)
+def tool_comparison_from_path(path, mode):
+    """Extract tool and comparison from path like .../native/{tool}/{comparison}/best_metrics.tsv"""
+    parts = path.replace("\\", "/").split("/")
+    for i, part in enumerate(parts):
+        if part == mode and i + 2 < len(parts):
+            return parts[i + 1], parts[i + 2]
+    return None, None
+
+
+def comparison_from_called_sites_path(path):
+    """Extract comparison from path like .../coverage/{comparison}/called_sites.tsv"""
+    parts = path.replace("\\", "/").split("/")
+    for i, part in enumerate(parts):
+        if part == "coverage" and i + 1 < len(parts):
+            return parts[i + 1]
+    return None
+
+
+def load_all_metrics(files, mode):
+    """
+    Load ALL score_comparison.tsv rows (not just best_metrics) for full score column evaluation.
+    Falls back to best_metrics.tsv (single best row per comparison).
+    """
+    records = []
+    for path in files:
+        tool, comparison = tool_comparison_from_path(path, mode)
+        if tool is None:
+            continue
+        try:
+            df = pd.read_csv(path, sep="\t")
+        except Exception:
+            continue
+        if df.empty:
+            continue
+        # best_metrics.tsv has one row (the best score column for that comparison)
+        # We load all rows if available
+        for _, row in df.iterrows():
+            records.append({
+                "tool": tool,
+                "comparison": comparison,
+                "mode": mode,
+                "score_column": row.get("score_column", np.nan),
+                "is_pvalue": row.get("is_pvalue", False),
+                "transform": row.get("transform", "none"),
+                "auroc": pd.to_numeric(row.get("auroc", np.nan), errors="coerce"),
+                "prauc": pd.to_numeric(row.get("prauc", np.nan), errors="coerce"),
+                "best_threshold": pd.to_numeric(row.get("best_threshold", np.nan), errors="coerce"),
+                "best_threshold_original": pd.to_numeric(
+                    row.get("best_threshold_original", np.nan), errors="coerce"
+                ),
+                "f1": pd.to_numeric(row.get("f1", np.nan), errors="coerce"),
+                "precision": pd.to_numeric(row.get("precision", np.nan), errors="coerce"),
+                "recall": pd.to_numeric(row.get("recall", np.nan), errors="coerce"),
+            })
+    return pd.DataFrame(records)
+
+
+def select_best_score_per_tool(metrics_df):
+    """
+    For each tool, select the score column with the highest mean AUROC across comparisons.
+
+    Returns:
+        - selected: DataFrame filtered to only the best score column per tool
+        - rationale: DataFrame explaining the selection (all candidates and their mean AUROCs)
+    """
+    if metrics_df.empty:
+        return pd.DataFrame(), pd.DataFrame()
+
+    # Compute mean AUROC per tool × score_column across comparisons/samples
+    candidate_stats = (
+        metrics_df
+        .groupby(["tool", "score_column"])
+        .agg(
+            mean_auroc=("auroc", "mean"),
+            std_auroc=("auroc", "std"),
+            mean_prauc=("prauc", "mean"),
+            mean_f1=("f1", "mean"),
+            mean_precision=("precision", "mean"),
+            mean_recall=("recall", "mean"),
+            n_comparisons=("comparison", "nunique"),
+        )
+        .reset_index()
+    )
+    # Fill NaN std with 0 (single comparison/sample tools)
+    candidate_stats["std_auroc"] = candidate_stats["std_auroc"].fillna(0.0)
+
+    # Selection criterion: mean_auroc - std_auroc (penalizes inconsistency)
+    # A column with 0.75±0.01 beats 0.76±0.15
+    candidate_stats["selection_score"] = (
+        candidate_stats["mean_auroc"] - candidate_stats["std_auroc"]
+    )
+
+    # For each tool, pick the score column with highest selection score
+    best_idx = candidate_stats.groupby("tool")["selection_score"].idxmax()
+    best_selections = candidate_stats.loc[best_idx][["tool", "score_column"]].copy()
+    best_selections = best_selections.rename(columns={"score_column": "best_score_column"})
+
+    # Filter original metrics to only the best score column per tool
+    selected = metrics_df.merge(
+        best_selections,
+        left_on=["tool", "score_column"],
+        right_on=["tool", "best_score_column"],
+    ).drop(columns=["best_score_column"])
+
+    # Rationale: mark which was selected
+    rationale = candidate_stats.merge(
+        best_selections, on="tool", how="left"
+    )
+    rationale["selected"] = rationale["score_column"] == rationale["best_score_column"]
+    rationale = rationale.sort_values(
+        ["tool", "mean_auroc"], ascending=[True, False]
+    ).reset_index(drop=True)
+
+    return selected, rationale
+
+
+def load_called_sites(files):
+    """Load called_sites.tsv files, annotate with comparison."""
+    records = []
+    for path in files:
+        comparison = comparison_from_called_sites_path(path)
+        if comparison is None:
+            continue
+        try:
+            df = pd.read_csv(path, sep="\t")
+        except Exception:
+            continue
+        if df.empty:
+            continue
+        for _, row in df.iterrows():
+            records.append({
+                "tool": row["tool"],
+                "comparison": comparison,
+                "n_covered": row["n_covered"],
+            })
+    return pd.DataFrame(records, columns=["tool", "comparison", "n_covered"])
+
+
+# ===========================================================================
+# Main
+# ===========================================================================
+
+# Full score_comparison files have ALL score columns evaluated per comparison
+# best_metrics files have only the single best per comparison (used as fallback)
+native_all_files = to_list(snakemake.input.native_all_scores)
+fair_all_files = to_list(snakemake.input.fair_all_scores)
+native_best_files = to_list(snakemake.input.native_metrics)
+fair_best_files = to_list(snakemake.input.fair_metrics)
 called_sites_files = to_list(snakemake.input.called_sites)
 truth_set_path = snakemake.input.truth_set
 
@@ -24,95 +196,9 @@ out_best_scores = snakemake.output.best_scores
 out_called_sites_comp = snakemake.output.called_sites_comp
 out_called_sites_sum = snakemake.output.called_sites_sum
 
+os.makedirs(os.path.dirname(out_summary), exist_ok=True)
 
-def tool_comparison_from_path(path, mode):
-    parts = path.replace("\\", "/").split("/")
-    for i, part in enumerate(parts):
-        if part == mode and i + 2 < len(parts):
-            tool = parts[i + 1]
-            comparison = parts[i + 2]
-            return tool, comparison
-    return None, None
-
-
-def comparison_from_called_sites_path(path):
-    parts = path.replace("\\", "/").split("/")
-    for i, part in enumerate(parts):
-        if part == "coverage" and i + 1 < len(parts):
-            return parts[i + 1]
-    return None
-
-
-BEST_METRICS_COLS = [
-    "score_column", "is_pvalue", "transform", "auroc", "prauc",
-    "best_threshold", "best_threshold_original", "f1", "precision", "recall",
-]
-
-ACCURACY_SUMMARY_COLS = [
-    "tool", "modification_type", "window", "precision", "recall", "f1",
-    "tp", "fp", "fn", "tn", "specificity", "mcc", "auprc", "auroc",
-    "called_sites", "total_truth", "total_predicted", "total_negative",
-]
-
-ACCURACY_OVERALL_COLS = [
-    "tool", "window", "precision", "recall", "f1",
-    "tp", "fp", "fn", "tn", "specificity", "mcc", "auprc", "auroc",
-    "called_sites", "total_truth", "total_predicted", "total_negative",
-]
-
-ACCURACY_BY_COMPARISON_COLS = [
-    "tool", "modification_type", "comparison", "window", "precision", "recall", "f1",
-    "tp", "fp", "fn", "tn", "specificity", "mcc", "auprc", "auroc",
-    "called_sites", "total_truth", "total_negative",
-]
-
-BY_NEGATIVE_TYPE_COLS = [
-    "tool", "modification_type", "negative_type", "window", "precision", "recall", "f1",
-    "tp", "fp", "fn", "tn", "specificity", "auprc", "auroc",
-    "called_sites", "total_truth", "total_negative", "total_predicted",
-]
-
-BY_TOOL_COLS = [
-    "tool", "best_score", "mean_auroc", "std_auroc", "mean_prauc", "std_prauc",
-    "mean_f1", "std_f1", "n_comparisons",
-]
-
-BEST_SCORES_COLS = [
-    "tool", "best_score", "n_comparisons_best",
-]
-
-
-def load_best_metrics(files, mode):
-    records = []
-    for path in files:
-        tool, comparison = tool_comparison_from_path(path, mode)
-        if tool is None or comparison is None:
-            continue
-        try:
-            df = pd.read_csv(path, sep="\t")
-        except Exception:
-            continue
-        if df.empty:
-            continue
-        row = df.iloc[0]
-        record = {
-            "tool": tool,
-            "comparison": comparison,
-            "score_column": row.get("score_column", np.nan),
-            "is_pvalue": row.get("is_pvalue", False),
-            "transform": row.get("transform", "none"),
-            "auroc": pd.to_numeric(row.get("auroc", np.nan), errors="coerce"),
-            "prauc": pd.to_numeric(row.get("prauc", np.nan), errors="coerce"),
-            "best_threshold": pd.to_numeric(row.get("best_threshold", np.nan), errors="coerce"),
-            "best_threshold_original": pd.to_numeric(row.get("best_threshold_original", np.nan), errors="coerce"),
-            "f1": pd.to_numeric(row.get("f1", np.nan), errors="coerce"),
-            "precision": pd.to_numeric(row.get("precision", np.nan), errors="coerce"),
-            "recall": pd.to_numeric(row.get("recall", np.nan), errors="coerce"),
-        }
-        records.append(record)
-    return pd.DataFrame(records)
-
-
+# Load truth set
 truth = pd.read_csv(truth_set_path, sep="\t")
 if "label" in truth.columns:
     truth_pos = truth[truth["label"] != "-"]
@@ -120,9 +206,16 @@ else:
     truth_pos = truth
 total_truth = len(truth_pos)
 
-native_df = load_best_metrics(native_files, "native")
-fair_df = load_best_metrics(fair_files, "fair")
+# Load full score evaluation (all score columns per comparison)
+# Fall back to best_metrics if score_comparison files fail
+native_df = load_all_metrics(native_all_files, "native")
+if native_df.empty:
+    native_df = load_all_metrics(native_best_files, "native")
+fair_df = load_all_metrics(fair_all_files, "fair")
+if fair_df.empty:
+    fair_df = load_all_metrics(fair_best_files, "fair")
 
+# Use native as primary, fair as secondary
 if not native_df.empty:
     primary_df = native_df.copy()
 elif not fair_df.empty:
@@ -130,170 +223,127 @@ elif not fair_df.empty:
 else:
     primary_df = pd.DataFrame()
 
-os.makedirs(os.path.dirname(out_summary), exist_ok=True)
+# Load coverage data (independent of metrics)
+called_sites_comp_df = load_called_sites(called_sites_files)
+called_sites_comp_df.to_csv(out_called_sites_comp, sep="\t", index=False)
 
-if primary_df.empty:
-    pd.DataFrame(columns=ACCURACY_SUMMARY_COLS).to_csv(out_summary, sep="\t", index=False)
-    pd.DataFrame(columns=ACCURACY_OVERALL_COLS).to_csv(out_overall, sep="\t", index=False)
-    pd.DataFrame(columns=ACCURACY_BY_COMPARISON_COLS).to_csv(out_by_comparison, sep="\t", index=False)
-    pd.DataFrame(columns=BY_NEGATIVE_TYPE_COLS).to_csv(out_by_negative_type, sep="\t", index=False)
-    pd.DataFrame(columns=BY_TOOL_COLS).to_csv(out_by_tool, sep="\t", index=False)
-    pd.DataFrame(columns=BEST_SCORES_COLS).to_csv(out_best_scores, sep="\t", index=False)
-    pd.DataFrame(columns=["tool", "comparison", "n_covered"]).to_csv(out_called_sites_comp, sep="\t", index=False)
-    pd.DataFrame(columns=["tool", "total_covered", "n_comparisons"]).to_csv(out_called_sites_sum, sep="\t", index=False)
-else:
-    summary_records = []
-    for _, row in primary_df.iterrows():
-        rec = {
-            "tool": row["tool"],
-            "modification_type": "all",
-            "window": 0,
-            "precision": row["precision"],
-            "recall": row["recall"],
-            "f1": row["f1"],
-            "tp": 0,
-            "fp": 0,
-            "fn": 0,
-            "tn": 0,
-            "specificity": np.nan,
-            "mcc": np.nan,
-            "auprc": row["prauc"],
-            "auroc": row["auroc"],
-            "called_sites": np.nan,
-            "total_truth": total_truth,
-            "total_predicted": np.nan,
-            "total_negative": np.nan,
-        }
-        summary_records.append(rec)
-
-    summary_df = pd.DataFrame(summary_records, columns=ACCURACY_SUMMARY_COLS)
-    summary_df.to_csv(out_summary, sep="\t", index=False)
-
-    overall_records = []
-    for tool, grp in primary_df.groupby("tool"):
-        rec = {
-            "tool": tool,
-            "window": 0,
-            "precision": grp["precision"].mean(),
-            "recall": grp["recall"].mean(),
-            "f1": grp["f1"].mean(),
-            "tp": 0,
-            "fp": 0,
-            "fn": 0,
-            "tn": 0,
-            "specificity": np.nan,
-            "mcc": np.nan,
-            "auprc": grp["prauc"].mean(),
-            "auroc": grp["auroc"].mean(),
-            "called_sites": np.nan,
-            "total_truth": total_truth,
-            "total_predicted": np.nan,
-            "total_negative": np.nan,
-        }
-        overall_records.append(rec)
-
-    overall_df = pd.DataFrame(overall_records, columns=ACCURACY_OVERALL_COLS)
-    overall_df.to_csv(out_overall, sep="\t", index=False)
-
-    by_comparison_records = []
-    for _, row in primary_df.iterrows():
-        rec = {
-            "tool": row["tool"],
-            "modification_type": "all",
-            "comparison": row["comparison"],
-            "window": 0,
-            "precision": row["precision"],
-            "recall": row["recall"],
-            "f1": row["f1"],
-            "tp": 0,
-            "fp": 0,
-            "fn": 0,
-            "tn": 0,
-            "specificity": np.nan,
-            "mcc": np.nan,
-            "auprc": row["prauc"],
-            "auroc": row["auroc"],
-            "called_sites": np.nan,
-            "total_truth": total_truth,
-            "total_negative": np.nan,
-        }
-        by_comparison_records.append(rec)
-
-    by_comparison_df = pd.DataFrame(by_comparison_records, columns=ACCURACY_BY_COMPARISON_COLS)
-    by_comparison_df.to_csv(out_by_comparison, sep="\t", index=False)
-
-    pd.DataFrame(columns=BY_NEGATIVE_TYPE_COLS).to_csv(out_by_negative_type, sep="\t", index=False)
-
-    by_tool_records = []
-    for tool, grp in primary_df.groupby("tool"):
-        score_col = grp["score_column"].mode()
-        best_score = score_col.iloc[0] if len(score_col) > 0 else np.nan
-        rec = {
-            "tool": tool,
-            "best_score": best_score,
-            "mean_auroc": grp["auroc"].mean(),
-            "std_auroc": grp["auroc"].std(),
-            "mean_prauc": grp["prauc"].mean(),
-            "std_prauc": grp["prauc"].std(),
-            "mean_f1": grp["f1"].mean(),
-            "std_f1": grp["f1"].std(),
-            "n_comparisons": len(grp),
-        }
-        by_tool_records.append(rec)
-
-    by_tool_df = pd.DataFrame(by_tool_records, columns=BY_TOOL_COLS)
-    by_tool_df.to_csv(out_by_tool, sep="\t", index=False)
-
-    best_scores_records = []
-    for tool, grp in primary_df.groupby("tool"):
-        score_counts = grp["score_column"].value_counts()
-        if len(score_counts) > 0:
-            best_score = score_counts.index[0]
-            n_best = score_counts.iloc[0]
-        else:
-            best_score = np.nan
-            n_best = 0
-        best_scores_records.append({
-            "tool": tool,
-            "best_score": best_score,
-            "n_comparisons_best": n_best,
-        })
-
-    best_scores_df = pd.DataFrame(best_scores_records, columns=BEST_SCORES_COLS)
-    best_scores_df.to_csv(out_best_scores, sep="\t", index=False)
-
-called_sites_by_comp_records = []
-for path in called_sites_files:
-    comparison = comparison_from_called_sites_path(path)
-    if comparison is None:
-        continue
-    try:
-        df = pd.read_csv(path, sep="\t")
-    except Exception:
-        continue
-    if df.empty:
-        continue
-    for _, row in df.iterrows():
-        called_sites_by_comp_records.append({
-            "tool": row["tool"],
-            "comparison": comparison,
-            "n_covered": row["n_covered"],
-        })
-
-called_sites_by_comp_df = pd.DataFrame(
-    called_sites_by_comp_records,
-    columns=["tool", "comparison", "n_covered"],
-)
-called_sites_by_comp_df.to_csv(out_called_sites_comp, sep="\t", index=False)
-
-if not called_sites_by_comp_df.empty:
+if not called_sites_comp_df.empty:
     called_sites_sum_df = (
-        called_sites_by_comp_df
+        called_sites_comp_df
         .groupby("tool")
         .agg(total_covered=("n_covered", "sum"), n_comparisons=("comparison", "count"))
         .reset_index()
     )
 else:
     called_sites_sum_df = pd.DataFrame(columns=["tool", "total_covered", "n_comparisons"])
-
 called_sites_sum_df.to_csv(out_called_sites_sum, sep="\t", index=False)
+
+# --- If no metrics data, write empty outputs and exit ---
+if primary_df.empty:
+    for path in [out_summary, out_overall, out_by_comparison,
+                 out_by_negative_type, out_by_tool, out_best_scores]:
+        pd.DataFrame().to_csv(path, sep="\t", index=False)
+else:
+    # Step 1: Select best score column per tool (by mean AUROC)
+    selected_df, rationale_df = select_best_score_per_tool(primary_df)
+
+    # --- Output: best_scores.tsv (selection rationale) ---
+    rationale_df.to_csv(out_best_scores, sep="\t", index=False)
+
+    # --- Output: accuracy_summary.tsv (all tool × comparison rows, best score only) ---
+    summary_cols = [
+        "tool", "comparison", "score_column", "is_pvalue", "transform",
+        "auroc", "prauc", "best_threshold", "best_threshold_original",
+        "f1", "precision", "recall",
+    ]
+    available_summary_cols = [c for c in summary_cols if c in selected_df.columns]
+    selected_df[available_summary_cols].to_csv(out_summary, sep="\t", index=False)
+
+    # --- Output: accuracy_summary_by_comparison.tsv ---
+    # Same as summary but includes mode column
+    by_comp_cols = available_summary_cols + (["mode"] if "mode" in selected_df.columns else [])
+    selected_df[by_comp_cols].to_csv(out_by_comparison, sep="\t", index=False)
+
+    # --- Output: accuracy_summary_overall.tsv (cross-comparison aggregate per tool) ---
+    overall_records = []
+    for tool, grp in selected_df.groupby("tool"):
+        score_col = grp["score_column"].iloc[0]
+        rec = {
+            "tool": tool,
+            "score_column": score_col,
+            "is_pvalue": grp["is_pvalue"].iloc[0],
+            "n_comparisons": len(grp),
+            "auroc_mean": grp["auroc"].mean(),
+            "auroc_std": grp["auroc"].std(),
+            "prauc_mean": grp["prauc"].mean(),
+            "prauc_std": grp["prauc"].std(),
+            "f1_mean": grp["f1"].mean(),
+            "f1_std": grp["f1"].std(),
+            "precision_mean": grp["precision"].mean(),
+            "precision_std": grp["precision"].std(),
+            "recall_mean": grp["recall"].mean(),
+            "recall_std": grp["recall"].std(),
+            "threshold_mean": grp["best_threshold"].mean(),
+            "threshold_std": grp["best_threshold"].std(),
+            "total_truth": total_truth,
+        }
+        overall_records.append(rec)
+
+    overall_df = pd.DataFrame(overall_records)
+    overall_df = overall_df.sort_values("auroc_mean", ascending=False).reset_index(drop=True)
+    overall_df.to_csv(out_overall, sep="\t", index=False)
+
+    # --- Output: by_tool.tsv (final per-tool summary with coverage) ---
+    # This is the KEY output for cross-tool comparison
+    by_tool_records = []
+    for tool, grp in selected_df.groupby("tool"):
+        rec = {
+            "tool": tool,
+            "best_score_column": grp["score_column"].iloc[0],
+            "is_pvalue": grp["is_pvalue"].iloc[0],
+            "transform": grp["transform"].iloc[0],
+            "n_comparisons": len(grp),
+            "auroc_mean": round(grp["auroc"].mean(), 4),
+            "auroc_std": round(grp["auroc"].std(), 4),
+            "prauc_mean": round(grp["prauc"].mean(), 4),
+            "f1_mean": round(grp["f1"].mean(), 4),
+            "precision_mean": round(grp["precision"].mean(), 4),
+            "recall_mean": round(grp["recall"].mean(), 4),
+            "threshold_mean": round(grp["best_threshold"].mean(), 4),
+            "threshold_original_mean": round(grp["best_threshold_original"].mean(), 6),
+        }
+
+        # Add per-comparison AUROC breakdown
+        for _, comp_row in grp.iterrows():
+            comp_key = f"auroc_{comp_row['comparison']}"
+            rec[comp_key] = round(comp_row["auroc"], 4)
+
+        # Merge coverage data
+        tool_coverage = called_sites_comp_df[called_sites_comp_df["tool"] == tool]
+        if not tool_coverage.empty:
+            rec["total_sites_covered"] = int(tool_coverage["n_covered"].sum())
+            rec["mean_sites_covered"] = round(tool_coverage["n_covered"].mean(), 1)
+            # Per-comparison coverage
+            for _, cov_row in tool_coverage.iterrows():
+                cov_key = f"covered_{cov_row['comparison']}"
+                rec[cov_key] = int(cov_row["n_covered"])
+        else:
+            rec["total_sites_covered"] = 0
+            rec["mean_sites_covered"] = 0.0
+
+        by_tool_records.append(rec)
+
+    by_tool_df = pd.DataFrame(by_tool_records)
+    by_tool_df = by_tool_df.sort_values("auroc_mean", ascending=False).reset_index(drop=True)
+    by_tool_df.to_csv(out_by_tool, sep="\t", index=False)
+
+    # --- Output: accuracy_summary_by_negative_type.tsv ---
+    # Only meaningful if truth set has modification type labels
+    if "label" in truth.columns:
+        label_counts = truth["label"].value_counts().reset_index()
+        label_counts.columns = ["label", "n_sites"]
+        label_counts.to_csv(out_by_negative_type, sep="\t", index=False)
+    else:
+        pd.DataFrame(columns=["label", "n_sites"]).to_csv(
+            out_by_negative_type, sep="\t", index=False
+        )

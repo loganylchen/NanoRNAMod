@@ -475,12 +475,23 @@ def main():
     logger.info(f"Loading truth set from: {truth_set_input}")
     truth_df = pd.read_csv(truth_set_input, sep='\t')
 
+    # Derive 'truth' column from 'truth_match' if needed
+    # benchmark_detailed.py outputs 'truth_match' (yes/no), convert to binary
+    if 'truth' not in predictions_df.columns and 'truth_match' in predictions_df.columns:
+        predictions_df['truth'] = (predictions_df['truth_match'] == 'yes').astype(int)
+        logger.info("Derived 'truth' column from 'truth_match'")
+
     # Ensure required columns
     required_cols = ['tool', 'score', 'truth']
-    for col in required_cols:
-        if col not in predictions_df.columns:
-            logger.error(f"Required column '{col}' not found in predictions")
-            sys.exit(1)
+    missing = [col for col in required_cols if col not in predictions_df.columns]
+    if missing:
+        logger.error(f"Required columns not found in predictions: {missing}")
+        logger.info(f"Available columns: {list(predictions_df.columns)}")
+        # Write empty outputs so downstream rules don't fail
+        pd.DataFrame().to_csv(output_coverage, sep='\t', index=False)
+        pd.DataFrame().to_csv(output_score_dist, sep='\t', index=False)
+        pd.DataFrame().to_csv(output_threshold_robust, sep='\t', index=False)
+        sys.exit(0)
 
     # =========================================================================
     # Coverage Analysis

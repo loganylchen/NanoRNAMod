@@ -3,7 +3,7 @@ rule epinano_prep:
         sample_bam="{project}/results/alignments/{sample}_filtered.bam",
         sample_bai="{project}/results/alignments/{sample}_filtered.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
-        reference_dict=config["reference"]["transcriptome_fasta"] + ".dict",
+        reference_fai=config["reference"]["transcriptome_fasta"] + ".fai",
     output:
         per_site=temp(
             "{project}/results/alignments/{sample}_filtered.fwd.per.site.csv"

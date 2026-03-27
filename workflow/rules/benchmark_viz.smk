@@ -10,7 +10,7 @@ rule benchmark_visualization:
         # Depend on the touch file from accuracy_benchmark
         # This ensures the accuracy_benchmark rule has completed
         done="{project}/results/benchmarks/.benchmark_complete",
-        summary="{project}/results/benchmarks/aggregated/accuracy_summary.tsv",
+        accuracy="{project}/results/benchmarks/aggregated/accuracy_summary.tsv",
         resource="{project}/results/benchmarks/resource_summary.tsv",
     output:
         html="{project}/results/benchmarks/viz/benchmark_report.html",
@@ -258,8 +258,11 @@ rule benchmark_r_figures:
             "accuracy_summary_by_negative_type.tsv",
         ]),
         optimal_scores="{project}/results/benchmarks/aggregated/best_scores.tsv",
+        by_tool="{project}/results/benchmarks/aggregated/by_tool.tsv",
+        score_optimization="{project}/results/benchmarks/optimal_score_per_tool.tsv",
         thresholds="{project}/results/benchmarks/threshold_evaluation.tsv",
         resources="{project}/results/benchmarks/resource_summary.tsv",
+        resource_by_tool="{project}/results/benchmarks/resource_by_tool.tsv",
         # Statistical analysis results
         bootstrap_ci="{project}/results/benchmarks/statistics/bootstrap_ci.tsv",
         significance="{project}/results/benchmarks/statistics/significance_tests.tsv",

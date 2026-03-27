@@ -3,6 +3,11 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score
 
+# Import shared utilities
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from benchmark_utils import tool_from_path, normalize_columns, is_pvalue_column, match_column
+
 
 TOOL_SCORE_MAP = {
     'xpore': ['pval_CASE_vs_CONTROL', 'z_score_CASE_vs_CONTROL', 'diff_mod_rate_CASE_vs_CONTROL',
@@ -30,77 +35,6 @@ OUTPUT_COLUMNS = [
     'score_column', 'is_pvalue', 'transform', 'auroc', 'prauc',
     'best_threshold', 'best_threshold_original', 'f1', 'precision', 'recall',
 ]
-
-
-def tool_from_path(path):
-    parts = path.split(os.sep)
-    for i, part in enumerate(parts):
-        if part == "modifications" and i + 1 < len(parts):
-            return parts[i + 1]
-    return os.path.basename(os.path.dirname(os.path.dirname(path)))
-
-
-def normalize_columns(df):
-    col_mapping = {}
-
-    transcript_cols = ['transcript', 'id', 'ref_id', 'chrom', 'transcript_id']
-    for col in transcript_cols:
-        if col in df.columns:
-            col_mapping[col] = 'transcript'
-            break
-
-    position_cols = ['position', 'pos', 'start', 'start_loc', 'transcript_pos', 'transcript_loc']
-    for col in position_cols:
-        if col in df.columns and col not in col_mapping.values():
-            col_mapping[col] = 'position'
-            break
-
-    if col_mapping:
-        df = df.rename(columns=col_mapping)
-
-    return df
-
-
-def is_pvalue_column(col_name):
-    if not col_name:
-        return False
-
-    col_lower = col_name.lower().replace(' ', '_')
-
-    if '-log10' in col_lower:
-        return False
-
-    if any(x in col_lower for x in ['p_value', 'pvalue', 'pval', 'padj', 'fdr', 'q_value', 'qval']):
-        return True
-
-    if any(x in col_lower for x in ['probability', 'prob', 'stoichiometry', 'logit',
-                                      'z_score', 'score', 'delta', 'diff_mod', 'mod_ratio']):
-        return False
-
-    return False
-
-
-def match_column(df_columns, pattern):
-    pattern_lower = pattern.lower().replace(' ', '_')
-
-    if pattern in df_columns:
-        return pattern
-
-    for col in df_columns:
-        if col.lower().replace(' ', '_') == pattern_lower:
-            return col
-
-    for col in df_columns:
-        col_lower = col.lower().replace(' ', '_')
-        if pattern_lower in col_lower:
-            return col
-
-    for col in df_columns:
-        col_lower = col.lower().replace(' ', '_')
-        if col_lower in pattern_lower:
-            return col
-
-    return None
 
 
 def get_candidate_columns(df, tool_name):
@@ -299,6 +233,7 @@ all_results = []
 
 for col_name, is_pval in candidate_cols:
     raw_scores = []
+    has_prediction = []
     for tx, pos in eval_sites:
         key = (tx, int(pos))
         if key in tool_index:
@@ -309,17 +244,28 @@ for col_name, is_pval in candidate_cols:
             except (ValueError, TypeError):
                 val = np.nan
             raw_scores.append(val)
+            has_prediction.append(True)
         else:
-            raw_scores.append(0.0 if fair_mode else np.nan)
+            raw_scores.append(np.nan)
+            has_prediction.append(False)
 
     scores_arr = np.array(raw_scores, dtype=float)
+    has_pred_arr = np.array(has_prediction)
     valid_mask = ~np.isnan(scores_arr)
 
     if not fair_mode:
         scores_arr = scores_arr[valid_mask]
         labels_eval = labels[valid_mask]
     else:
-        scores_arr = np.where(np.isnan(scores_arr), 0.0, scores_arr)
+        # Fair mode: uncalled sites get the minimum possible score so they
+        # are always classified as negative regardless of threshold.
+        # This correctly counts them as TN (truth=0) or FN (truth=1).
+        valid_scores = scores_arr[valid_mask]
+        if len(valid_scores) > 0:
+            min_score = np.min(valid_scores) - 1.0
+        else:
+            min_score = -1.0
+        scores_arr = np.where(np.isnan(scores_arr), min_score, scores_arr)
         labels_eval = labels
 
     if len(scores_arr) == 0:

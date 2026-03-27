@@ -60,10 +60,17 @@ else:
 PER_COMPARISON_TOOLS = ["xpore", "nanocompore", "baleen", "differr", "drummer",
                         "eligos2", "epinano", "psipore", "pybaleen"]
 
+PER_SAMPLE_TOOLS = ["tandemmod", "directrm", "m6atm", "rnano", "nanopsu", "nanomud", "penguin"]
+
 
 def get_active_comparison_tools():
     return [t for t in config["tools"]
             if config["tools"][t]["activate"] and t in PER_COMPARISON_TOOLS]
+
+
+def get_active_per_sample_tools():
+    return [t for t in config["tools"]
+            if config["tools"][t]["activate"] and t in PER_SAMPLE_TOOLS]
 
 
 def get_raw_fastq(wildcards):
@@ -90,7 +97,7 @@ def get_nanocompore_list(sample_list):
 
 def get_final_output():
     tools = [tool for tool in config["tools"] if config["tools"][tool]["activate"]]
-    final_output = [f"{RESULT_ROOT}/workflow_version.json"]  # Always record version first
+    final_output = [f"{RESULT_ROOT}/workflow_version.json"]
     final_output += [f"{RESULT_ROOT}/depth_table.tsv"]
     final_output += expand(
         "{RESULT_ROOT}/quantification/{sample}.tx_counts.tsv",
@@ -134,278 +141,107 @@ def get_final_output():
             RESULT_ROOT=RESULT_ROOT,
         )
 
-    # For some small dataset (on limited transcripts), sampling may be a good choice, while for other big datasets, it may not be necessary
+    has_gtf = os.path.exists(config["reference"]["transcriptome_gtf"])
 
-    if "baleen" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/baleen/{comp}/baleen_results.tsv",
-            comp=comparisons,
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
+    # Comparison-based tool outputs
+    for tool in tools:
+        if tool in PER_COMPARISON_TOOLS:
             final_output += expand(
-                "{RESULT_ROOT}/modifications/baleen/{comp}/baleen_annotated_results.tsv",
-                comp=comparisons,
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "nanocompore" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/nanocompore/{comp}/nanocompore_results.tsv",
-            comp=comparisons,
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/nanocompore/{comp}/nanocompore_annotated_results.tsv",
-                comp=comparisons,
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "xpore" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/xpore/{comp}/xpore_results.tsv",
-            comp=comparisons,
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/xpore/{comp}/xpore_annotated_results.tsv",
-                RESULT_ROOT=RESULT_ROOT,
+                f"{RESULT_ROOT}/modifications/{tool}/{{comp}}/{tool}_results.tsv",
                 comp=comparisons,
             )
-    if "differr" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/differr/{comp}/differr_results.tsv",
-            comp=comparisons,
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
+            if has_gtf:
+                final_output += expand(
+                    f"{RESULT_ROOT}/modifications/{tool}/{{comp}}/{tool}_annotated_results.tsv",
+                    comp=comparisons,
+                )
+        elif tool in PER_SAMPLE_TOOLS:
             final_output += expand(
-                "{RESULT_ROOT}/modifications/differr/{comp}/differr_annotated_results.tsv",
-                comp=comparisons,
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "drummer" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/drummer/{comp}/drummer_results.tsv",
-            comp=comparisons,
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/drummer/{comp}/drummer_annotated_results.tsv",
-                comp=comparisons,
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "eligos2" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/eligos2/{comp}/eligos2_results.tsv",
-            comp=comparisons,
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/eligos2/{comp}/eligos2_annotated_results.tsv",
-                comp=comparisons,
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "epinano" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/epinano/{comp}/epinano_results.tsv",
-            comp=comparisons,
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/epinano/{comp}/epinano_annotated_results.tsv",
-                comp=comparisons,
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "tandemmod" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/tandemmod/{sample}/tandemmod_results.tsv",
-            sample=list(samples.index),
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/tandemmod/{sample}/tandemmod_annotated_results.tsv",
+                f"{RESULT_ROOT}/modifications/{tool}/{{sample}}/{tool}_results.tsv",
                 sample=list(samples.index),
-                RESULT_ROOT=RESULT_ROOT,
             )
-    if "directrm" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/directrm/{sample}/directrm_results.tsv",
-            sample=list(samples.index),
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/directrm/{sample}/directrm_annotated_results.tsv",
-                sample=list(samples.index),
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "m6atm" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/m6atm/{sample}/m6atm_results.tsv",
-            sample=list(samples.index),
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/m6atm/{sample}/m6atm_annotated_results.tsv",
-                sample=list(samples.index),
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "rnano" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/rnano/{sample}/rnano_results.tsv",
-            sample=list(samples.index),
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/rnano/{sample}/rnano_annotated_results.tsv",
-                sample=list(samples.index),
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "psipore" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/psipore/{comp}/psipore_results.tsv",
-            comp=comparisons,
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/psipore/{comp}/psipore_annotated_results.tsv",
-                comp=comparisons,
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "nanopsu" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/nanopsu/{sample}/nanopsu_results.tsv",
-            sample=list(samples.index),
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/nanopsu/{sample}/nanopsu_annotated_results.tsv",
-                sample=list(samples.index),
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "nanomud" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/nanomud/{sample}/nanomud_results.tsv",
-            sample=list(samples.index),
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/nanomud/{sample}/nanomud_annotated_results.tsv",
-                sample=list(samples.index),
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "penguin" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/penguin/{sample}/penguin_results.tsv",
-            sample=list(samples.index),
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/penguin/{sample}/penguin_annotated_results.tsv",
-                sample=list(samples.index),
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    if "pybaleen" in tools:
-        final_output += expand(
-            "{RESULT_ROOT}/modifications/pybaleen/{comp}/pybaleen_results.tsv",
-            comp=comparisons,
-            RESULT_ROOT=RESULT_ROOT,
-        )
-        if os.path.exists(config["reference"]["transcriptome_gtf"]):
-            final_output += expand(
-                "{RESULT_ROOT}/modifications/pybaleen/{comp}/pybaleen_annotated_results.tsv",
-                comp=comparisons,
-                RESULT_ROOT=RESULT_ROOT,
-            )
-    # Benchmarking outputs - resource metrics (shared across all tools)
+            if has_gtf:
+                final_output += expand(
+                    f"{RESULT_ROOT}/modifications/{tool}/{{sample}}/{tool}_annotated_results.tsv",
+                    sample=list(samples.index),
+                )
+
+    # Benchmarking outputs - resource metrics
     final_output += [f"{RESULT_ROOT}/benchmarks/resource_summary.tsv"]
     final_output += [f"{RESULT_ROOT}/benchmarks/resource_by_tool.tsv"]
     final_output += [f"{RESULT_ROOT}/benchmarks/resource_by_tool.pdf"]
-    # Aggregated accuracy benchmarking outputs (produced by accuracy_benchmark.py)
-    if config.get("benchmark", {}).get("truth_set", ""):
-        active_tools = get_active_comparison_tools()
 
-        # Per-tool coverage
+    # Accuracy benchmarking outputs (requires truth_set)
+    if config.get("benchmark", {}).get("truth_set", ""):
+        active_comp_tools = get_active_comparison_tools()
+
+        # Per-tool coverage, native and fair evaluation (comparison tools)
         final_output += expand(
             f"{RESULT_ROOT}/benchmarks/coverage/{{comp}}/{{tool}}_covered.tsv",
-            comp=comparisons, tool=active_tools,
+            comp=comparisons, tool=active_comp_tools,
         )
         final_output += expand(
             f"{RESULT_ROOT}/benchmarks/coverage/{{comp}}/union.tsv",
             comp=comparisons,
         )
-
-        # Per-tool native and fair evaluation
         final_output += expand(
             f"{RESULT_ROOT}/benchmarks/native/{{tool}}/{{comp}}/best_metrics.tsv",
-            tool=active_tools, comp=comparisons,
+            tool=active_comp_tools, comp=comparisons,
         )
         final_output += expand(
             f"{RESULT_ROOT}/benchmarks/fair/{{tool}}/{{comp}}/best_metrics.tsv",
-            tool=active_tools, comp=comparisons,
+            tool=active_comp_tools, comp=comparisons,
         )
 
-        # Aggregated summaries (moved to aggregated/ subdir)
-        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/accuracy_summary.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/accuracy_summary_overall.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/accuracy_summary_by_comparison.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/by_tool.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/best_scores.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/called_sites_by_comparison.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/called_sites_summary.tsv"]
-        # Visualization and detailed reports (shared across all tools)
+        # Aggregated summaries
+        for agg_file in [
+            "accuracy_summary.tsv", "accuracy_summary_overall.tsv",
+            "accuracy_summary_by_comparison.tsv", "by_tool.tsv",
+            "best_scores.tsv", "called_sites_by_comparison.tsv",
+            "called_sites_summary.tsv",
+        ]:
+            final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/{agg_file}"]
+
+        # Visualization and reports
         final_output += [f"{RESULT_ROOT}/benchmarks/viz/benchmark_report.html"]
         final_output += [f"{RESULT_ROOT}/benchmarks/benchmark_report.pdf"]
         final_output += [f"{RESULT_ROOT}/benchmarks/optimal_thresholds.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/detailed_predictions.tsv"]
-        # Multi-threshold evaluation outputs
+
+        # Multi-threshold evaluation
         final_output += [f"{RESULT_ROOT}/benchmarks/threshold_evaluation.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/optimal_thresholds_detailed.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/score_distributions.tsv"]
-        # Negative control strategies (k-mer and same-base negatives)
+
+        # Negative control strategies
         final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_kmer_negatives.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/kmer_negative_sites.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_same_base_negatives.tsv"]
         final_output += [f"{RESULT_ROOT}/benchmarks/same_base_negative_sites.tsv"]
-        # Statistical analysis (bootstrap CIs, significance tests, effect sizes)
-        final_output += [f"{RESULT_ROOT}/benchmarks/statistics/bootstrap_ci.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/statistics/significance_tests.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/statistics/fdr_corrected.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/statistics/effect_sizes.tsv"]
-        # Sensitivity analysis (coverage, score distribution, threshold robustness)
-        final_output += [f"{RESULT_ROOT}/benchmarks/sensitivity/coverage_analysis.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/sensitivity/score_distribution.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/sensitivity/threshold_robustness.tsv"]
-        # Publication figures (ggplot2, Nature/Cell/Science themes)
-        final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig1_overall_accuracy.pdf"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig2_pr_curves.pdf"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig3_roc_curves.pdf"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig4_f1_comparison.pdf"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig5_coverage_sensitivity.pdf"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig6_resource_usage.pdf"]
-        # Supplementary figures
-        final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/sfig1_per_comparison.pdf"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/sfig2_score_distributions.pdf"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/sfig3_threshold_robustness.pdf"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/sfig4_effect_sizes.pdf"]
-        # Figure source data (for manuscript submission)
-        final_output += [f"{RESULT_ROOT}/benchmarks/data/fig1_source_data.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/data/fig2_source_data.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/data/fig3_source_data.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/data/fig4_source_data.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/data/fig5_source_data.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/data/fig6_source_data.tsv"]
+
+        # Statistical analysis
+        for stat_file in ["bootstrap_ci.tsv", "significance_tests.tsv",
+                          "fdr_corrected.tsv", "effect_sizes.tsv"]:
+            final_output += [f"{RESULT_ROOT}/benchmarks/statistics/{stat_file}"]
+
+        # Sensitivity analysis
+        for sens_file in ["coverage_analysis.tsv", "score_distribution.tsv",
+                          "threshold_robustness.tsv"]:
+            final_output += [f"{RESULT_ROOT}/benchmarks/sensitivity/{sens_file}"]
+
+        # Publication figures
+        for i in range(1, 7):
+            final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig{i}_{{name}}.pdf".format(
+                name=["overall_accuracy", "pr_curves", "roc_curves",
+                      "f1_comparison", "coverage_sensitivity", "resource_usage"][i-1]
+            )]
+            final_output += [f"{RESULT_ROOT}/benchmarks/data/fig{i}_source_data.tsv"]
+        for i in range(1, 5):
+            final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/sfig{i}_{{name}}.pdf".format(
+                name=["per_comparison", "score_distributions",
+                      "threshold_robustness", "effect_sizes"][i-1]
+            )]
+
     return final_output
 
 

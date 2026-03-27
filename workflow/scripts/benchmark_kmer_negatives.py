@@ -49,38 +49,13 @@ else:
         windows = [int(window_param)]
 
 
+# Import shared utilities
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from benchmark_utils import tool_from_path, normalize_columns
+
+
 # ── Helper Functions ─────────────────────────────────────────────────────────
-
-def tool_from_path(path):
-    """Extract tool name from path."""
-    parts = path.split(os.sep)
-    for i, part in enumerate(parts):
-        if part == "modifications" and i + 1 < len(parts):
-            return parts[i + 1]
-    return os.path.basename(os.path.dirname(os.path.dirname(path)))
-
-
-def normalize_columns(df):
-    """Map various column names to standard names."""
-    col_mapping = {}
-
-    transcript_cols = ['transcript', 'id', 'ref_id', 'chrom', 'contig', 'chr']
-    for col in transcript_cols:
-        if col in df.columns:
-            col_mapping[col] = 'transcript'
-            break
-
-    position_cols = ['position', 'pos', 'start', 'start_loc', 'transcript_pos', 'transcript_loc', 'genomic_pos']
-    for col in position_cols:
-        if col in df.columns and col not in col_mapping.values():
-            col_mapping[col] = 'position'
-            break
-
-    if col_mapping:
-        df = df.rename(columns=col_mapping)
-
-    return df
-
 
 def detect_kmer_column(df, tool_name=None):
     """Detect the k-mer column in the dataframe."""

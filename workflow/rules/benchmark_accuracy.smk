@@ -121,16 +121,67 @@ if config.get("benchmark", {}).get("truth_set", ""):
             "../scripts/benchmark_per_tool.py"
 
 
+    rule benchmark_per_sample_native:
+        """Benchmark per-sample tools (tandemmod, directrm, etc.) against truth set."""
+        input:
+            results="{project}/results/modifications/{tool}/{sample}/{tool}_results.tsv",
+            truth_set=config["benchmark"]["truth_set"],
+        output:
+            scores="{project}/results/benchmarks/native/{tool}/{sample}/score_comparison.tsv",
+            best_metrics="{project}/results/benchmarks/native/{tool}/{sample}/best_metrics.tsv",
+            best_score="{project}/results/benchmarks/native/{tool}/{sample}/best_score.txt",
+        params:
+            window=config["benchmark"]["window"],
+        resources:
+            mem_mb=1024 * 8,
+        threads: 1
+        priority: 32
+        log:
+            "logs/{project}/benchmark_per_sample_native/{tool}/{sample}.log",
+        benchmark:
+            "benchmarks/{project}/benchmark_per_sample_native/{tool}/{sample}.benchmark.txt"
+        container:
+            get_container("python3")
+        script:
+            "../scripts/benchmark_per_tool.py"
+
+
     rule benchmark_aggregate:
         input:
-            native_metrics=lambda wc: expand(
-                f"{{project}}/results/benchmarks/native/{{tool}}/{{comparison}}/best_metrics.tsv",
+            native_metrics=lambda wc: (
+                expand(
+                    f"{{project}}/results/benchmarks/native/{{tool}}/{{comparison}}/best_metrics.tsv",
+                    project=wc.project,
+                    tool=get_active_comparison_tools(),
+                    comparison=comparisons,
+                ) + expand(
+                    f"{{project}}/results/benchmarks/native/{{tool}}/{{sample}}/best_metrics.tsv",
+                    project=wc.project,
+                    tool=get_active_per_sample_tools(),
+                    sample=list(samples.index),
+                )
+            ),
+            native_all_scores=lambda wc: (
+                expand(
+                    f"{{project}}/results/benchmarks/native/{{tool}}/{{comparison}}/score_comparison.tsv",
+                    project=wc.project,
+                    tool=get_active_comparison_tools(),
+                    comparison=comparisons,
+                ) + expand(
+                    f"{{project}}/results/benchmarks/native/{{tool}}/{{sample}}/score_comparison.tsv",
+                    project=wc.project,
+                    tool=get_active_per_sample_tools(),
+                    sample=list(samples.index),
+                )
+            ),
+            fair_metrics=lambda wc: expand(
+                f"{{project}}/results/benchmarks/fair/{{tool}}/{{comparison}}/best_metrics.tsv",
                 project=wc.project,
                 tool=get_active_comparison_tools(),
                 comparison=comparisons,
             ),
-            fair_metrics=lambda wc: expand(
-                f"{{project}}/results/benchmarks/fair/{{tool}}/{{comparison}}/best_metrics.tsv",
+            fair_all_scores=lambda wc: expand(
+                f"{{project}}/results/benchmarks/fair/{{tool}}/{{comparison}}/score_comparison.tsv",
                 project=wc.project,
                 tool=get_active_comparison_tools(),
                 comparison=comparisons,
