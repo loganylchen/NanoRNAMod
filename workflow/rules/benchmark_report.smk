@@ -1,20 +1,10 @@
 rule aggregate_benchmarks:
     input:
-        # Depend only on benchmark files from activated tools.
-        # The script globs benchmark_dir at runtime so it picks up all step files;
-        # these inputs just ensure the tool jobs have completed before aggregating.
-        native_benchmarks=lambda wc: expand(
-            "benchmarks/{project}/{comp}.{tool}.benchmark.txt",
-            project=wc.project,
-            comp=comparisons,
-            tool=get_active_comparison_tools(),
-        ),
-        sample_benchmarks=lambda wc: expand(
-            "benchmarks/{project}/{sample}.{tool}.benchmark.txt",
-            project=wc.project,
-            sample=list(samples.index),
-            tool=get_active_per_sample_tools(),
-        ),
+        # Depend on tool result TSVs (not benchmark files directly — those are
+        # side-effects written by Snakemake and may not exist until jobs finish).
+        # By the time all result TSVs exist, all benchmark files are guaranteed
+        # to exist as well, so the script's glob over benchmark_dir is safe.
+        tool_results=lambda wc: get_all_result_tsvs(wc),
     output:
         "{project}/results/benchmarks/resource_summary.tsv",
     params:
