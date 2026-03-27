@@ -35,7 +35,7 @@ def load_accuracy_summary(path):
 
 def load_resource_summary(path):
     """Load resource_summary.tsv."""
-    return pd.read_csv(path, sep='\t')
+    return pd.read_csv(path, sep='\t', low_memory=False)
 
 
 def plot_pr_curve(df, output_path, window=0):
@@ -205,52 +205,54 @@ def plot_f1_by_window(df, output_path):
 
 def plot_resource_comparison(df, output_path):
     """Generate resource usage comparison plots."""
-    if df.empty:
+    if df.empty or 'tool' not in df.columns:
         return None
 
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    # Build agg spec dynamically — only include columns that exist
+    agg_spec = {}
+    for col in ['s', 'cpu_time', 'max_rss']:
+        if col in df.columns:
+            agg_spec[col] = 'mean'
+    for col in ['io_in', 'io_out']:
+        if col in df.columns:
+            agg_spec[col] = 'sum'
 
-    # Aggregate by tool
-    agg = df.groupby('tool').agg({
-        's': 'mean',
-        'max_rss': 'mean',
-        'cpu_time': 'mean',
-        'io_in': 'sum',
-        'io_out': 'sum'
-    }).reset_index()
+    if not agg_spec:
+        return None
 
-    # Wall-clock time
-    ax = axes[0, 0]
-    agg = agg.sort_values('s', ascending=False)
-    ax.barh(agg['tool'], agg['s'])
-    ax.set_xlabel('Time (seconds)')
-    ax.set_title('Wall-Clock Time by Tool')
-    ax.grid(axis='x', alpha=0.3)
+    agg = df.groupby('tool').agg(agg_spec).reset_index()
 
-    # Memory usage
-    ax = axes[0, 1]
-    agg = agg.sort_values('max_rss', ascending=False)
-    ax.barh(agg['tool'], agg['max_rss'])
-    ax.set_xlabel('Memory (MB)')
-    ax.set_title('Peak Memory Usage by Tool')
-    ax.grid(axis='x', alpha=0.3)
+    # Determine which subplots to draw
+    panels = []
+    if 's' in agg.columns:
+        panels.append(('s', 'Wall-Clock Time by Tool', 'Time (seconds)'))
+    if 'max_rss' in agg.columns:
+        panels.append(('max_rss', 'Peak Memory Usage by Tool', 'Memory (MB)'))
+    if 'cpu_time' in agg.columns:
+        panels.append(('cpu_time', 'Total CPU Time by Tool', 'CPU Time (seconds)'))
+    if 'io_in' in agg.columns and 'io_out' in agg.columns:
+        agg['total_io'] = agg['io_in'] + agg['io_out']
+        panels.append(('total_io', 'Total I/O by Tool', 'I/O (MB)'))
 
-    # CPU time
-    ax = axes[1, 0]
-    agg = agg.sort_values('cpu_time', ascending=False)
-    ax.barh(agg['tool'], agg['cpu_time'])
-    ax.set_xlabel('CPU Time (seconds)')
-    ax.set_title('Total CPU Time by Tool')
-    ax.grid(axis='x', alpha=0.3)
+    if not panels:
+        return None
 
-    # I/O
-    ax = axes[1, 1]
-    agg['total_io'] = agg['io_in'] + agg['io_out']
-    agg = agg.sort_values('total_io', ascending=False)
-    ax.barh(agg['tool'], agg['total_io'])
-    ax.set_xlabel('I/O (MB)')
-    ax.set_title('Total I/O by Tool')
-    ax.grid(axis='x', alpha=0.3)
+    ncols = 2
+    nrows = (len(panels) + 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols, figsize=(14, 5 * nrows))
+    axes_flat = np.array(axes).flatten()
+
+    for i, (col, title, xlabel) in enumerate(panels):
+        ax = axes_flat[i]
+        sorted_agg = agg.sort_values(col, ascending=False)
+        ax.barh(sorted_agg['tool'], sorted_agg[col])
+        ax.set_xlabel(xlabel)
+        ax.set_title(title)
+        ax.grid(axis='x', alpha=0.3)
+
+    # Hide unused subplots
+    for j in range(len(panels), len(axes_flat)):
+        axes_flat[j].axis('off')
 
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches='tight')
