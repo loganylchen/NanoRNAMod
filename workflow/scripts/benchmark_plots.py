@@ -27,7 +27,10 @@ except ImportError:
 
 def load_accuracy_summary(path):
     """Load accuracy_summary.tsv or accuracy_summary_overall.tsv."""
-    return pd.read_csv(path, sep='\t')
+    df = pd.read_csv(path, sep='\t', low_memory=False)
+    if 'window' not in df.columns:
+        df['window'] = 0
+    return df
 
 
 def load_resource_summary(path):
