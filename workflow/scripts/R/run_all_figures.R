@@ -26,19 +26,23 @@ options(echo = FALSE, warn = 1)
 # Configuration - Handle both Snakemake script and command-line invocation
 # =============================================================================
 
-# Get script directory
-script_dir <- tryCatch({
-  args <- commandArgs(trailingOnly = FALSE)
-  file_arg <- grep("^--file=", args, value = TRUE)
-  if (length(file_arg) > 0) {
-    path <- sub("^--file=", "", file_arg[1])
-    dirname(normalizePath(path))
-  } else {
-    "."
-  }
-}, error = function(e) ".")
+# Get script directory — snakemake@scriptdir gives the real source dir even
+# when Snakemake copies the script to a temp location.
+script_dir <- if (exists("snakemake")) {
+  snakemake@scriptdir
+} else {
+  tryCatch({
+    args <- commandArgs(trailingOnly = FALSE)
+    file_arg <- grep("^--file=", args, value = TRUE)
+    if (length(file_arg) > 0) {
+      dirname(normalizePath(sub("^--file=", "", file_arg[1])))
+    } else {
+      "."
+    }
+  }, error = function(e) ".")
+}
 
-# Source utilities
+# Source utilities from the original script directory
 source(file.path(script_dir, "00_utils.R"))
 
 # Initialize with defaults

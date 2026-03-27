@@ -915,14 +915,12 @@ def plot_overall_metrics_bar(data, pdf, window=0):
     if df.empty:
         return
 
-    # Aggregate by tool
-    agg_df = df.groupby('tool').agg({
-        'precision': 'mean',
-        'recall': 'mean',
-        'f1': 'mean',
-        'auprc': 'mean' if 'auprc' in df.columns else 'first',
-        'auroc': 'mean' if 'auroc' in df.columns else 'first'
-    }).reset_index()
+    # Aggregate by tool — only include columns that actually exist
+    agg_spec = {col: 'mean' for col in ['precision', 'recall', 'f1', 'auprc', 'auroc', 'mcc']
+                if col in df.columns}
+    if not agg_spec:
+        return
+    agg_df = df.groupby('tool').agg(agg_spec).reset_index()
 
     fig, axes = plt.subplots(2, 3, figsize=(PAGE_WIDTH, PAGE_HEIGHT))
     fig.suptitle(f'Overall Tool Comparison (window={window}nt)', fontsize=16, fontweight='bold')
