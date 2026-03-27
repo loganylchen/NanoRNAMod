@@ -1,21 +1,18 @@
 def get_all_result_tsvs(wildcards):
     """Collect all *_results.tsv paths for activated tools.
 
-    Note: wildcards parameter is kept for Snakemake consistency but not used.
+    Uses PER_COMPARISON_TOOLS and PER_SAMPLE_TOOLS from common.smk to avoid
+    maintaining a separate hardcoded list.
     """
     tools = [t for t in config["tools"] if config["tools"][t]["activate"]]
     result_files = []
-    per_comparison_tools = ["xpore", "nanocompore", "baleen", "differr", "drummer", "pybaleen",
-                             "eligos2", "epinano", "psipore"]
-    per_sample_tools = ["tandemmod", "directrm", "m6atm", "rnano",
-                        "nanopsu", "nanomud", "penguin"]
     for tool in tools:
-        if tool in per_comparison_tools:
+        if tool in PER_COMPARISON_TOOLS:
             result_files += expand(
                 f"{RESULT_ROOT}/modifications/{tool}/{{comp}}/{tool}_results.tsv",
                 comp=comparisons,
             )
-        elif tool in per_sample_tools:
+        elif tool in PER_SAMPLE_TOOLS:
             result_files += expand(
                 f"{RESULT_ROOT}/modifications/{tool}/{{sample}}/{tool}_results.tsv",
                 sample=list(samples.index),
