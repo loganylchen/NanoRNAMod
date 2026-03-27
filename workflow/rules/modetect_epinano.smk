@@ -53,10 +53,5 @@ rule epinano:
         stderr="logs/{project}/epinano/{native}_{control}.err",
     benchmark:
         "benchmarks/{project}/{native}_{control}.epinano.benchmark.txt"
-    shell:
-        "Rscript /opt/epinano/Epinano_DiffErr.R "
-        "-t {threads} "
-        "-k {input.control} "
-        "-w {input.native} "
-        "-o {params.prefix} "
-        "{params.extra} 1>{log.stdout} 2>{log.stderr}"
+    script:
+        "../scripts/epinano_differr.sh"
