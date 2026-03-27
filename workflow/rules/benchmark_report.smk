@@ -1,9 +1,19 @@
 rule aggregate_benchmarks:
     input:
-        expand(
-            "benchmarks/{project}/{stem}.benchmark.txt",
-            project=PROJECT,
-            stem=glob_wildcards(f"benchmarks/{PROJECT}/{{stem}}.benchmark.txt").stem,
+        # Depend only on benchmark files from activated tools.
+        # The script globs benchmark_dir at runtime so it picks up all step files;
+        # these inputs just ensure the tool jobs have completed before aggregating.
+        native_benchmarks=lambda wc: expand(
+            "benchmarks/{project}/{comp}.{tool}.benchmark.txt",
+            project=wc.project,
+            comp=comparisons,
+            tool=get_active_comparison_tools(),
+        ),
+        sample_benchmarks=lambda wc: expand(
+            "benchmarks/{project}/{sample}.{tool}.benchmark.txt",
+            project=wc.project,
+            sample=list(samples.index),
+            tool=get_active_per_sample_tools(),
         ),
     output:
         "{project}/results/benchmarks/resource_summary.tsv",
