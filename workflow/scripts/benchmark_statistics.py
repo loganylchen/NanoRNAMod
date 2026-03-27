@@ -541,6 +541,7 @@ def run_significance_analysis(
         Tuple of (significance_tests_df, fdr_corrected_df)
     """
     all_tests = []
+    group_col = 'modification_type' if 'modification_type' in by_comparison_df.columns else 'comparison'
 
     for metric in metrics:
         if metric not in by_comparison_df.columns:
@@ -552,7 +553,7 @@ def run_significance_analysis(
             by_comparison_df,
             metric,
             tool_col='tool',
-            group_col='modification_type' if 'modification_type' in by_comparison_df.columns else 'comparison',
+            group_col=group_col,
             n_perm=n_perm
         )
         all_tests.append(tests_df)
@@ -573,8 +574,8 @@ def run_significance_analysis(
     all_tests_df['adj_p_value'] = adj_p
     all_tests_df['significant'] = rejected
 
-    # Create FDR summary
-    fdr_summary = all_tests_df[['tool1', 'tool2', 'modification_type', 'metric',
+    # Create FDR summary (use the actual group column name present in the data)
+    fdr_summary = all_tests_df[['tool1', 'tool2', group_col, 'metric',
                                  'test_type', 'p_value', 'adj_p_value', 'significant']].copy()
 
     return all_tests_df, fdr_summary
