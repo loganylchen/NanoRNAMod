@@ -213,9 +213,11 @@ def analyze_score_distribution(
             logger.warning(f"No score column for tool {tool}")
             continue
 
-        # Separate by truth status
-        pos_scores = tool_df[tool_df['truth'] == 1]['score'].dropna().values
-        neg_scores = tool_df[tool_df['truth'] == 0]['score'].dropna().values
+        # Separate by truth status; drop NaN and inf (e.g. from -log10(0) transforms)
+        pos_scores = tool_df[tool_df['truth'] == 1]['score'].values
+        neg_scores = tool_df[tool_df['truth'] == 0]['score'].values
+        pos_scores = pos_scores[np.isfinite(pos_scores)]
+        neg_scores = neg_scores[np.isfinite(neg_scores)]
 
         if len(pos_scores) < 2 or len(neg_scores) < 2:
             continue
@@ -251,11 +253,17 @@ def analyze_score_distribution(
         )
         cohens_d = mean_diff / pooled_std if pooled_std > 0 else 0.0
 
-        # Overlap coefficient (histogram-based)
+        # Overlap coefficient (histogram-based, shared range across both classes)
         n_bins = 50
-        pos_hist, bin_edges = np.histogram(pos_scores, bins=n_bins, density=True)
-        neg_hist, _ = np.histogram(neg_scores, bins=bin_edges, density=True)
-        overlap = np.minimum(pos_hist, neg_hist).sum() / max(pos_hist.sum(), neg_hist.sum())
+        all_scores = np.concatenate([pos_scores, neg_scores])
+        shared_range = (all_scores.min(), all_scores.max())
+        if shared_range[0] == shared_range[1]:
+            overlap = 1.0
+        else:
+            pos_hist, bin_edges = np.histogram(pos_scores, bins=n_bins, range=shared_range, density=True)
+            neg_hist, _ = np.histogram(neg_scores, bins=bin_edges, density=True)
+            denom = max(pos_hist.sum(), neg_hist.sum())
+            overlap = np.minimum(pos_hist, neg_hist).sum() / denom if denom > 0 else 0.0
 
         # KS test
         ks_stat, ks_pvalue = ks_2samp(pos_scores, neg_scores)
