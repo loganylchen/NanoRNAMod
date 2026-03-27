@@ -97,6 +97,25 @@ def get_nanocompore_list(sample_list):
 
 def get_final_output():
     tools = [tool for tool in config["tools"] if config["tools"][tool]["activate"]]
+    active_comp = [t for t in tools if t in PER_COMPARISON_TOOLS]
+    active_persample = [t for t in tools if t in PER_SAMPLE_TOOLS]
+    inactive = [t for t in config["tools"] if not config["tools"][t]["activate"]]
+
+    logger.info("=" * 60)
+    logger.info("NanoRNAMod — Active tools summary")
+    logger.info(f"  Comparison tools ({len(active_comp)}): {', '.join(active_comp) or 'none'}")
+    logger.info(f"  Per-sample tools ({len(active_persample)}): {', '.join(active_persample) or 'none'}")
+    logger.info(f"  Inactive tools   ({len(inactive)}): {', '.join(inactive) or 'none'}")
+    logger.info(f"  Samples: {', '.join(samples.index)}")
+    logger.info(f"  Comparisons: {', '.join(comparisons)}")
+    if config.get("benchmark", {}).get("truth_set", ""):
+        logger.info(f"  Benchmarking: enabled (truth_set={config['benchmark']['truth_set']})")
+        logger.info(f"    Comparison tools to benchmark: {', '.join(active_comp) or 'none'}")
+        logger.info(f"    Per-sample tools to benchmark: {', '.join(active_persample) or 'none'}")
+    else:
+        logger.info("  Benchmarking: disabled (no truth_set)")
+    logger.info("=" * 60)
+
     final_output = [f"{RESULT_ROOT}/workflow_version.json"]
     final_output += [f"{RESULT_ROOT}/depth_table.tsv"]
     final_output += expand(
