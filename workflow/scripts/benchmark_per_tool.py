@@ -3,10 +3,67 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score
 
-# Import shared utilities
-import sys as _sys
-_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from benchmark_utils import tool_from_path, normalize_columns, is_pvalue_column, match_column
+
+
+def tool_from_path(path):
+    """Extract tool name from file path."""
+    parts = path.split(os.sep)
+    for i, part in enumerate(parts):
+        if part == "modifications" and i + 1 < len(parts):
+            return parts[i + 1]
+    return os.path.basename(os.path.dirname(os.path.dirname(path)))
+
+
+def normalize_columns(df):
+    """Normalize various column names to standard 'transcript' and 'position'."""
+    col_mapping = {}
+    transcript_cols = ['transcript', 'id', 'ref_id', 'chrom', 'transcript_id']
+    for col in transcript_cols:
+        if col in df.columns:
+            col_mapping[col] = 'transcript'
+            break
+    position_cols = ['position', 'pos', 'start', 'start_loc', 'transcript_pos', 'transcript_loc']
+    for col in position_cols:
+        if col in df.columns and col not in col_mapping.values():
+            col_mapping[col] = 'position'
+            break
+    if col_mapping:
+        df = df.rename(columns=col_mapping)
+    return df
+
+
+def match_column(df_columns, pattern):
+    """Match a pattern against DataFrame columns using multiple strategies."""
+    pattern_lower = pattern.lower().replace(' ', '_')
+    if pattern in df_columns:
+        return pattern
+    for col in df_columns:
+        if col.lower().replace(' ', '_') == pattern_lower:
+            return col
+    for col in df_columns:
+        col_lower = col.lower().replace(' ', '_')
+        if pattern_lower in col_lower:
+            return col
+    for col in df_columns:
+        col_lower = col.lower().replace(' ', '_')
+        if col_lower in pattern_lower:
+            return col
+    return None
+
+
+def is_pvalue_column(col_name):
+    """Determine if a column is a p-value (lower=better) or score (higher=better)."""
+    if not col_name:
+        return False
+    col_lower = col_name.lower().replace(' ', '_')
+    if '-log10' in col_lower:
+        return False
+    if any(x in col_lower for x in ['p_value', 'pvalue', 'pval', 'padj', 'fdr', 'q_value', 'qval']):
+        return True
+    if any(x in col_lower for x in ['probability', 'prob', 'stoichiometry', 'logit',
+                                      'z_score', 'score', 'delta', 'diff_mod', 'mod_ratio']):
+        return False
+    return False
 
 
 TOOL_SCORE_MAP = {

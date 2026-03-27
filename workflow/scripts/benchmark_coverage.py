@@ -2,10 +2,24 @@ import os
 import pandas as pd
 import numpy as np
 
-# Import shared utilities
-import sys as _sys
-_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from benchmark_utils import normalize_columns
+
+
+def normalize_columns(df):
+    """Normalize various column names to standard 'transcript' and 'position'."""
+    col_mapping = {}
+    transcript_cols = ['transcript', 'id', 'ref_id', 'chrom', 'transcript_id']
+    for col in transcript_cols:
+        if col in df.columns:
+            col_mapping[col] = 'transcript'
+            break
+    position_cols = ['position', 'pos', 'start', 'start_loc', 'transcript_pos', 'transcript_loc']
+    for col in position_cols:
+        if col in df.columns and col not in col_mapping.values():
+            col_mapping[col] = 'position'
+            break
+    if col_mapping:
+        df = df.rename(columns=col_mapping)
+    return df
 
 
 def parse_windows(window_param):
