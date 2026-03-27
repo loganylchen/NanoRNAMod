@@ -30,9 +30,6 @@ rule pybaleen_run:
         result=KEEP_OR_NOT(
             "{project}/results/pybaleen/{native}_{control}/site_results.tsv"
         ),
-        pkl=KEEP_OR_NOT(
-            "{project}/results/pybaleen/{native}_{control}/pipeline_results.pkl"
-        ),
     params:
         output_dir="{project}/results/pybaleen/{native}_{control}/",
         extra=config["params"].get("pybaleen", ""),
