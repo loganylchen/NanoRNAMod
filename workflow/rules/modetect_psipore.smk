@@ -1,9 +1,9 @@
 rule psipore_prep:
     input:
-        control_bam="{project}/results/alignments/{control}_filtered.bam",
-        control_bai="{project}/results/alignments/{control}_filtered.bam.bai",
-        native_bam="{project}/results/alignments/{native}_filtered.bam",
-        native_bai="{project}/results/alignments/{native}_filtered.bam.bai",
+        control_bam="{project}/results/alignments/{control}.bam",
+        control_bai="{project}/results/alignments/{control}.bam.bai",
+        native_bam="{project}/results/alignments/{native}.bam",
+        native_bai="{project}/results/alignments/{native}.bam.bai",
     output:
         region=temp("{project}/results/psipore/{native}_{control}_regions.bed"),
     container:
@@ -21,10 +21,10 @@ rule psipore_prep:
 
 rule psipore_run:
     input:
-        control_bam="{project}/results/alignments/{control}_filtered.bam",
-        control_bai="{project}/results/alignments/{control}_filtered.bam.bai",
-        native_bam="{project}/results/alignments/{native}_filtered.bam",
-        native_bai="{project}/results/alignments/{native}_filtered.bam.bai",
+        control_bam="{project}/results/alignments/{control}.bam",
+        control_bai="{project}/results/alignments/{control}.bam.bai",
+        native_bam="{project}/results/alignments/{native}.bam",
+        native_bai="{project}/results/alignments/{native}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
         region="{project}/results/psipore/{native}_{control}_regions.bed",
     output:

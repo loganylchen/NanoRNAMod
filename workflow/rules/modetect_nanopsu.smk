@@ -1,7 +1,7 @@
 rule nanopsu_predict:
     input:
-        bam="{project}/results/alignments/{sample}_filtered.bam",
-        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
+        bam="{project}/results/alignments/{sample}.bam",
+        bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
     output:
         outdir=KEEP_OR_NOT(directory("{project}/results/dataprep/{sample}_nanopsu_dataprep")),

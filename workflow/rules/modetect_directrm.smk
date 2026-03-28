@@ -1,7 +1,7 @@
 rule directrm_config:
     input:
-        bam="{project}/results/alignments/{sample}_filtered.bam",
-        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
+        bam="{project}/results/alignments/{sample}.bam",
+        bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"]
     output:
         config="{project}/results/directrm/{sample}_directrm_config.yaml"
@@ -21,8 +21,8 @@ rule directrm_config:
 
 rule directrm_predict:
     input:
-        bam="{project}/results/alignments/{sample}_filtered.bam",
-        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
+        bam="{project}/results/alignments/{sample}.bam",
+        bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
         config="{project}/results/directrm/{sample}_directrm_config.yaml"
     output:

@@ -451,7 +451,7 @@ rule epinano_annotate:
 
 rule post_eligos2:
     input:
-        "{project}/results/eligos2/{native}_{control}/{native}_filtered_vs_{control}_filtered_on_{native}_{control}_baseExt0.txt",
+        "{project}/results/eligos2/{native}_{control}/{native}_vs_{control}_on_{native}_{control}_baseExt0.txt",
         "{project}/results/eligos2/{native}_{control}",
     output:
         "{project}/results/modifications/eligos2/{native}_{control}/eligos2_results.tsv",

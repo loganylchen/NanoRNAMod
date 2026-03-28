@@ -1,7 +1,7 @@
 rule m6atm_config:
     input:
-        bam="{project}/results/alignments/{sample}_filtered.bam",
-        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
+        bam="{project}/results/alignments/{sample}.bam",
+        bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"]
     output:
         config="{project}/results/m6atm/{sample}_m6atm_config.yaml"
@@ -21,8 +21,8 @@ rule m6atm_config:
 
 rule m6atm_predict:
     input:
-        bam="{project}/results/alignments/{sample}_filtered.bam",
-        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
+        bam="{project}/results/alignments/{sample}.bam",
+        bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
         config="{project}/results/m6atm/{sample}_m6atm_config.yaml"
     output:

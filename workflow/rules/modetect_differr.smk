@@ -1,9 +1,9 @@
 rule differr:
     input:
-        control_bam="{project}/results/alignments/{control}_filtered.bam",
-        control_bai="{project}/results/alignments/{control}_filtered.bam.bai",
-        native_bam="{project}/results/alignments/{native}_filtered.bam",
-        native_bai="{project}/results/alignments/{native}_filtered.bam.bai",
+        control_bam="{project}/results/alignments/{control}.bam",
+        control_bai="{project}/results/alignments/{control}.bam.bai",
+        native_bam="{project}/results/alignments/{native}.bam",
+        native_bai="{project}/results/alignments/{native}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
     output:
         KEEP_OR_NOT("{project}/results/differr/{native}_{control}/differr.bed"),

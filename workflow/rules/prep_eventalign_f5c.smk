@@ -8,8 +8,8 @@ rule f5c_eventalign_with_readname:
             ".index.gzi",
             ".index.readdb",
         ),
-        bam="{project}/results/alignments/{sample}_filtered.bam",
-        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
+        bam="{project}/results/alignments/{sample}.bam",
+        bai="{project}/results/alignments/{sample}.bam.bai",
         index="{project}/results/blow5/{sample}.blow5.idx",
         blow5="{project}/results/blow5/{sample}.blow5",
     output:
@@ -50,8 +50,8 @@ rule f5c_eventalign_simple:
             ".index.gzi",
             ".index.readdb",
         ),
-        bam="{project}/results/alignments/{sample}_filtered.bam",
-        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
+        bam="{project}/results/alignments/{sample}.bam",
+        bai="{project}/results/alignments/{sample}.bam.bai",
         index="{project}/results/blow5/{sample}.blow5.idx",
         blow5="{project}/results/blow5/{sample}.blow5",
     output:

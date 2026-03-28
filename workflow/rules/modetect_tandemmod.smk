@@ -1,7 +1,7 @@
 rule tandemmod_config:
     input:
-        bam="{project}/results/alignments/{sample}_filtered.bam",
-        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
+        bam="{project}/results/alignments/{sample}.bam",
+        bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"]
     output:
         config="{project}/results/tandemmod/{sample}_tandemmod_config.yaml"
@@ -21,8 +21,8 @@ rule tandemmod_config:
 
 rule tandemmod_predict:
     input:
-        bam="{project}/results/alignments/{sample}_filtered.bam",
-        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
+        bam="{project}/results/alignments/{sample}.bam",
+        bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
         config="{project}/results/tandemmod/{sample}_tandemmod_config.yaml"
     output:

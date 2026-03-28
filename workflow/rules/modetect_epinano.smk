@@ -1,21 +1,16 @@
 rule epinano_prep:
     input:
-        sample_bam="{project}/results/alignments/{sample}_filtered.bam",
-        sample_bai="{project}/results/alignments/{sample}_filtered.bam.bai",
+        sample_bam="{project}/results/alignments/{sample}.bam",
+        sample_bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
         reference_fai=config["reference"]["transcriptome_fasta"] + ".fai",
     output:
         per_site=temp(
-            "{project}/results/alignments/{sample}_filtered.fwd.per.site.csv"
+            "{project}/results/alignments/{sample}.fwd.per.site.csv"
         ),
-        # sum_err=temp(
-        #     "{project}/results/alignments/{sample}_filtered.fwd.sumErrOut.csv"
-        # ),
-        # kmer_5_site = "results/alignments/{sample}_filtered.fwd.per.site.5mer.csv",
-        # dump_csv = "results/alignments/{sample}_filtered.q3.mis3.del3.MODEL.rrach.q3.mis3.del3.linear.dump.csv"
     params:
         extra=config["params"]["epinano_dataprep"],
-        prefix="{project}/results/alignments/{sample}_filtered",
+        prefix="{project}/results/alignments/{sample}",
     container:
         get_container("epinano")
     threads: get_threads("epinano", 4)
@@ -32,8 +27,8 @@ rule epinano_prep:
 
 rule epinano:
     input:
-        control="{project}/results/alignments/{control}_filtered.fwd.per.site.csv",
-        native="{project}/results/alignments/{native}_filtered.fwd.per.site.csv",
+        control="{project}/results/alignments/{control}.fwd.per.site.csv",
+        native="{project}/results/alignments/{native}.fwd.per.site.csv",
     output:
         results="{project}/results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv",
         output_dir=KEEP_OR_NOT(
