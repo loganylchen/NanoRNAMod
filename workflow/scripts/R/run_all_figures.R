@@ -94,6 +94,9 @@ if (exists("snakemake")) {
   input_files$threshold_robust <- snakemake@input[["threshold_robust"]]
 
   output_dir <- snakemake@output[["dir"]]
+  if (is.null(output_dir)) {
+    output_dir <- dirname(dirname(snakemake@output[["fig1"]]))
+  }
   window_filter <- snakemake@params[["window"]]
   theme <- snakemake@params[["theme"]]
   dpi <- snakemake@params[["dpi"]]
