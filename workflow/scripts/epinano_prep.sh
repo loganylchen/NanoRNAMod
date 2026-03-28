@@ -7,6 +7,7 @@ directory=$(dirname "${snakemake_output[per_site]}")
 expected_output="${snakemake_output[per_site]}"
 bam="${snakemake_input[sample_bam]}"
 ref="${snakemake_input[reference]}"
+extra="${snakemake_params[extra]}"
 
 # Verify reference .fai index exists (EpiNano silently exits without it)
 if [ ! -f "${ref}.fai" ]; then
@@ -19,27 +20,40 @@ fi
 echo "Checking BAM: ${bam}"
 samtools flagstat "${bam}" | head -5
 
+echo "Running EpiNano_Variants.py with -c ${snakemake[threads]} CPUs, output dir: ${directory}"
 python /opt/epinano/Epinano_Variants.py -r "${ref}" \
-    -b "${bam}" -c ${snakemake[threads]} -o "${directory}" 2>"${snakemake_log[0]}"
+    -b "${bam}" -c ${snakemake[threads]} -o "${directory}" ${extra} \
+    >>"${snakemake_log[0]}" 2>&1
 
-# List what EpiNano actually produced
-echo "Files matching *per.site* in ${directory}:"
+# List all files EpiNano produced in output directory
+echo "=== All files in ${directory} after EpiNano ==="
+ls -lh "${directory}/" 2>/dev/null || echo "  (directory empty or missing)"
+
+echo "=== Files matching *per.site* in ${directory} ==="
 ls -lh ${directory}/*per.site* 2>/dev/null || echo "  (none found)"
 
-# EpiNano v1.2.5 output: {bam_stem}.fwd.per.site.csv (from split_bam fwd.bam)
+# EpiNano output: {bam_stem}.fwd.per.site.csv (from split_bam fwd.bam)
+# Some versions may produce {bam_stem}.per.site.csv (no strand split)
 # If expected output doesn't exist, try to find and rename what was produced
 if [ ! -f "${expected_output}" ]; then
-    # Try any per.site.csv file containing the sample name
     bam_stem=$(basename "${bam}" .bam)
+    # Search in output directory
     found=$(find "${directory}" -maxdepth 1 -name "${bam_stem}*per.site.csv" -print -quit 2>/dev/null)
+    # Broader fallback: any per.site.csv in output directory
+    if [ -z "${found}" ]; then
+        found=$(find "${directory}" -maxdepth 1 -name "*per.site.csv" -print -quit 2>/dev/null)
+    fi
     if [ -n "${found}" ]; then
         echo "Renaming ${found} -> ${expected_output}"
         mv "${found}" "${expected_output}"
     else
         echo "ERROR: EpiNano produced no per.site.csv output for ${bam_stem}"
         echo "This usually means no reads mapped to forward strand after BAM splitting."
-        echo "Check the log: ${snakemake_log[0]}"
+        echo "Full diagnostic info written to log: ${snakemake_log[0]}"
         # Create empty output with header so downstream rules can handle gracefully
         echo "#Ref,pos,strand,base,cov,q_mean,q_median,q_std,mat,mis,ins,del" > "${expected_output}"
     fi
 fi
+
+# Clean up EpiNano intermediate files (split BAMs)
+rm -f "${directory}/${bam_stem}.fwd.bam" "${directory}/${bam_stem}.rev.bam" 2>/dev/null || true
