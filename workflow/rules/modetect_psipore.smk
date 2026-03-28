@@ -10,7 +10,7 @@ rule psipore_prep:
         get_container("bedtools")
     threads: get_threads("psipore", 1)
     resources:
-        mem_mb = 1024
+        mem_mb = 1024 * 10
     priority: 10
     shell:
         "bedtools bamtobed -bed12 -i {input.control_bam} | cut -f1 | sort > {output.region}.tmp && "

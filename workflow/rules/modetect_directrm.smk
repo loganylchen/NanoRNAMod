@@ -9,7 +9,7 @@ rule directrm_config:
         get_container("directrm")
     threads: get_threads("directrm", 1)
     resources:
-        mem_mb = 1024
+        mem_mb = 1024 * 10
     params:
         modifications="all",
         min_prob=0.7

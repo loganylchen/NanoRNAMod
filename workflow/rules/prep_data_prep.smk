@@ -11,7 +11,7 @@ rule link_fastq:
         "logs/{project}/link_fastq/{sample}.log",
     threads: get_threads("default", 1)
     resources:
-        mem_mb=1024,
+        mem_mb=1024 * 10,
     shell:
         "ln -s {params.relative_path} {output.fastq} && "
         "echo `date` > {log} "
@@ -44,7 +44,7 @@ rule link_blow5:
         "logs/{project}/link_blow5/{sample}.log",
     threads: get_threads("default", 1)
     resources:
-        mem_mb=1024,
+        mem_mb=1024 * 10,
     shell:
         "ln -s {params.relative_path} {output.blow5} && "
         "echo `date` > {log} "

@@ -15,7 +15,7 @@ rule uncompress_eventalign_full:
         get_container("default")
     threads: get_threads("default", 1)
     resources:
-        mem_mb = 1024 
+        mem_mb = 1024 * 10
     priority: 10
     shell:
         "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"

@@ -31,7 +31,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
         params:
             window=config["benchmark"]["window"],
         resources:
-            mem_mb=1024 * 4,
+            mem_mb=1024 * 10,
         threads: 1
         priority: 30
         log:
@@ -56,7 +56,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
             union="{project}/results/benchmarks/coverage/{comparison}/union.tsv",
             called_sites="{project}/results/benchmarks/coverage/{comparison}/called_sites.tsv",
         resources:
-            mem_mb=1024 * 2,
+            mem_mb=1024 * 10,
         threads: 1
         priority: 31
         log:
@@ -80,7 +80,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
         params:
             window=config["benchmark"]["window"],
         resources:
-            mem_mb=1024 * 8,
+            mem_mb=1024 * 10,
         threads: 1
         priority: 32
         log:
@@ -105,7 +105,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
         params:
             window=config["benchmark"]["window"],
         resources:
-            mem_mb=1024 * 8,
+            mem_mb=1024 * 10,
         threads: 1
         priority: 33
         log:
@@ -130,7 +130,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
         params:
             window=config["benchmark"]["window"],
         resources:
-            mem_mb=1024 * 8,
+            mem_mb=1024 * 10,
         threads: 1
         priority: 32
         log:
@@ -200,7 +200,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
             called_sites_sum="{project}/results/benchmarks/aggregated/called_sites_summary.tsv",
             done=touch("{project}/results/benchmarks/.benchmark_complete"),
         resources:
-            mem_mb=1024 * 4,
+            mem_mb=1024 * 10,
         threads: 1
         priority: 34
         log:

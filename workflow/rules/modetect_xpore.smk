@@ -14,7 +14,7 @@ rule uncompress_eventalign:
     container:
         get_container("default")
     resources:
-        mem_mb = 1024
+        mem_mb = 1024 * 10
     priority: 10
     threads: get_threads("default", 1)
     shell:
@@ -58,7 +58,7 @@ rule xpore_config:
         get_container("xpore")
     threads: get_threads("default", 1)
     resources:
-        mem_mb = 1024
+        mem_mb = 1024 * 10
     params:
         "{project}/results/xpore/{native}_{control}",
     log:

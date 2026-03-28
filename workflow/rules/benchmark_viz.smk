@@ -19,7 +19,7 @@ rule benchmark_visualization:
         window=lambda wc: config["benchmark"].get("window", [0]),
         output_dir="{project}/results/benchmarks/viz",
     resources:
-        mem_mb=1024 * 4,
+        mem_mb=1024 * 10,
     threads: 1
     priority: 25
     log:
@@ -41,7 +41,7 @@ rule benchmark_threshold:
         window=config["benchmark"]["window"],
         criterion="f1",
     resources:
-        mem_mb=1024 * 8,
+        mem_mb=1024 * 10,
     threads: 1
     priority: 20
     log:
@@ -65,7 +65,7 @@ rule benchmark_detailed:
     params:
         window=config["benchmark"]["window"],
     resources:
-        mem_mb=1024 * 8,
+        mem_mb=1024 * 10,
     threads: 1
     priority: 20
     log:
@@ -90,7 +90,7 @@ rule benchmark_kmer_negatives:
         window=config["benchmark"]["window"],
         kmer_column=config.get("benchmark", {}).get("kmer_column", "auto"),
     resources:
-        mem_mb=1024 * 8,
+        mem_mb=1024 * 10,
     threads: 1
     priority: 22
     log:
@@ -115,7 +115,7 @@ rule benchmark_same_base_negatives:
         window=config["benchmark"]["window"],
         base_column=config.get("benchmark", {}).get("base_column", "auto"),
     resources:
-        mem_mb=1024 * 8,
+        mem_mb=1024 * 10,
     threads: 1
     priority: 21
     log:
@@ -200,7 +200,7 @@ rule benchmark_statistics:
         alpha=config.get("benchmark", {}).get("alpha", 0.05),
         fdr_method=config.get("benchmark", {}).get("fdr_method", "benjamini-hochberg"),
     resources:
-        mem_mb=1024 * 8,
+        mem_mb=1024 * 10,
     threads: 4
     priority: 32
     log:
@@ -234,7 +234,7 @@ rule benchmark_sensitivity:
         coverage_bins=config.get("benchmark", {}).get("coverage_bins", [0, 10, 20, 50, 100, 200, 500]),
         n_splits=config.get("benchmark", {}).get("n_splits", 5),
     resources:
-        mem_mb=1024 * 8,
+        mem_mb=1024 * 10,
     threads: 2
     priority: 33
     log:
@@ -298,7 +298,7 @@ rule benchmark_r_figures:
         dpi=config.get("benchmark", {}).get("dpi", 300),
         format=config.get("benchmark", {}).get("fig_format", "pdf"),
     resources:
-        mem_mb=1024 * 8,
+        mem_mb=1024 * 10,
     threads: 1
     priority: 34
     log:
@@ -322,7 +322,7 @@ rule benchmark_pdf_report:
     params:
         benchmark_dir="{project}/results/benchmarks/aggregated",
     resources:
-        mem_mb=1024 * 8,
+        mem_mb=1024 * 10,
     threads: 1
     priority: 35
     log:
@@ -343,7 +343,7 @@ rule benchmark_resource_by_tool:
     params:
         benchmark_dir="benchmarks/{project}",
     resources:
-        mem_mb=1024 * 4,
+        mem_mb=1024 * 10,
     threads: 1
     priority: 36
     log:

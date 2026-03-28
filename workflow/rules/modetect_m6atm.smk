@@ -9,7 +9,7 @@ rule m6atm_config:
         get_container("m6atm")
     threads: get_threads("m6atm", 1)
     resources:
-        mem_mb = 1024
+        mem_mb = 1024 * 10
     params:
         threshold=0.6,
         stoichiometry=True

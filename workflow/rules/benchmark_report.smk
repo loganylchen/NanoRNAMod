@@ -10,7 +10,7 @@ rule aggregate_benchmarks:
     params:
         benchmark_dir="benchmarks/{project}",
     resources:
-        mem_mb=1024 * 4,
+        mem_mb=1024 * 10,
     threads: 1
     priority: 30
     log:

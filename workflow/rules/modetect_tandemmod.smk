@@ -9,7 +9,7 @@ rule tandemmod_config:
         get_container("tandemmod")
     threads: get_threads("tandemmod", 1)
     resources:
-        mem_mb = 1024
+        mem_mb = 1024 * 10
     params:
         model_type="multi",
         threshold=0.5

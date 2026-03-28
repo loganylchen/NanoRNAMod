@@ -9,7 +9,7 @@ rule rnano_config:
         get_container("rnano")
     threads: get_threads("rnano", 1)
     resources:
-        mem_mb = 1024
+        mem_mb = 1024 * 10
     params:
         model="pretrained",
         gpu=False
