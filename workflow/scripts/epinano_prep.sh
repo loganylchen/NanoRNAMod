@@ -20,10 +20,17 @@ fi
 echo "Checking BAM: ${bam}"
 samtools flagstat "${bam}" | head -5
 
+# Resolve to absolute paths before cd
+ref_abs="$(cd "$(dirname "${ref}")" && pwd)/$(basename "${ref}")"
+bam_abs="$(cd "$(dirname "${bam}")" && pwd)/$(basename "${bam}")"
+
 echo "Running EpiNano_Variants.py with -c ${snakemake[threads]} CPUs, output dir: ${directory}"
-python /opt/epinano/Epinano_Variants.py -r "${ref}" \
-    -b "${bam}" -c ${snakemake[threads]} -o "${directory}" ${extra} \
+# v1.2.4 has no -o flag; output goes to CWD, so cd to target directory
+pushd "${directory}" > /dev/null
+python /opt/epinano/Epinano_Variants.py -r "${ref_abs}" \
+    -b "${bam_abs}" -c ${snakemake[threads]} ${extra} \
     >>"${snakemake_log[0]}" 2>&1
+popd > /dev/null
 
 # List all files EpiNano produced in output directory
 echo "=== All files in ${directory} after EpiNano ==="
