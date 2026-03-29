@@ -62,7 +62,8 @@ TOOL_SCORE_COLUMNS = {
     # Baleen raw output: transcript,position,kmer,homopolymer,...,p_value,padj,...
     'baleen': ['p_value', 'padj', 'pvalue', 'padj', 'effect_size', 'score'],
     # pyBaleen raw output: contig,position,kmer,mod_ratio,ci_low,ci_high,pvalue,padj,effect_size,...
-    'pybaleen': ['pvalue', 'padj', 'effect_size', 'p_value', 'adjusted_p_value', 'stoichiometry'],
+    'pybaleen': ['mod_ratio', 'pvalue', 'padj', 'effect_size', 'mean_p_mod',
+                  'p_value', 'adjusted_p_value', 'stoichiometry'],
 
     # Error-based comparative tools
     # DiffErr raw output (BED, after format.py): -log10 P value, -log10 FDR, odds ratio, G statistic
@@ -483,6 +484,7 @@ def main():
         truth_set_path = snakemake.input.truth_set
         output_optimal = snakemake.output.optimal
         output_all = snakemake.output.all_eval
+        output_summary = snakemake.output.score_summary
 
         window_param = snakemake.params.get('window', 0)
         n_thresholds = snakemake.params.get('n_thresholds', 100)
@@ -504,6 +506,8 @@ def main():
                           help='Output file for optimal score per tool')
         parser.add_argument('--output-all', required=True,
                           help='Output file for all score columns evaluated')
+        parser.add_argument('--output-summary', required=True,
+                          help='Output file for per-tool per-score-column summary')
         parser.add_argument('--window', type=int, default=0,
                           help='Positional tolerance window')
         parser.add_argument('--n-thresholds', type=int, default=100,
@@ -514,6 +518,7 @@ def main():
         truth_set_path = args.truth
         output_optimal = args.output_optimal
         output_all = args.output_all
+        output_summary = args.output_summary
         windows = [args.window]
         n_thresholds = args.n_thresholds
 
@@ -574,6 +579,7 @@ def main():
     # Evaluate all score columns for each tool
     all_evaluation_records = []
     optimal_per_tool = []
+    score_column_summaries = []  # per-tool, per-score-column summary
 
     for tool, pred_df in tool_dfs.items():
         # Get all available score columns for this tool
@@ -609,9 +615,22 @@ def main():
                     window, n_thresholds
                 )
 
-                # Add all evaluation records
+                # Add all evaluation records and per-score-column summaries
                 for result in score_results:
                     all_evaluation_records.extend(result.get('evaluation_records', []))
+                    score_column_summaries.append({
+                        'tool': tool,
+                        'modification_type': mod_type,
+                        'window': window,
+                        'score_column': result['score_column'],
+                        'score_type': result['score_type'],
+                        'auroc': result.get('auroc', np.nan),
+                        'auprc': result.get('auprc', np.nan),
+                        'optimal_f1': result.get('optimal_f1', 0.0),
+                        'optimal_precision': result.get('optimal_precision', 0.0),
+                        'optimal_recall': result.get('optimal_recall', 0.0),
+                        'optimal_threshold': result.get('optimal_threshold', np.nan),
+                    })
 
                 # Find the best score column for this tool/mod_type
                 if score_results:
@@ -673,11 +692,36 @@ def main():
             'optimal_recall', 'auprc', 'auroc', 'all_available_scores'
         ])
 
+    # Build score column summary with is_best flag
+    summary_cols = ['tool', 'modification_type', 'window', 'score_column', 'score_type',
+                    'auroc', 'auprc', 'optimal_f1', 'optimal_precision', 'optimal_recall',
+                    'optimal_threshold', 'is_best']
+    if score_column_summaries:
+        summary_df = pd.DataFrame(score_column_summaries)
+        # Mark the best score column per (tool, modification_type, window)
+        summary_df['is_best'] = False
+        for _, opt_row in optimal_df.iterrows():
+            mask = (
+                (summary_df['tool'] == opt_row['tool']) &
+                (summary_df['modification_type'] == opt_row['modification_type']) &
+                (summary_df['window'] == opt_row['window']) &
+                (summary_df['score_column'] == opt_row['score_column'])
+            )
+            summary_df.loc[mask, 'is_best'] = True
+        summary_df = summary_df.sort_values(
+            ['tool', 'modification_type', 'window', 'auroc'],
+            ascending=[True, True, True, False]
+        )
+    else:
+        summary_df = pd.DataFrame(columns=summary_cols)
+
     all_df.to_csv(output_all, sep='\t', index=False)
     optimal_df.to_csv(output_optimal, sep='\t', index=False)
+    summary_df.to_csv(output_summary, sep='\t', index=False)
 
     print(f"Written all score columns evaluation to {output_all}")
     print(f"Written optimal score per tool to {output_optimal}")
+    print(f"Written score column summary to {output_summary}")
 
     # Print summary
     if not optimal_df.empty:

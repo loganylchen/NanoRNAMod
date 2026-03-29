@@ -248,18 +248,24 @@ def get_final_output():
                           "threshold_robustness.tsv"]:
             final_output += [f"{RESULT_ROOT}/benchmarks/sensitivity/{sens_file}"]
 
+        # Score column analysis
+        final_output += [f"{RESULT_ROOT}/benchmarks/score_column_summary.tsv"]
+
         # Publication figures
-        for i in range(1, 7):
-            final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig{i}_{{name}}.pdf".format(
-                name=["overall_accuracy", "pr_curves", "roc_curves",
-                      "f1_comparison", "coverage_sensitivity", "resource_usage"][i-1]
-            )]
+        main_fig_names = [
+            "overall_accuracy", "precision_recall", "auroc",
+            "score_columns", "best_score", "coverage_sensitivity",
+            "resource_usage", "score_lollipop",
+        ]
+        for i, name in enumerate(main_fig_names, 1):
+            final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig{i}_{name}.pdf"]
             final_output += [f"{RESULT_ROOT}/benchmarks/data/fig{i}_source_data.tsv"]
-        for i in range(1, 5):
-            final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/sfig{i}_{{name}}.pdf".format(
-                name=["per_comparison", "score_distributions",
-                      "threshold_robustness", "effect_sizes"][i-1]
-            )]
+        supp_fig_names = [
+            "per_comparison", "score_distributions",
+            "threshold_robustness", "effect_sizes", "score_heatmap",
+        ]
+        for i, name in enumerate(supp_fig_names, 1):
+            final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/sfig{i}_{name}.pdf"]
 
     logger.debug("=" * 60)
     logger.debug(f"NanoRNAMod — Final output files ({len(final_output)} total)")

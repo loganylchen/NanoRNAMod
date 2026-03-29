@@ -163,6 +163,7 @@ rule benchmark_score_optimization:
     output:
         optimal="{project}/results/benchmarks/optimal_score_per_tool.tsv",
         all_eval="{project}/results/benchmarks/all_scores_evaluation.tsv",
+        score_summary="{project}/results/benchmarks/score_column_summary.tsv",
     params:
         window=config["benchmark"]["window"],
         n_thresholds=config.get("benchmark", {}).get("n_thresholds", 100),
@@ -260,6 +261,7 @@ rule benchmark_r_figures:
         optimal_scores="{project}/results/benchmarks/aggregated/best_scores.tsv",
         by_tool="{project}/results/benchmarks/aggregated/by_tool.tsv",
         score_optimization="{project}/results/benchmarks/optimal_score_per_tool.tsv",
+        score_column_summary="{project}/results/benchmarks/score_column_summary.tsv",
         thresholds="{project}/results/benchmarks/threshold_evaluation.tsv",
         resources="{project}/results/benchmarks/resource_summary.tsv",
         resource_by_tool="{project}/results/benchmarks/resource_by_tool.tsv",
@@ -275,16 +277,19 @@ rule benchmark_r_figures:
     output:
         # Main figures (explicit file tracking)
         fig1="{project}/results/benchmarks/figures/main/fig1_overall_accuracy.pdf",
-        fig2="{project}/results/benchmarks/figures/main/fig2_pr_curves.pdf",
-        fig3="{project}/results/benchmarks/figures/main/fig3_roc_curves.pdf",
-        fig4="{project}/results/benchmarks/figures/main/fig4_f1_comparison.pdf",
-        fig5="{project}/results/benchmarks/figures/main/fig5_coverage_sensitivity.pdf",
-        fig6="{project}/results/benchmarks/figures/main/fig6_resource_usage.pdf",
+        fig2="{project}/results/benchmarks/figures/main/fig2_precision_recall.pdf",
+        fig3="{project}/results/benchmarks/figures/main/fig3_auroc.pdf",
+        fig4="{project}/results/benchmarks/figures/main/fig4_score_columns.pdf",
+        fig5="{project}/results/benchmarks/figures/main/fig5_best_score.pdf",
+        fig6="{project}/results/benchmarks/figures/main/fig6_coverage_sensitivity.pdf",
+        fig7="{project}/results/benchmarks/figures/main/fig7_resource_usage.pdf",
+        fig8="{project}/results/benchmarks/figures/main/fig8_score_lollipop.pdf",
         # Supplementary figures
         sfig1="{project}/results/benchmarks/figures/supplementary/sfig1_per_comparison.pdf",
         sfig2="{project}/results/benchmarks/figures/supplementary/sfig2_score_distributions.pdf",
         sfig3="{project}/results/benchmarks/figures/supplementary/sfig3_threshold_robustness.pdf",
         sfig4="{project}/results/benchmarks/figures/supplementary/sfig4_effect_sizes.pdf",
+        sfig5="{project}/results/benchmarks/figures/supplementary/sfig5_score_heatmap.pdf",
         # Source data files
         data1="{project}/results/benchmarks/data/fig1_source_data.tsv",
         data2="{project}/results/benchmarks/data/fig2_source_data.tsv",
@@ -292,6 +297,8 @@ rule benchmark_r_figures:
         data4="{project}/results/benchmarks/data/fig4_source_data.tsv",
         data5="{project}/results/benchmarks/data/fig5_source_data.tsv",
         data6="{project}/results/benchmarks/data/fig6_source_data.tsv",
+        data7="{project}/results/benchmarks/data/fig7_source_data.tsv",
+        data8="{project}/results/benchmarks/data/fig8_source_data.tsv",
     params:
         window=config["benchmark"]["window"],
         theme=config.get("benchmark", {}).get("figure_theme", "nature"),

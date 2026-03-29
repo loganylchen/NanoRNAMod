@@ -56,7 +56,8 @@ def detect_score_column(df, tool_name=None):
         'nanopsu': ['pvalue', 'p_value', 'score'],
         'nanomud': ['probability', 'pvalue', 'score'],
         'penguin': ['probability', 'score', 'pvalue'],
-        'pybaleen': ['mod_score', 'score'],
+        'pybaleen': ['mod_ratio', 'pvalue', 'padj', 'effect_size', 'mean_p_mod',
+                      'p_value', 'adjusted_p_value', 'stoichiometry'],
     }
 
     if tool_name and tool_name in tool_score_map:

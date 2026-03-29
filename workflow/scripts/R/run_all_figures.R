@@ -42,8 +42,9 @@ script_dir <- if (exists("snakemake")) {
   }, error = function(e) ".")
 }
 
-# Source utilities from the original script directory
+# Source utilities and analysis modules from the original script directory
 source(file.path(script_dir, "00_utils.R"))
+source(file.path(script_dir, "06_score_column_analysis.R"))
 
 # Initialize with defaults
 data_dir <- "."
@@ -72,7 +73,9 @@ input_files <- list(
   # Sensitivity analysis
   coverage = NULL,
   score_dist = NULL,
-  threshold_robust = NULL
+  threshold_robust = NULL,
+  # Score column analysis
+  score_column_summary = NULL
 )
 
 # Check if running as Snakemake script
@@ -92,6 +95,7 @@ if (exists("snakemake")) {
   input_files$coverage <- snakemake@input[["coverage"]]
   input_files$score_dist <- snakemake@input[["score_dist"]]
   input_files$threshold_robust <- snakemake@input[["threshold_robust"]]
+  input_files$score_column_summary <- snakemake@input[["score_column_summary"]]
 
   output_dir <- snakemake@output[["dir"]]
   if (is.null(output_dir)) {
@@ -146,6 +150,7 @@ if (exists("snakemake")) {
   input_files$coverage <- file.path(data_dir, "sensitivity/coverage_analysis.tsv")
   input_files$score_dist <- file.path(data_dir, "sensitivity/score_distribution.tsv")
   input_files$threshold_robust <- file.path(data_dir, "sensitivity/threshold_robustness.tsv")
+  input_files$score_column_summary <- file.path(data_dir, "score_column_summary.tsv")
 }
 
 # Define output directories
@@ -676,6 +681,7 @@ score_dist_df <- load_with_fallback(input_files$score_dist)
 thresh_robust_df <- load_with_fallback(input_files$threshold_robust)
 by_comp_df <- load_with_fallback(input_files$accuracy_by_comparison)
 resource_df <- load_with_fallback(input_files$resources)
+score_col_df <- load_with_fallback(input_files$score_column_summary)
 
 # Assign tool colors
 tool_colors <- assign_tool_colors(unique(accuracy_df$tool))
@@ -687,9 +693,12 @@ tool_colors <- assign_tool_colors(unique(accuracy_df$tool))
 message("\n", paste(rep("=", 70), collapse = ""))
 message("Generating Main Figures")
 message(paste(rep("=", 70), collapse = ""))
+message("Narrative flow: Overall Performance -> Precision/Recall ->")
+message("  Score Column Analysis -> Best Score -> Coverage -> Resources")
 
-# Figure 1: Overall Accuracy with CI
-message("\n[1/6] Overall Accuracy with Bootstrap CI...")
+# ── Fig 1: Overall Performance (AUROC + F1 with CI) ──────────────────────────
+# The headline result: how well does each tool discriminate modified vs unmodified?
+message("\n[1/8] Overall Performance (AUROC + F1 with Bootstrap CI)...")
 p1 <- create_fig1_overall_accuracy(accuracy_df, ci_df, tool_colors)
 if (!is.null(p1)) {
   save_figure(p1, file.path(main_dir, paste0("fig1_overall_accuracy.", fig_format)),
@@ -700,11 +709,12 @@ if (!is.null(p1)) {
   )
 }
 
-# Figure 2: PR Curves
-message("[2/6] Precision vs Recall...")
+# ── Fig 2: Precision vs Recall Trade-off ─────────────────────────────────────
+# Shows how each tool balances false positives vs missed sites.
+message("[2/8] Precision vs Recall Trade-off...")
 p2 <- create_fig2_pr_curves(accuracy_df, tool_colors)
 if (!is.null(p2)) {
-  save_figure(p2, file.path(main_dir, paste0("fig2_pr_curves.", fig_format)),
+  save_figure(p2, file.path(main_dir, paste0("fig2_precision_recall.", fig_format)),
               width = 85, height = 70, dpi = dpi)
   export_source_data(
     accuracy_df %>% dplyr::group_by(tool) %>%
@@ -714,11 +724,12 @@ if (!is.null(p2)) {
   )
 }
 
-# Figure 3: ROC Curves
-message("[3/6] ROC Curves (AUROC)...")
+# ── Fig 3: AUROC Comparison with CI ──────────────────────────────────────────
+# Threshold-independent discrimination ability.
+message("[3/8] AUROC Comparison...")
 p3 <- create_fig3_roc_curves(accuracy_df, ci_df, tool_colors)
 if (!is.null(p3)) {
-  save_figure(p3, file.path(main_dir, paste0("fig3_roc_curves.", fig_format)),
+  save_figure(p3, file.path(main_dir, paste0("fig3_auroc.", fig_format)),
               width = 85, height = 70, dpi = dpi)
   export_source_data(
     accuracy_df %>% dplyr::group_by(tool) %>%
@@ -728,35 +739,64 @@ if (!is.null(p3)) {
   )
 }
 
-# Figure 4: F1 Comparison
-message("[4/6] F1 Comparison...")
-p4 <- create_fig4_f1_comparison(accuracy_df, sig_df, tool_colors)
+# ── Fig 4: Per-Tool Score Column Comparison (NEW) ────────────────────────────
+# For each tool, how do different score columns (p-value, effect_size,
+# mod_ratio, etc.) perform as ranking metrics? This justifies score selection.
+message("[4/8] Per-Tool Score Column Comparison (faceted)...")
+p4 <- create_fig_score_columns_faceted(score_col_df, tool_colors)
 if (!is.null(p4)) {
-  save_figure(p4, file.path(main_dir, paste0("fig4_f1_comparison.", fig_format)),
-              width = 85, height = 70, dpi = dpi)
+  n_tools <- length(unique(score_col_df$tool))
+  fig4_height <- max(100, 55 * ceiling(n_tools / 3))
+  save_figure(p4, file.path(main_dir, paste0("fig4_score_columns.", fig_format)),
+              width = 174, height = fig4_height, dpi = dpi)
+  export_source_data(score_col_df, "fig4_source_data.tsv", data_out_dir)
+}
+
+# ── Fig 5: Best Score Selection Summary (NEW) ────────────────────────────────
+# Dot plot showing which score column was selected for each tool and why.
+message("[5/8] Best Score Selection Summary (dot plot)...")
+p5 <- create_fig_best_score_dotplot(score_col_df, tool_colors)
+if (!is.null(p5)) {
+  n_tools <- length(unique(score_col_df$tool))
+  fig5_height <- max(70, 12 * n_tools)
+  save_figure(p5, file.path(main_dir, paste0("fig5_best_score.", fig_format)),
+              width = 120, height = fig5_height, dpi = dpi)
   export_source_data(
-    accuracy_df %>% dplyr::group_by(tool) %>%
-      dplyr::summarise(f1 = mean(f1, na.rm = TRUE), .groups = "drop"),
-    "fig4_source_data.tsv", data_out_dir
+    score_col_df %>% dplyr::filter(is_best == TRUE | is_best == "True"),
+    "fig5_source_data.tsv", data_out_dir
   )
 }
 
-# Figure 5: Coverage Sensitivity
-message("[5/6] Coverage Sensitivity...")
-p5 <- create_fig5_coverage_sensitivity(coverage_df, tool_colors)
-if (!is.null(p5)) {
-  save_figure(p5, file.path(main_dir, paste0("fig5_coverage_sensitivity.", fig_format)),
+# ── Fig 6: Coverage Sensitivity ──────────────────────────────────────────────
+# How does performance vary with sequencing depth?
+message("[6/8] Coverage Sensitivity...")
+p6 <- create_fig5_coverage_sensitivity(coverage_df, tool_colors)
+if (!is.null(p6)) {
+  save_figure(p6, file.path(main_dir, paste0("fig6_coverage_sensitivity.", fig_format)),
               width = 174, height = 100, dpi = dpi)
-  export_source_data(coverage_df, "fig5_source_data.tsv", data_out_dir)
+  export_source_data(coverage_df, "fig6_source_data.tsv", data_out_dir)
 }
 
-# Figure 6: Resource Usage
-message("[6/6] Resource Usage...")
-p6 <- create_fig6_resource_usage(resource_df, accuracy_df, tool_colors)
-if (!is.null(p6)) {
-  save_figure(p6, file.path(main_dir, paste0("fig6_resource_usage.", fig_format)),
+# ── Fig 7: Resource Usage ────────────────────────────────────────────────────
+# Practical considerations: runtime vs memory, bubble size = F1.
+message("[7/8] Resource Usage...")
+p7 <- create_fig6_resource_usage(resource_df, accuracy_df, tool_colors)
+if (!is.null(p7)) {
+  save_figure(p7, file.path(main_dir, paste0("fig7_resource_usage.", fig_format)),
               width = 100, height = 85, dpi = dpi)
-  export_source_data(resource_df, "fig6_source_data.tsv", data_out_dir)
+  export_source_data(resource_df, "fig7_source_data.tsv", data_out_dir)
+}
+
+# ── Fig 8: Per-Tool Score Column Detail (lollipop) ──────────────────────────
+# Detailed ranking of score columns within each tool, dot size = F1.
+message("[8/8] Per-Tool Score Column Lollipop Charts...")
+p8 <- create_fig_score_lollipop_per_tool(score_col_df, tool_colors)
+if (!is.null(p8)) {
+  n_tools <- length(unique(score_col_df$tool))
+  fig8_height <- max(120, 60 * ceiling(n_tools / 3))
+  save_figure(p8, file.path(main_dir, paste0("fig8_score_lollipop.", fig_format)),
+              width = 174, height = fig8_height, dpi = dpi)
+  export_source_data(score_col_df, "fig8_source_data.tsv", data_out_dir)
 }
 
 # =============================================================================
@@ -799,6 +839,18 @@ if (!is.null(sp4)) {
               width = 100, height = 70, dpi = dpi)
 }
 
+# SFig 5: Score Column AUROC Heatmap
+message("[S5] Score Column AUROC Heatmap...")
+sp5 <- create_fig_score_heatmap(score_col_df, tool_colors)
+if (!is.null(sp5)) {
+  n_tools <- length(unique(score_col_df$tool))
+  n_cols <- length(unique(score_col_df$score_column))
+  sfig5_width <- max(100, 12 * n_cols)
+  sfig5_height <- max(70, 10 * n_tools)
+  save_figure(sp5, file.path(supp_dir, paste0("sfig5_score_heatmap.", fig_format)),
+              width = sfig5_width, height = sfig5_height, dpi = dpi)
+}
+
 # =============================================================================
 # Export All Source Data
 # =============================================================================
@@ -814,6 +866,7 @@ if (!is.null(effect_df)) export_source_data(effect_df, "effect_sizes_source.tsv"
 if (!is.null(coverage_df)) export_source_data(coverage_df, "coverage_analysis_source.tsv", data_out_dir)
 if (!is.null(score_dist_df)) export_source_data(score_dist_df, "score_distribution_source.tsv", data_out_dir)
 if (!is.null(thresh_robust_df)) export_source_data(thresh_robust_df, "threshold_robustness_source.tsv", data_out_dir)
+if (!is.null(score_col_df)) export_source_data(score_col_df, "score_column_summary_source.tsv", data_out_dir)
 
 # =============================================================================
 # Ensure all declared Snakemake outputs exist (create empty placeholders if skipped)

@@ -104,7 +104,8 @@ def detect_score_column(df, tool_name=None):
         'nanocompore': ['GMM_logit_pvalue', 'KS_dwell_pvalue', 'KS_intensity_pvalue', 'Logit_LOR',
                         'p_value_glm', 'p_value_ks', 'p_value'],
         'baleen': ['p_value', 'padj', 'pvalue', 'effect_size', 'score'],
-        'pybaleen': ['pvalue', 'padj', 'effect_size', 'p_value', 'adjusted_p_value', 'stoichiometry'],
+        'pybaleen': ['mod_ratio', 'pvalue', 'padj', 'effect_size', 'mean_p_mod',
+                      'p_value', 'adjusted_p_value', 'stoichiometry'],
         'differr': ['-log10 P value', '-log10 FDR', 'odds ratio', 'G statistic', 'score'],
         'drummer': ['OR_padj', 'G_padj', 'G_test', 'log2_(OR)', 'p_value', 'pvalue', 'padj'],
     }

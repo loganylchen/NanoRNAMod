@@ -11,7 +11,7 @@
 
 required_packages <- c("ggplot2", "grid", "gridExtra", "scales",
                        "RColorBrewer", "viridis", "dplyr",
-                       "tidyr", "purrr")
+                       "tidyr", "purrr", "forcats", "ggrepel")
 
 install_if_missing <- function(packages) {
   for (pkg in packages) {

@@ -588,7 +588,7 @@ TOOL_PREREQUISITES = {
         'container': 'pybaleen',
         'description': 'CUDA-accelerated DTW + HMM modification detection',
         'output': 'site_results.tsv',
-        'score_columns': ['pvalue', 'padj', 'effect_size', 'stoichiometry']
+        'score_columns': ['mod_ratio', 'pvalue', 'padj', 'effect_size', 'mean_p_mod', 'stoichiometry']
     },
     'differr': {
         'inputs': [
