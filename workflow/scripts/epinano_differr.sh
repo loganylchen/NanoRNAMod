@@ -33,7 +33,7 @@ Rscript /opt/epinano/Epinano_DiffErr.R \
     -w "${native}" \
     -o "${prefix}" \
     ${extra} \
-    1>"${snakemake_log[stdout]}" 2>"${snakemake_log[stderr]}"
+    1>"${snakemake_log[0]}" 2>&1
 
 echo "Files produced in ${output_dir}:"
 ls -lh "${output_dir}/" 2>/dev/null || echo "  (directory empty)"
@@ -51,6 +51,6 @@ if [ -n "${found}" ]; then
     mv "${found}" "${expected_output}"
 else
     echo "ERROR: Epinano_DiffErr.R produced no *.prediction.csv in ${output_dir}"
-    echo "Check logs: ${snakemake_log[stderr]}"
+    echo "Check log: ${snakemake_log[0]}"
     exit 1
 fi

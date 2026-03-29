@@ -8,8 +8,7 @@ rule quant_nanocount:
     benchmark:
         "benchmarks/{project}/{sample}.quantification_nanocount.benchmark.txt"
     log:
-        stdout="logs/{project}/qc/{sample}_quantification_nanocount.log",
-        stderr="logs/{project}/qc/{sample}_quantification_nanocount.err",
+        "logs/{project}/qc/{sample}_quantification_nanocount.log",
     priority: 20
     resources:
         mem_mb=1024 * 10,
@@ -17,4 +16,4 @@ rule quant_nanocount:
     shell:
         "NanoCount -i {input.bam}  "
         "--extra_tx_info "
-        "-o {output.count_tsv} 1> {log.stdout} 2>{log.stderr}"
+        "-o {output.count_tsv} 1>{log} 2>&1"

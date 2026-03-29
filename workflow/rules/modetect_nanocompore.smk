@@ -33,8 +33,7 @@ rule nanocompore_collapse:
         prefix="{sample}",
         dir="{project}/results/nanocompore_eventalign_collapse/{sample}",
     log:
-        stdout="logs/{project}/nanocompore_collapse/{sample}.log",
-        stderr="logs/{project}/nanocompore_collapse/{sample}.err",
+        "logs/{project}/nanocompore_collapse/{sample}.log",
     benchmark:
         "benchmarks/{project}/{sample}.nanocompore_collapse.benchmark.txt"
     container:
@@ -49,7 +48,7 @@ rule nanocompore_collapse:
         "--outpath {params.dir} "
         "--outprefix {params.prefix} "
         "--overwrite "
-        "--nthreads {threads} 1>{log.stdout} 2>{log.stderr}"
+        "--nthreads {threads} 1>{log} 2>&1"
 
 
 rule nanocompore:
@@ -72,8 +71,7 @@ rule nanocompore:
         mem_mb = 1024 * 50
     threads: get_threads("nanocompore", 4)
     log:
-        stdout="logs/{project}/nanocompore/{native}_{control}.log",
-        stderr="logs/{project}/nanocompore/{native}_{control}.err",
+        "logs/{project}/nanocompore/{native}_{control}.log",
     benchmark:
         "benchmarks/{project}/{native}_{control}.nanocompore.benchmark.txt"
     shell:
@@ -87,4 +85,4 @@ rule nanocompore:
         "--fasta {input.reference} "
         "--outpath {output.output_dir} "
         "--outprefix '' "
-        "--overwrite  1>{log.stdout} 2>{log.stderr}"
+        "--overwrite  1>{log} 2>&1"

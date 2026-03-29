@@ -44,8 +44,7 @@ rule epinano:
     resources:
         mem_mb = 1024 * 50
     log:
-        stdout="logs/{project}/epinano/{native}_{control}.log",
-        stderr="logs/{project}/epinano/{native}_{control}.err",
+        "logs/{project}/epinano/{native}_{control}.log",
     benchmark:
         "benchmarks/{project}/{native}_{control}.epinano.benchmark.txt"
     script:

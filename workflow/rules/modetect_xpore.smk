@@ -83,12 +83,11 @@ rule xpore_run:
         mem_mb = 1024 * 50
     priority: 10
     log:
-        stdout="logs/{project}/xpore/{native}_{control}.log",
-        stderr="logs/{project}/xpore/{native}_{control}.err",
+        "logs/{project}/xpore/{native}_{control}.log",
     benchmark:
         "benchmarks/{project}/{native}_{control}.xpore.benchmark.txt"
     shell:
-        "xpore diffmod --config {input[0]} --n_processes {threads} 1>{log.stdout} 2>{log.stderr}"
+        "xpore diffmod --config {input[0]} --n_processes {threads} 1>{log} 2>&1"
 
 
 rule xpore_postprocessing:

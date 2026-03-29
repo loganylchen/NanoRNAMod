@@ -13,8 +13,7 @@ rule differr:
     container:
         get_container("differr")
     log:
-        stdout="logs/{project}/differr/{native}_{control}.log",
-        stderr="logs/{project}/differr/{native}_{control}.err",
+        "logs/{project}/differr/{native}_{control}.log",
     threads: get_threads("differr", 4)
     resources:
         mem_mb = 1024 * 50
@@ -28,4 +27,4 @@ rule differr:
         " -r {input.reference} "
         " -o {output} "
         " {params.extra} "
-        " -p {threads} 1>{log.stdout} 2>{log.stderr}"
+        " -p {threads} 1>{log} 2>&1"
