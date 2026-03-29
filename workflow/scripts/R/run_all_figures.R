@@ -88,7 +88,7 @@ if (exists("snakemake")) {
   input_files$bootstrap_ci <- snakemake@input[["bootstrap_ci"]]
   input_files$significance <- snakemake@input[["significance"]]
   input_files$fdr_corrected <- snakemake@input[["fdr"]]
-  input_files$effect_sizes <- snakemake@input[["effects"]]
+  input_files$effect_sizes <- snakemake@input[["effect_sizes"]]
   input_files$coverage <- snakemake@input[["coverage"]]
   input_files$score_dist <- snakemake@input[["score_dist"]]
   input_files$threshold_robust <- snakemake@input[["threshold_robust"]]
