@@ -33,6 +33,6 @@ if [ ! -f "${expected_output}" ]; then
     echo "ERROR: EpiNano did not produce expected output: ${expected_output}" | tee -a "${snakemake_log[0]}"
     # List what was actually produced for debugging
     echo "Files in ${directory}:" | tee -a "${snakemake_log[0]}"
-    ls -la "${directory}"/*.per.site.csv 2>/dev/null | tee -a "${snakemake_log[0]}" || echo "  (no .per.site.csv files found)" | tee -a "${snakemake_log[0]}"
+    ls -la "${directory}"/*.per.site*.csv 2>/dev/null | tee -a "${snakemake_log[0]}" || echo "  (no .per.site*.csv files found)" | tee -a "${snakemake_log[0]}"
     exit 1
 fi

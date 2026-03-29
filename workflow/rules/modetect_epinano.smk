@@ -6,7 +6,7 @@ rule epinano_prep:
         reference_fai=config["reference"]["transcriptome_fasta"] + ".fai",
     output:
         per_site=temp(
-            "{project}/results/alignments/{sample}.fwd.per.site.csv"
+            "{project}/results/alignments/{sample}.plus_strand.per.site.var.csv"
         ),
     params:
         extra=config["params"]["epinano_dataprep"],
@@ -27,8 +27,8 @@ rule epinano_prep:
 
 rule epinano:
     input:
-        control="{project}/results/alignments/{control}.fwd.per.site.csv",
-        native="{project}/results/alignments/{native}.fwd.per.site.csv",
+        control="{project}/results/alignments/{control}.plus_strand.per.site.var.csv",
+        native="{project}/results/alignments/{native}.plus_strand.per.site.var.csv",
     output:
         results="{project}/results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv",
         output_dir=KEEP_OR_NOT(
