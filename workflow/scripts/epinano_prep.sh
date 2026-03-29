@@ -16,6 +16,7 @@ bam_abs="$(cd "$(dirname "${bam}")" && pwd)/$(basename "${bam}")"
 # v1.2.4 has no -o flag; output goes to CWD, so cd to target directory via subshell
 ( cd "${directory}" && \
   python /opt/epinano/Epinano_Variants.py -R "${ref_abs}" \
+      -s /opt/epinano/misc/sam2tsv.jar \
       -b "${bam_abs}" -t ${snakemake[threads]} ${extra} ) \
     >>"${snakemake_log[0]}" 2>&1
 
