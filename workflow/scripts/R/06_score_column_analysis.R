@@ -159,7 +159,8 @@ create_fig_best_score_dotplot <- function(summary_df, tool_colors) {
   tool_order <- df_agg %>%
     dplyr::filter(is_best == TRUE | is_best == "True") %>%
     dplyr::arrange(desc(auroc)) %>%
-    dplyr::pull(tool)
+    dplyr::pull(tool) %>%
+    unique()
   # Add any tools without a best flag
   remaining <- setdiff(unique(df_agg$tool), tool_order)
   tool_order <- c(tool_order, remaining)
@@ -249,7 +250,8 @@ create_fig_score_heatmap <- function(summary_df, tool_colors) {
   tool_order <- df_agg %>%
     dplyr::filter(is_best == TRUE | is_best == "True") %>%
     dplyr::arrange(desc(auroc)) %>%
-    dplyr::pull(tool)
+    dplyr::pull(tool) %>%
+    unique()
   remaining <- setdiff(unique(df_agg$tool), tool_order)
   tool_order <- c(tool_order, remaining)
   df_agg$tool <- factor(df_agg$tool, levels = rev(tool_order))
