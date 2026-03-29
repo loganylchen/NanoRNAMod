@@ -261,12 +261,12 @@ def get_final_output():
                       "threshold_robustness", "effect_sizes"][i-1]
             )]
 
-    logger.info("=" * 60)
-    logger.info(f"NanoRNAMod — Final output files ({len(final_output)} total)")
-    logger.info("=" * 60)
+    logger.debug("=" * 60)
+    logger.debug(f"NanoRNAMod — Final output files ({len(final_output)} total)")
+    logger.debug("=" * 60)
     for f in final_output:
-        logger.info(f"  {f}")
-    logger.info("=" * 60)
+        logger.debug(f"  {f}")
+    logger.debug("=" * 60)
 
     return final_output
 
