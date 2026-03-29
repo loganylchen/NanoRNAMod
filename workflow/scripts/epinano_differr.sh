@@ -14,20 +14,39 @@ extra=$(echo "${snakemake_params[extra]}" | sed -E 's/-t[[:space:]]+[0-9]+//g')
 
 mkdir -p "${output_dir}"
 
+# Epinano_DiffErr.R cleanup() expects a "position" column, but
+# Epinano_Variants.py (v1.2+) outputs "pos". Add "position" as a copy of "pos".
+add_position_col() {
+    local src="$1" dst="$2"
+    # pos is column 2 in: #Ref,pos,base,strand,cov,...
+    awk -F',' -v OFS=',' 'NR==1{print $0,"position"} NR>1{print $0,$2}' \
+        "${src}" > "${dst}"
+}
+
+control_fixed="${output_dir}/$(basename "${control}" .csv)_fixed.csv"
+native_fixed="${output_dir}/$(basename "${native}" .csv)_fixed.csv"
+
+echo "Preprocessing: adding 'position' column for Epinano_DiffErr.R compatibility"
+add_position_col "${control}" "${control_fixed}"
+add_position_col "${native}" "${native_fixed}"
+
 echo "Running Epinano_DiffErr.R"
-echo "  control: ${control}"
-echo "  native:  ${native}"
+echo "  control: ${control_fixed}"
+echo "  native:  ${native_fixed}"
 echo "  prefix:  ${prefix}"
 echo "  threads: ${threads}"
 echo "  extra:   ${extra}"
 
 Rscript /opt/epinano/Epinano_DiffErr.R \
     -t "${threads}" \
-    -k "${control}" \
-    -w "${native}" \
+    -k "${control_fixed}" \
+    -w "${native_fixed}" \
     -o "${prefix}" \
     ${extra} \
     1>"${snakemake_log[stdout]}" 2>"${snakemake_log[stderr]}"
+
+# Clean up temp fixed files
+rm -f "${control_fixed}" "${native_fixed}"
 
 echo "Files produced in ${output_dir}:"
 ls -lh "${output_dir}/" 2>/dev/null || echo "  (directory empty)"
