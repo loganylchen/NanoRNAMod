@@ -424,24 +424,33 @@ create_fig5_coverage_sensitivity <- function(coverage_df, tool_colors) {
 create_fig6_resource_usage <- function(resource_df, accuracy_df, tool_colors) {
   if (is.null(resource_df)) return(NULL)
 
-  # Merge with accuracy for context
-  if (!is.null(accuracy_df)) {
-    acc_summary <- accuracy_df %>%
+  df_plot <- resource_df
+
+  # Handle both pre-summarised (mean_memory_mb) and raw benchmark (max_rss, s) columns
+  if ("mean_memory_mb" %in% names(df_plot) && "mean_runtime_s" %in% names(df_plot)) {
+    df_plot <- df_plot %>%
+      dplyr::mutate(runtime_min = mean_runtime_s / 60, memory_gb = mean_memory_mb / 1024)
+  } else if ("max_rss" %in% names(df_plot) && "s" %in% names(df_plot)) {
+    # Raw Snakemake benchmark data — summarise per tool
+    df_plot <- df_plot %>%
       dplyr::group_by(tool) %>%
-      dplyr::summarise(f1 = mean(f1, na.rm = TRUE), .groups = "drop")
-
-    df_plot <- resource_df %>%
-      dplyr::left_join(acc_summary, by = "tool")
+      dplyr::summarise(
+        runtime_min = mean(s, na.rm = TRUE) / 60,
+        memory_gb = mean(max_rss, na.rm = TRUE) / 1024,
+        .groups = "drop"
+      )
+    if (!is.null(accuracy_df)) {
+      acc_summary <- accuracy_df %>%
+        dplyr::group_by(tool) %>%
+        dplyr::summarise(f1 = mean(f1, na.rm = TRUE), .groups = "drop")
+      df_plot <- df_plot %>% dplyr::left_join(acc_summary, by = "tool")
+    }
   } else {
-    df_plot <- resource_df
-  }
-
-  if (!"mean_memory_mb" %in% names(df_plot) || !"mean_runtime_s" %in% names(df_plot)) {
     message("  Skipping resource figure: required columns missing")
     return(NULL)
   }
 
-  p <- ggplot(df_plot, aes(x = mean_runtime_s / 60, y = mean_memory_mb / 1024, color = tool)) +
+  p <- ggplot(df_plot, aes(x = runtime_min, y = memory_gb, color = tool)) +
     geom_point(aes(size = ifelse("f1" %in% names(df_plot), f1, 1)), alpha = 0.8) +
     geom_text(aes(label = tool), vjust = -1, size = 2.5, hjust = 0.5) +
     scale_color_manual(values = tool_colors, guide = "none") +
@@ -558,22 +567,32 @@ create_sfig_threshold_robust <- function(thresh_robust_df, tool_colors) {
 create_sfig_effect_sizes <- function(effect_df, tool_colors) {
   if (is.null(effect_df)) return(NULL)
 
+  # Effect sizes are pairwise (tool1 vs tool2); aggregate across groups
+  # Filter to F1 metric if available, otherwise use first metric
+  if ("metric" %in% names(effect_df)) {
+    metric_choice <- if ("f1" %in% effect_df$metric) "f1" else effect_df$metric[1]
+    effect_df <- effect_df %>% dplyr::filter(metric == metric_choice)
+  }
+
+  # Create pair label and summarise across comparisons/groups
   df_plot <- effect_df %>%
+    dplyr::mutate(pair = paste0(tool1, " vs ", tool2)) %>%
+    dplyr::group_by(pair) %>%
+    dplyr::summarise(cohens_d = mean(cohens_d, na.rm = TRUE), .groups = "drop") %>%
     dplyr::arrange(desc(cohens_d))
 
-  df_plot$tool <- factor(df_plot$tool, levels = df_plot$tool)
+  df_plot$pair <- factor(df_plot$pair, levels = df_plot$pair)
 
-  p <- ggplot(df_plot, aes(x = tool, y = cohens_d, fill = tool)) +
-    geom_bar(stat = "identity", width = 0.7) +
-    scale_fill_manual(values = tool_colors, guide = "none") +
+  p <- ggplot(df_plot, aes(x = pair, y = cohens_d)) +
+    geom_bar(stat = "identity", width = 0.7, fill = "#4477AA") +
     geom_hline(yintercept = c(0.2, 0.5, 0.8), linetype = "dashed", color = "gray50", linewidth = 0.25) +
     geom_text(aes(label = sprintf("%.2f", cohens_d)), vjust = -0.5, size = 2) +
     annotate("text", x = Inf, y = c(0.2, 0.5, 0.8), hjust = -0.5, size = 2,
              label = c("Small", "Medium", "Large"), color = "gray50") +
     labs(
       title = "Effect Size (Cohen's d)",
-      subtitle = "Magnitude of performance difference between tools",
-      x = "Tool",
+      subtitle = "Pairwise performance difference (F1 score)",
+      x = "Tool Pair",
       y = "Cohen's d"
     ) +
     theme_nature() +
@@ -585,6 +604,14 @@ create_sfig_effect_sizes <- function(effect_df, tool_colors) {
 # =============================================================================
 # Source Data Export Functions
 # =============================================================================
+
+ensure_output <- function(path) {
+  # Create empty file if it doesn't exist (so Snakemake doesn't fail on missing output)
+  if (!file.exists(path)) {
+    dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
+    file.create(path)
+  }
+}
 
 export_source_data <- function(data, filename, output_dir) {
   if (is.null(data) || nrow(data) == 0) return(FALSE)
@@ -679,6 +706,12 @@ p2 <- create_fig2_pr_curves(accuracy_df, tool_colors)
 if (!is.null(p2)) {
   save_figure(p2, file.path(main_dir, paste0("fig2_pr_curves.", fig_format)),
               width = 85, height = 70, dpi = dpi)
+  export_source_data(
+    accuracy_df %>% dplyr::group_by(tool) %>%
+      dplyr::summarise(precision = mean(precision, na.rm = TRUE),
+                       recall = mean(recall, na.rm = TRUE), .groups = "drop"),
+    "fig2_source_data.tsv", data_out_dir
+  )
 }
 
 # Figure 3: ROC Curves
@@ -687,6 +720,12 @@ p3 <- create_fig3_roc_curves(accuracy_df, ci_df, tool_colors)
 if (!is.null(p3)) {
   save_figure(p3, file.path(main_dir, paste0("fig3_roc_curves.", fig_format)),
               width = 85, height = 70, dpi = dpi)
+  export_source_data(
+    accuracy_df %>% dplyr::group_by(tool) %>%
+      dplyr::summarise(auroc = mean(auroc, na.rm = TRUE), .groups = "drop") %>%
+      dplyr::filter(!is.na(auroc)),
+    "fig3_source_data.tsv", data_out_dir
+  )
 }
 
 # Figure 4: F1 Comparison
@@ -695,6 +734,11 @@ p4 <- create_fig4_f1_comparison(accuracy_df, sig_df, tool_colors)
 if (!is.null(p4)) {
   save_figure(p4, file.path(main_dir, paste0("fig4_f1_comparison.", fig_format)),
               width = 85, height = 70, dpi = dpi)
+  export_source_data(
+    accuracy_df %>% dplyr::group_by(tool) %>%
+      dplyr::summarise(f1 = mean(f1, na.rm = TRUE), .groups = "drop"),
+    "fig4_source_data.tsv", data_out_dir
+  )
 }
 
 # Figure 5: Coverage Sensitivity
@@ -703,6 +747,7 @@ p5 <- create_fig5_coverage_sensitivity(coverage_df, tool_colors)
 if (!is.null(p5)) {
   save_figure(p5, file.path(main_dir, paste0("fig5_coverage_sensitivity.", fig_format)),
               width = 174, height = 100, dpi = dpi)
+  export_source_data(coverage_df, "fig5_source_data.tsv", data_out_dir)
 }
 
 # Figure 6: Resource Usage
@@ -711,6 +756,7 @@ p6 <- create_fig6_resource_usage(resource_df, accuracy_df, tool_colors)
 if (!is.null(p6)) {
   save_figure(p6, file.path(main_dir, paste0("fig6_resource_usage.", fig_format)),
               width = 100, height = 85, dpi = dpi)
+  export_source_data(resource_df, "fig6_source_data.tsv", data_out_dir)
 }
 
 # =============================================================================
@@ -768,6 +814,17 @@ if (!is.null(effect_df)) export_source_data(effect_df, "effect_sizes_source.tsv"
 if (!is.null(coverage_df)) export_source_data(coverage_df, "coverage_analysis_source.tsv", data_out_dir)
 if (!is.null(score_dist_df)) export_source_data(score_dist_df, "score_distribution_source.tsv", data_out_dir)
 if (!is.null(thresh_robust_df)) export_source_data(thresh_robust_df, "threshold_robustness_source.tsv", data_out_dir)
+
+# =============================================================================
+# Ensure all declared Snakemake outputs exist (create empty placeholders if skipped)
+# =============================================================================
+
+if (exists("snakemake")) {
+  all_outputs <- unlist(snakemake@output)
+  for (out_path in all_outputs) {
+    ensure_output(out_path)
+  }
+}
 
 # =============================================================================
 # Summary Report
