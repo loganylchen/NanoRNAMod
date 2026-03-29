@@ -19,7 +19,7 @@ params:
   differr: " -f 2  --median-expr-threshold 0  --min-expr-threshold 0 "
   # eligos2: "--max_depth 5000000 --min_depth 5 --esb 0 --oddR 0 --pval 1"
   eligos2: "--max_depth 5000000  --esb 0 --oddR 0 --pval 1"
-  epinano: ' -t 1  -c 5 -f sum_err  -d 0.01  '
+  epinano: '-f sum_err'
   epinano_dataprep: ''
   drummer: ' -z 0.1 -p 1 '
 
