@@ -362,7 +362,7 @@ def analyze_threshold_robustness(
         # Remove NaN scores
         tool_df = tool_df.dropna(subset=['score'])
 
-        if len(tool_df) < n_splits * 10:
+        if len(tool_df) < n_splits * 4:
             continue
 
         y_true = tool_df['truth'].values

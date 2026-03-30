@@ -762,29 +762,75 @@ create_sfig_effect_sizes <- function(effect_df, tool_colors) {
     effect_df <- effect_df %>% dplyr::filter(metric == metric_choice)
   }
 
-  # Create pair label and summarise across comparisons/groups
-  df_plot <- effect_df %>%
-    dplyr::mutate(pair = paste0(tool1, " vs ", tool2)) %>%
-    dplyr::group_by(pair) %>%
-    dplyr::summarise(cohens_d = mean(cohens_d, na.rm = TRUE), .groups = "drop") %>%
-    dplyr::arrange(desc(cohens_d))
+  # Compute mean Cohen's d per tool pair
+  df_pairs <- effect_df %>%
+    dplyr::group_by(tool1, tool2) %>%
+    dplyr::summarise(cohens_d = mean(cohens_d, na.rm = TRUE), .groups = "drop")
 
-  df_plot$pair <- factor(df_plot$pair, levels = df_plot$pair)
+  # Build symmetric matrix
+  all_tools <- sort(unique(c(df_pairs$tool1, df_pairs$tool2)))
+  if (length(all_tools) < 2) return(NULL)
 
-  p <- ggplot(df_plot, aes(x = pair, y = cohens_d)) +
-    geom_bar(stat = "identity", width = 0.7, fill = "#4477AA") +
-    geom_hline(yintercept = c(0.2, 0.5, 0.8), linetype = "dashed", color = "gray50", linewidth = 0.25) +
-    geom_text(aes(label = sprintf("%.2f", cohens_d)), vjust = -0.5, size = 2) +
-    annotate("text", x = Inf, y = c(0.2, 0.5, 0.8), hjust = -0.5, size = 2,
-             label = c("Small", "Medium", "Large"), color = "gray50") +
-    labs(
-      title = "Effect Size (Cohen's d)",
-      subtitle = "Pairwise performance difference (F1 score)",
-      x = "Tool Pair",
-      y = "Cohen's d"
+  # Create all combinations for the heatmap (including reverse direction)
+  mat_df <- tidyr::expand_grid(tool_row = all_tools, tool_col = all_tools)
+  mat_df <- mat_df %>%
+    dplyr::left_join(df_pairs, by = c("tool_row" = "tool1", "tool_col" = "tool2")) %>%
+    dplyr::rename(d_forward = cohens_d) %>%
+    dplyr::left_join(df_pairs, by = c("tool_row" = "tool2", "tool_col" = "tool1")) %>%
+    dplyr::rename(d_reverse = cohens_d) %>%
+    dplyr::mutate(
+      cohens_d = dplyr::case_when(
+        tool_row == tool_col ~ NA_real_,
+        !is.na(d_forward) ~ d_forward,
+        !is.na(d_reverse) ~ -d_reverse,
+        TRUE ~ NA_real_
+      )
+    ) %>%
+    dplyr::select(tool_row, tool_col, cohens_d)
+
+  mat_df$tool_row <- factor(mat_df$tool_row, levels = all_tools)
+  mat_df$tool_col <- factor(mat_df$tool_col, levels = all_tools)
+
+  # Determine color scale limits (symmetric around 0)
+  d_max <- max(abs(mat_df$cohens_d), na.rm = TRUE)
+  d_lim <- ceiling(d_max * 10) / 10  # round up to nearest 0.1
+
+  p <- ggplot(mat_df, aes(x = tool_col, y = tool_row, fill = cohens_d)) +
+    geom_tile(color = "white", linewidth = 0.4) +
+    # Grey diagonal
+    geom_tile(
+      data = mat_df %>% dplyr::filter(tool_row == tool_col),
+      fill = "gray90", color = "white", linewidth = 0.4
     ) +
+    geom_text(
+      data = mat_df %>% dplyr::filter(tool_row != tool_col & !is.na(cohens_d)),
+      aes(label = sprintf("%.2f", cohens_d)),
+      size = 2.2, color = "black"
+    ) +
+    scale_fill_gradient2(
+      low = "#2166AC", mid = "white", high = "#B2182B",
+      midpoint = 0, limits = c(-d_lim, d_lim),
+      na.value = "gray90",
+      name = "Cohen's d"
+    ) +
+    labs(
+      title = "Pairwise Effect Sizes (Cohen's d)",
+      subtitle = paste0(
+        "Row tool vs column tool | ",
+        "|d| < 0.2 negligible, 0.2\u20130.5 small, 0.5\u20130.8 medium, > 0.8 large"
+      ),
+      x = NULL,
+      y = NULL
+    ) +
+    coord_fixed() +
     theme_nature() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      panel.border = element_blank(),
+      axis.line = element_blank(),
+      axis.ticks = element_blank(),
+      legend.position = "right"
+    )
 
   p
 }

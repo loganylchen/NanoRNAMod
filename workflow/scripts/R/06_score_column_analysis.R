@@ -235,11 +235,12 @@ create_fig_best_score_dotplot <- function(summary_df, tool_colors) {
 create_fig_score_heatmap <- function(summary_df, tool_colors) {
   if (is.null(summary_df) || nrow(summary_df) == 0) return(NULL)
 
-  # Aggregate
+  # Aggregate (mean across modification_type × window combinations)
   df_agg <- summary_df %>%
     dplyr::group_by(tool, score_column, is_best) %>%
     dplyr::summarise(
       auroc = mean(auroc, na.rm = TRUE),
+      auprc = mean(auprc, na.rm = TRUE),
       .groups = "drop"
     ) %>%
     dplyr::filter(!is.na(auroc))
@@ -265,10 +266,20 @@ create_fig_score_heatmap <- function(summary_df, tool_colors) {
       is_best_flag = (is_best == TRUE | is_best == "True")
     )
 
+  # Build cell label: AUROC on top, AUPRC on bottom
+  df_agg <- df_agg %>%
+    dplyr::mutate(
+      cell_label = ifelse(
+        !is.na(auprc),
+        sprintf("%.2f\n%.2f", auroc, auprc),
+        sprintf("%.2f", auroc)
+      )
+    )
+
   p <- ggplot(df_agg, aes(x = score_label, y = tool, fill = auroc)) +
     geom_tile(color = "white", linewidth = 0.3) +
-    geom_text(aes(label = sprintf("%.2f", auroc)),
-              size = 2, color = "black") +
+    geom_text(aes(label = cell_label),
+              size = 1.8, color = "black", lineheight = 0.85) +
     # Bold border for best
     geom_tile(
       data = df_agg %>% dplyr::filter(is_best_flag),
@@ -279,8 +290,8 @@ create_fig_score_heatmap <- function(summary_df, tool_colors) {
       name = "AUROC"
     ) +
     labs(
-      title = "Score Column AUROC Heatmap",
-      subtitle = "AUROC per tool \u00d7 score column (bold border = best)",
+      title = "Score Column Performance Heatmap",
+      subtitle = "Upper: AUROC / Lower: AUPRC (bold border = best score column)",
       x = "Score Column",
       y = "Tool"
     ) +
