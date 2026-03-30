@@ -8,9 +8,11 @@ rule epinano_prep:
         per_site=temp(
             "{project}/results/alignments/{sample}.plus_strand.per.site.var.csv"
         ),
+        sum_err=temp(
+            "{project}/results/alignments/{sample}.plus_strand.per.site.var.csv.per.site.var.sum_err.csv"
+        ),
     params:
         extra=config["params"]["epinano_dataprep"],
-        prefix="{project}/results/alignments/{sample}",
     container:
         get_container("epinano")
     threads: get_threads("epinano", 4)
