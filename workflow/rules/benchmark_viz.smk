@@ -10,7 +10,7 @@ rule benchmark_visualization:
         # Depend on the touch file from accuracy_benchmark
         # This ensures the accuracy_benchmark rule has completed
         done="{project}/results/benchmarks/.benchmark_complete",
-        accuracy="{project}/results/benchmarks/aggregated/accuracy_summary.tsv",
+        accuracy="{project}/results/benchmarks/cross_tool/accuracy_summary.tsv",
         resource="{project}/results/benchmarks/resource_summary.tsv",
     output:
         html="{project}/results/benchmarks/viz/benchmark_report.html",
@@ -189,8 +189,8 @@ rule benchmark_statistics:
     permutation tests, FDR correction, and effect sizes (Cohen's d, Cliff's delta).
     """
     input:
-        summary="{project}/results/benchmarks/aggregated/accuracy_summary.tsv",
-        by_comparison="{project}/results/benchmarks/aggregated/accuracy_summary_by_comparison.tsv",
+        summary="{project}/results/benchmarks/cross_tool/accuracy_summary.tsv",
+        by_comparison="{project}/results/benchmarks/cross_tool/accuracy_summary_by_comparison.tsv",
     output:
         ci="{project}/results/benchmarks/statistics/bootstrap_ci.tsv",
         significance="{project}/results/benchmarks/statistics/significance_tests.tsv",
@@ -251,15 +251,15 @@ rule benchmark_sensitivity:
 rule benchmark_r_figures:
     """Generate Nature-quality figures using R ggplot2 with statistical overlays."""
     input:
-        # Aggregated accuracy metrics
-        aggregated=expand("{{project}}/results/benchmarks/aggregated/{agg_file}", agg_file=[
+        # Cross-tool accuracy metrics
+        aggregated=expand("{{project}}/results/benchmarks/cross_tool/{agg_file}", agg_file=[
             "accuracy_summary.tsv",
             "accuracy_summary_overall.tsv",
             "accuracy_summary_by_comparison.tsv",
             "accuracy_summary_by_negative_type.tsv",
         ]),
-        optimal_scores="{project}/results/benchmarks/aggregated/best_scores.tsv",
-        by_tool="{project}/results/benchmarks/aggregated/by_tool.tsv",
+        optimal_scores="{project}/results/benchmarks/cross_tool/best_scores.tsv",
+        by_tool="{project}/results/benchmarks/cross_tool/by_tool.tsv",
         score_optimization="{project}/results/benchmarks/optimal_score_per_tool.tsv",
         score_column_summary="{project}/results/benchmarks/score_column_summary.tsv",
         thresholds="{project}/results/benchmarks/threshold_evaluation.tsv",
@@ -275,30 +275,30 @@ rule benchmark_r_figures:
         score_dist="{project}/results/benchmarks/sensitivity/score_distribution.tsv",
         threshold_robust="{project}/results/benchmarks/sensitivity/threshold_robustness.tsv",
     output:
-        # Main figures (explicit file tracking)
-        fig1="{project}/results/benchmarks/figures/main/fig1_overall_accuracy.pdf",
-        fig2="{project}/results/benchmarks/figures/main/fig2_precision_recall.pdf",
-        fig3="{project}/results/benchmarks/figures/main/fig3_auroc.pdf",
-        fig4="{project}/results/benchmarks/figures/main/fig4_score_columns.pdf",
-        fig5="{project}/results/benchmarks/figures/main/fig5_best_score.pdf",
-        fig6="{project}/results/benchmarks/figures/main/fig6_coverage_sensitivity.pdf",
-        fig7="{project}/results/benchmarks/figures/main/fig7_resource_usage.pdf",
-        fig8="{project}/results/benchmarks/figures/main/fig8_score_lollipop.pdf",
+        # Main figures (flat layout with co-located source data)
+        fig1="{project}/results/benchmarks/figures/fig1_overall_accuracy.pdf",
+        fig2="{project}/results/benchmarks/figures/fig2_precision_recall.pdf",
+        fig3="{project}/results/benchmarks/figures/fig3_auroc.pdf",
+        fig4="{project}/results/benchmarks/figures/fig4_native_vs_fair.pdf",
+        fig5="{project}/results/benchmarks/figures/fig5_best_score.pdf",
+        fig6="{project}/results/benchmarks/figures/fig6_coverage_sensitivity.pdf",
+        fig7="{project}/results/benchmarks/figures/fig7_resource_usage.pdf",
+        fig8="{project}/results/benchmarks/figures/fig8_tool_ranking.pdf",
         # Supplementary figures
-        sfig1="{project}/results/benchmarks/figures/supplementary/sfig1_per_comparison.pdf",
-        sfig2="{project}/results/benchmarks/figures/supplementary/sfig2_score_distributions.pdf",
-        sfig3="{project}/results/benchmarks/figures/supplementary/sfig3_threshold_robustness.pdf",
-        sfig4="{project}/results/benchmarks/figures/supplementary/sfig4_effect_sizes.pdf",
-        sfig5="{project}/results/benchmarks/figures/supplementary/sfig5_score_heatmap.pdf",
-        # Source data files
-        data1="{project}/results/benchmarks/data/fig1_source_data.tsv",
-        data2="{project}/results/benchmarks/data/fig2_source_data.tsv",
-        data3="{project}/results/benchmarks/data/fig3_source_data.tsv",
-        data4="{project}/results/benchmarks/data/fig4_source_data.tsv",
-        data5="{project}/results/benchmarks/data/fig5_source_data.tsv",
-        data6="{project}/results/benchmarks/data/fig6_source_data.tsv",
-        data7="{project}/results/benchmarks/data/fig7_source_data.tsv",
-        data8="{project}/results/benchmarks/data/fig8_source_data.tsv",
+        sfig1="{project}/results/benchmarks/figures/sfig1_per_comparison.pdf",
+        sfig2="{project}/results/benchmarks/figures/sfig2_native_vs_fair_detail.pdf",
+        sfig3="{project}/results/benchmarks/figures/sfig3_threshold_robustness.pdf",
+        sfig4="{project}/results/benchmarks/figures/sfig4_effect_sizes.pdf",
+        sfig5="{project}/results/benchmarks/figures/sfig5_score_heatmap.pdf",
+        # Source data files (co-located in figures/)
+        data1="{project}/results/benchmarks/figures/fig1_overall_accuracy_data.tsv",
+        data2="{project}/results/benchmarks/figures/fig2_precision_recall_data.tsv",
+        data3="{project}/results/benchmarks/figures/fig3_auroc_data.tsv",
+        data4="{project}/results/benchmarks/figures/fig4_native_vs_fair_data.tsv",
+        data5="{project}/results/benchmarks/figures/fig5_best_score_data.tsv",
+        data6="{project}/results/benchmarks/figures/fig6_coverage_sensitivity_data.tsv",
+        data7="{project}/results/benchmarks/figures/fig7_resource_usage_data.tsv",
+        data8="{project}/results/benchmarks/figures/fig8_tool_ranking_data.tsv",
     params:
         window=config["benchmark"]["window"],
         theme=config.get("benchmark", {}).get("figure_theme", "nature"),
@@ -327,7 +327,7 @@ rule benchmark_pdf_report:
     output:
         pdf="{project}/results/benchmarks/benchmark_report.pdf",
     params:
-        benchmark_dir="{project}/results/benchmarks/aggregated",
+        benchmark_dir="{project}/results/benchmarks/cross_tool",
     resources:
         mem_mb=1024 * 10,
     threads: 1
@@ -338,6 +338,101 @@ rule benchmark_pdf_report:
         get_container("python3")
     script:
         "../scripts/benchmark_pdf_report.py"
+
+
+rule benchmark_per_tool_comparison_figures:
+    """Generate per-tool × comparison figures (ROC, PR, score dist, native vs fair)."""
+    input:
+        native_scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/native/score_comparison.tsv",
+        fair_scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/fair/score_comparison.tsv",
+        results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
+        truth_set=config["benchmark"]["truth_set"],
+    output:
+        roc_pdf="{project}/results/benchmarks/per_tool/{tool}/{comparison}/figures/roc_curve.pdf",
+        roc_data="{project}/results/benchmarks/per_tool/{tool}/{comparison}/figures/roc_curve_data.tsv",
+        pr_pdf="{project}/results/benchmarks/per_tool/{tool}/{comparison}/figures/pr_curve.pdf",
+        pr_data="{project}/results/benchmarks/per_tool/{tool}/{comparison}/figures/pr_curve_data.tsv",
+        dist_pdf="{project}/results/benchmarks/per_tool/{tool}/{comparison}/figures/score_distribution.pdf",
+        dist_data="{project}/results/benchmarks/per_tool/{tool}/{comparison}/figures/score_distribution_data.tsv",
+        nvf_pdf="{project}/results/benchmarks/per_tool/{tool}/{comparison}/figures/native_vs_fair.pdf",
+        nvf_data="{project}/results/benchmarks/per_tool/{tool}/{comparison}/figures/native_vs_fair_data.tsv",
+    params:
+        window=config["benchmark"]["window"],
+    resources:
+        mem_mb=1024 * 10,
+    threads: 1
+    priority: 35
+    log:
+        "logs/{project}/benchmark_per_tool_comparison_figures/{tool}/{comparison}.log",
+    benchmark:
+        "benchmarks/{project}/benchmark_per_tool_comparison_figures/{tool}/{comparison}.benchmark.txt"
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_per_tool_figures.py"
+
+
+rule benchmark_per_tool_summary_figures:
+    """Generate per-tool summary figures across all comparisons."""
+    input:
+        native_scores=lambda wc: expand(
+            f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{comparison}}/native/score_comparison.tsv",
+            project=wc.project,
+            tool=wc.tool,
+            comparison=comparisons,
+        ),
+        fair_scores=lambda wc: expand(
+            f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{comparison}}/fair/score_comparison.tsv",
+            project=wc.project,
+            tool=wc.tool,
+            comparison=comparisons,
+        ),
+    output:
+        acc_pdf="{project}/results/benchmarks/per_tool/{tool}/figures/accuracy_by_comparison.pdf",
+        acc_data="{project}/results/benchmarks/per_tool/{tool}/figures/accuracy_by_comparison_data.tsv",
+        nvf_pdf="{project}/results/benchmarks/per_tool/{tool}/figures/native_vs_fair_summary.pdf",
+        nvf_data="{project}/results/benchmarks/per_tool/{tool}/figures/native_vs_fair_summary_data.tsv",
+        sc_pdf="{project}/results/benchmarks/per_tool/{tool}/figures/score_columns_comparison.pdf",
+        sc_data="{project}/results/benchmarks/per_tool/{tool}/figures/score_columns_comparison_data.tsv",
+        thresh_pdf="{project}/results/benchmarks/per_tool/{tool}/figures/threshold_curve.pdf",
+        thresh_data="{project}/results/benchmarks/per_tool/{tool}/figures/threshold_curve_data.tsv",
+    resources:
+        mem_mb=1024 * 10,
+    threads: 1
+    priority: 35
+    log:
+        "logs/{project}/benchmark_per_tool_summary_figures/{tool}.log",
+    benchmark:
+        "benchmarks/{project}/benchmark_per_tool_summary_figures/{tool}.benchmark.txt"
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_per_tool_summary.py"
+
+
+rule benchmark_per_sample_figures:
+    """Generate per-sample tool figures (native only, no fair mode)."""
+    input:
+        native_scores="{project}/results/benchmarks/per_tool/{tool}/{sample}/native/score_comparison.tsv",
+        results="{project}/results/modifications/{tool}/{sample}/{tool}_results.tsv",
+        truth_set=config["benchmark"]["truth_set"],
+    output:
+        dist_pdf="{project}/results/benchmarks/per_tool/{tool}/{sample}/figures/score_distribution.pdf",
+        dist_data="{project}/results/benchmarks/per_tool/{tool}/{sample}/figures/score_distribution_data.tsv",
+    params:
+        window=config["benchmark"]["window"],
+    resources:
+        mem_mb=1024 * 10,
+    threads: 1
+    priority: 35
+    log:
+        "logs/{project}/benchmark_per_sample_figures/{tool}/{sample}.log",
+    benchmark:
+        "benchmarks/{project}/benchmark_per_sample_figures/{tool}/{sample}.benchmark.txt"
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_per_sample_figures.py"
 
 
 rule benchmark_resource_by_tool:

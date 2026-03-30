@@ -14,9 +14,8 @@
 #   OR via Snakemake script directive
 #
 # Output structure:
-#   figures/main/          - Main figures (Nature-ready)
-#   figures/supplementary/ - Supplementary figures
-#   data/                  - Source data (TSV)
+#   figures/               - All figures (main figN_*, supplementary sfigN_*)
+#                            with co-located source data (*_data.tsv)
 # =============================================================================
 
 # Suppress startup messages
@@ -99,7 +98,7 @@ if (exists("snakemake")) {
 
   output_dir <- snakemake@output[["dir"]]
   if (is.null(output_dir)) {
-    output_dir <- dirname(dirname(snakemake@output[["fig1"]]))
+    output_dir <- dirname(snakemake@output[["fig1"]])
   }
   window_filter <- snakemake@params[["window"]]
   theme <- snakemake@params[["theme"]]
@@ -153,10 +152,10 @@ if (exists("snakemake")) {
   input_files$score_column_summary <- file.path(data_dir, "score_column_summary.tsv")
 }
 
-# Define output directories
-main_dir <- file.path(output_dir, "main")
-supp_dir <- file.path(output_dir, "supplementary")
-data_out_dir <- file.path(output_dir, "..", "data")
+# Define output directories (flat layout — all figures and data co-located)
+main_dir <- output_dir
+supp_dir <- output_dir
+data_out_dir <- output_dir
 
 # =============================================================================
 # Data Loading Functions
@@ -473,6 +472,151 @@ create_fig6_resource_usage <- function(resource_df, accuracy_df, tool_colors) {
 }
 
 # =============================================================================
+# New Cross-Tool Figure Functions (Phase 4)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Figure 4: Native vs Fair Comparison
+# -----------------------------------------------------------------------------
+create_fig4_native_vs_fair <- function(by_comp_df, tool_colors) {
+  if (is.null(by_comp_df) || !"mode" %in% names(by_comp_df)) return(NULL)
+
+  df_summary <- by_comp_df %>%
+    dplyr::group_by(tool, mode) %>%
+    dplyr::summarise(auroc = mean(auroc, na.rm = TRUE), .groups = "drop") %>%
+    dplyr::filter(!is.na(auroc))
+
+  if (nrow(df_summary) == 0) return(NULL)
+
+  # Order tools by native AUROC
+  tool_order <- df_summary %>%
+    dplyr::filter(mode == "native") %>%
+    dplyr::arrange(desc(auroc)) %>%
+    dplyr::pull(tool)
+  df_summary$tool <- factor(df_summary$tool, levels = tool_order)
+
+  p <- ggplot(df_summary, aes(x = tool, y = auroc, fill = mode)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7,
+             color = "black", linewidth = 0.25) +
+    scale_fill_manual(
+      values = c("native" = "#0072B2", "fair" = "#D55E00"),
+      labels = c("Native", "Fair"),
+      name = "Mode"
+    ) +
+    geom_text(aes(label = sprintf("%.3f", auroc)),
+              position = position_dodge(width = 0.8), vjust = -0.5, size = 2) +
+    labs(
+      title = "Native vs Fair Evaluation Mode",
+      subtitle = "AUROC comparison across evaluation strategies",
+      x = "Tool",
+      y = "AUROC"
+    ) +
+    scale_y_continuous(limits = c(0, 1.15), expand = c(0, 0)) +
+    geom_hline(yintercept = 0.5, linetype = "dashed", color = "gray50", linewidth = 0.25) +
+    theme_nature() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "top"
+    )
+
+  p
+}
+
+# -----------------------------------------------------------------------------
+# Figure 8: Tool Ranking (lollipop)
+# -----------------------------------------------------------------------------
+create_fig8_tool_ranking <- function(accuracy_df, ci_df, tool_colors) {
+  if (is.null(accuracy_df) || !"auroc" %in% names(accuracy_df)) return(NULL)
+
+  df_summary <- accuracy_df %>%
+    dplyr::group_by(tool) %>%
+    dplyr::summarise(
+      auroc = mean(auroc, na.rm = TRUE),
+      f1 = mean(f1, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::filter(!is.na(auroc)) %>%
+    dplyr::arrange(auroc)
+
+  if (nrow(df_summary) == 0) return(NULL)
+
+  df_summary$tool <- factor(df_summary$tool, levels = df_summary$tool)
+  plot_colors <- tool_colors[match(levels(df_summary$tool), names(tool_colors))]
+
+  # Add CI if available
+  if (!is.null(ci_df) && "metric" %in% names(ci_df)) {
+    ci_auroc <- ci_df %>%
+      dplyr::filter(metric == "auroc") %>%
+      dplyr::select(tool, ci_lower, ci_upper)
+    df_summary <- df_summary %>%
+      dplyr::left_join(ci_auroc, by = "tool")
+  }
+
+  p <- ggplot(df_summary, aes(x = tool, y = auroc, color = tool)) +
+    geom_segment(aes(x = tool, xend = tool, y = 0.5, yend = auroc), linewidth = 1) +
+    geom_point(size = 4)
+
+  if ("ci_lower" %in% names(df_summary) && !all(is.na(df_summary$ci_lower))) {
+    p <- p + geom_errorbar(
+      aes(ymin = ci_lower, ymax = ci_upper),
+      width = 0.2, linewidth = 0.5
+    )
+  }
+
+  p <- p +
+    scale_color_manual(values = plot_colors, guide = "none") +
+    geom_text(aes(label = sprintf("%.3f", auroc)), hjust = -0.3, size = 2.5) +
+    coord_flip() +
+    geom_hline(yintercept = 0.5, linetype = "dashed", color = "gray50", linewidth = 0.25) +
+    labs(
+      title = "Tool Ranking by AUROC",
+      subtitle = "Higher is better (dashed line = random classifier)",
+      x = NULL,
+      y = "AUROC"
+    ) +
+    scale_y_continuous(limits = c(0.45, 1.1), expand = c(0, 0)) +
+    theme_nature()
+
+  p
+}
+
+# -----------------------------------------------------------------------------
+# SFig 2: Native vs Fair Detail (per-tool paired breakdown)
+# -----------------------------------------------------------------------------
+create_sfig2_native_vs_fair_detail <- function(by_comp_df, tool_colors) {
+  if (is.null(by_comp_df) || !"mode" %in% names(by_comp_df)) return(NULL)
+
+  df_plot <- by_comp_df %>%
+    dplyr::filter(!is.na(auroc))
+
+  if (nrow(df_plot) == 0) return(NULL)
+
+  p <- ggplot(df_plot, aes(x = comparison, y = auroc, fill = mode)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+    scale_fill_manual(
+      values = c("native" = "#0072B2", "fair" = "#D55E00"),
+      labels = c("Native", "Fair"),
+      name = "Mode"
+    ) +
+    facet_wrap(~ tool, scales = "free_x") +
+    labs(
+      title = "Native vs Fair: Per-Tool Breakdown",
+      subtitle = "AUROC by comparison for each tool",
+      x = "Comparison",
+      y = "AUROC"
+    ) +
+    scale_y_continuous(limits = c(0, 1.15), expand = c(0, 0)) +
+    theme_nature() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+      legend.position = "top",
+      strip.text = element_text(size = 8)
+    )
+
+  p
+}
+
+# =============================================================================
 # Supplementary Figure Functions
 # =============================================================================
 
@@ -650,14 +794,10 @@ if (!is.null(window_filter)) {
   message("  Window filter: ", window_filter)
 }
 
-# Create output directories
-message("\nCreating output directories...")
-dir.create(main_dir, showWarnings = FALSE, recursive = TRUE)
-dir.create(supp_dir, showWarnings = FALSE, recursive = TRUE)
-dir.create(data_out_dir, showWarnings = FALSE, recursive = TRUE)
-message("  Created: ", main_dir)
-message("  Created: ", supp_dir)
-message("  Created: ", data_out_dir)
+# Create output directory
+message("\nCreating output directory...")
+dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+message("  Created: ", output_dir)
 
 # =============================================================================
 # Load Data
@@ -705,7 +845,7 @@ if (!is.null(p1)) {
               width = 85, height = 70, dpi = dpi)
   export_source_data(
     accuracy_df %>% dplyr::group_by(tool) %>% dplyr::summarise(f1 = mean(f1, na.rm = TRUE), .groups = "drop"),
-    "fig1_source_data.tsv", data_out_dir
+    "fig1_overall_accuracy_data.tsv", data_out_dir
   )
 }
 
@@ -720,7 +860,7 @@ if (!is.null(p2)) {
     accuracy_df %>% dplyr::group_by(tool) %>%
       dplyr::summarise(precision = mean(precision, na.rm = TRUE),
                        recall = mean(recall, na.rm = TRUE), .groups = "drop"),
-    "fig2_source_data.tsv", data_out_dir
+    "fig2_precision_recall_data.tsv", data_out_dir
   )
 }
 
@@ -735,21 +875,18 @@ if (!is.null(p3)) {
     accuracy_df %>% dplyr::group_by(tool) %>%
       dplyr::summarise(auroc = mean(auroc, na.rm = TRUE), .groups = "drop") %>%
       dplyr::filter(!is.na(auroc)),
-    "fig3_source_data.tsv", data_out_dir
+    "fig3_auroc_data.tsv", data_out_dir
   )
 }
 
-# ── Fig 4: Per-Tool Score Column Comparison (NEW) ────────────────────────────
-# For each tool, how do different score columns (p-value, effect_size,
-# mod_ratio, etc.) perform as ranking metrics? This justifies score selection.
-message("[4/8] Per-Tool Score Column Comparison (faceted)...")
-p4 <- create_fig_score_columns_faceted(score_col_df, tool_colors)
+# ── Fig 4: Native vs Fair Comparison ──────────────────────────────────────────
+# Grouped bar chart: native/fair AUROC per tool.
+message("[4/8] Native vs Fair Comparison...")
+p4 <- create_fig4_native_vs_fair(by_comp_df, tool_colors)
 if (!is.null(p4)) {
-  n_tools <- length(unique(score_col_df$tool))
-  fig4_height <- max(100, 55 * ceiling(n_tools / 3))
-  save_figure(p4, file.path(main_dir, paste0("fig4_score_columns.", fig_format)),
-              width = 174, height = fig4_height, dpi = dpi)
-  export_source_data(score_col_df, "fig4_source_data.tsv", data_out_dir)
+  save_figure(p4, file.path(main_dir, paste0("fig4_native_vs_fair.", fig_format)),
+              width = 174, height = 100, dpi = dpi)
+  export_source_data(by_comp_df, "fig4_native_vs_fair_data.tsv", data_out_dir)
 }
 
 # ── Fig 5: Best Score Selection Summary (NEW) ────────────────────────────────
@@ -763,7 +900,7 @@ if (!is.null(p5)) {
               width = 120, height = fig5_height, dpi = dpi)
   export_source_data(
     score_col_df %>% dplyr::filter(is_best == TRUE | is_best == "True"),
-    "fig5_source_data.tsv", data_out_dir
+    "fig5_best_score_data.tsv", data_out_dir
   )
 }
 
@@ -774,7 +911,7 @@ p6 <- create_fig5_coverage_sensitivity(coverage_df, tool_colors)
 if (!is.null(p6)) {
   save_figure(p6, file.path(main_dir, paste0("fig6_coverage_sensitivity.", fig_format)),
               width = 174, height = 100, dpi = dpi)
-  export_source_data(coverage_df, "fig6_source_data.tsv", data_out_dir)
+  export_source_data(coverage_df, "fig6_coverage_sensitivity_data.tsv", data_out_dir)
 }
 
 # ── Fig 7: Resource Usage ────────────────────────────────────────────────────
@@ -784,19 +921,22 @@ p7 <- create_fig6_resource_usage(resource_df, accuracy_df, tool_colors)
 if (!is.null(p7)) {
   save_figure(p7, file.path(main_dir, paste0("fig7_resource_usage.", fig_format)),
               width = 100, height = 85, dpi = dpi)
-  export_source_data(resource_df, "fig7_source_data.tsv", data_out_dir)
+  export_source_data(resource_df, "fig7_resource_usage_data.tsv", data_out_dir)
 }
 
-# ── Fig 8: Per-Tool Score Column Detail (lollipop) ──────────────────────────
-# Detailed ranking of score columns within each tool, dot size = F1.
-message("[8/8] Per-Tool Score Column Lollipop Charts...")
-p8 <- create_fig_score_lollipop_per_tool(score_col_df, tool_colors)
+# ── Fig 8: Tool Ranking ──────────────────────────────────────────────────────
+# Lollipop chart: tools ranked by performance (mean AUROC).
+message("[8/8] Tool Ranking (lollipop)...")
+p8 <- create_fig8_tool_ranking(accuracy_df, ci_df, tool_colors)
 if (!is.null(p8)) {
-  n_tools <- length(unique(score_col_df$tool))
-  fig8_height <- max(120, 60 * ceiling(n_tools / 3))
-  save_figure(p8, file.path(main_dir, paste0("fig8_score_lollipop.", fig_format)),
-              width = 174, height = fig8_height, dpi = dpi)
-  export_source_data(score_col_df, "fig8_source_data.tsv", data_out_dir)
+  save_figure(p8, file.path(main_dir, paste0("fig8_tool_ranking.", fig_format)),
+              width = 120, height = 100, dpi = dpi)
+  export_source_data(
+    accuracy_df %>% dplyr::group_by(tool) %>%
+      dplyr::summarise(auroc = mean(auroc, na.rm = TRUE), f1 = mean(f1, na.rm = TRUE), .groups = "drop") %>%
+      dplyr::arrange(desc(auroc)),
+    "fig8_tool_ranking_data.tsv", data_out_dir
+  )
 }
 
 # =============================================================================
@@ -815,12 +955,12 @@ if (!is.null(sp1)) {
               width = 174, height = 100, dpi = dpi)
 }
 
-# SFig 2: Score Distributions
-message("[S2] Score Distribution Analysis...")
-sp2 <- create_sfig_score_dist(score_dist_df, tool_colors)
+# SFig 2: Native vs Fair Detail
+message("[S2] Native vs Fair Detail (per-tool breakdown)...")
+sp2 <- create_sfig2_native_vs_fair_detail(by_comp_df, tool_colors)
 if (!is.null(sp2)) {
-  save_figure(sp2, file.path(supp_dir, paste0("sfig2_score_distributions.", fig_format)),
-              width = 100, height = 70, dpi = dpi)
+  save_figure(sp2, file.path(supp_dir, paste0("sfig2_native_vs_fair_detail.", fig_format)),
+              width = 174, height = 120, dpi = dpi)
 }
 
 # SFig 3: Threshold Robustness
@@ -888,18 +1028,16 @@ message("Generation Complete!")
 message(paste(rep("=", 70), collapse = ""))
 
 # Count generated figures
-main_figs <- list.files(main_dir, pattern = paste0("\\.", fig_format, "$"))
-supp_figs <- list.files(supp_dir, pattern = paste0("\\.", fig_format, "$"))
-data_files <- list.files(data_out_dir, pattern = "\\.tsv$")
+all_figs <- list.files(output_dir, pattern = paste0("\\.", fig_format, "$"))
+main_figs <- grep("^fig", all_figs, value = TRUE)
+supp_figs <- grep("^sfig", all_figs, value = TRUE)
+data_files <- list.files(output_dir, pattern = "_data\\.tsv$")
 
 message("\nMain figures: ", length(main_figs))
 message("Supplementary figures: ", length(supp_figs))
 message("Source data files: ", length(data_files))
 
-message("\nOutput directories:")
-message("  Main: ", main_dir)
-message("  Supplementary: ", supp_dir)
-message("  Data: ", data_out_dir)
+message("\nOutput directory: ", output_dir)
 
 message("\n", paste(rep("=", 70), collapse = ""))
 message("Done!")

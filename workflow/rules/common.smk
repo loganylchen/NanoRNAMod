@@ -204,22 +204,26 @@ def get_final_output():
             comp=comparisons,
         )
         final_output += expand(
-            f"{RESULT_ROOT}/benchmarks/native/{{tool}}/{{comp}}/best_metrics.tsv",
+            f"{RESULT_ROOT}/benchmarks/coverage/{{comp}}/union_predictions.tsv",
+            comp=comparisons,
+        )
+        final_output += expand(
+            f"{RESULT_ROOT}/benchmarks/per_tool/{{tool}}/{{comp}}/native/best_metrics.tsv",
             tool=active_comp_tools, comp=comparisons,
         )
         final_output += expand(
-            f"{RESULT_ROOT}/benchmarks/fair/{{tool}}/{{comp}}/best_metrics.tsv",
+            f"{RESULT_ROOT}/benchmarks/per_tool/{{tool}}/{{comp}}/fair/best_metrics.tsv",
             tool=active_comp_tools, comp=comparisons,
         )
 
-        # Aggregated summaries
+        # Cross-tool summaries
         for agg_file in [
             "accuracy_summary.tsv", "accuracy_summary_overall.tsv",
             "accuracy_summary_by_comparison.tsv", "by_tool.tsv",
             "best_scores.tsv", "called_sites_by_comparison.tsv",
             "called_sites_summary.tsv",
         ]:
-            final_output += [f"{RESULT_ROOT}/benchmarks/aggregated/{agg_file}"]
+            final_output += [f"{RESULT_ROOT}/benchmarks/cross_tool/{agg_file}"]
 
         # Visualization and reports
         final_output += [f"{RESULT_ROOT}/benchmarks/viz/benchmark_report.html"]
@@ -251,21 +255,39 @@ def get_final_output():
         # Score column analysis
         final_output += [f"{RESULT_ROOT}/benchmarks/score_column_summary.tsv"]
 
-        # Publication figures
+        # Per-tool comparison figures (one representative file per tool×comp)
+        final_output += expand(
+            f"{RESULT_ROOT}/benchmarks/per_tool/{{tool}}/{{comp}}/figures/roc_curve.pdf",
+            tool=active_comp_tools, comp=comparisons,
+        )
+        # Per-tool summary figures (one representative file per tool)
+        final_output += expand(
+            f"{RESULT_ROOT}/benchmarks/per_tool/{{tool}}/figures/accuracy_by_comparison.pdf",
+            tool=active_comp_tools,
+        )
+        # Per-sample figures
+        active_ps_tools = get_active_per_sample_tools()
+        if active_ps_tools:
+            final_output += expand(
+                f"{RESULT_ROOT}/benchmarks/per_tool/{{tool}}/{{sample}}/figures/score_distribution.pdf",
+                tool=active_ps_tools, sample=list(samples.index),
+            )
+
+        # Publication figures (flat layout with co-located data)
         main_fig_names = [
             "overall_accuracy", "precision_recall", "auroc",
-            "score_columns", "best_score", "coverage_sensitivity",
-            "resource_usage", "score_lollipop",
+            "native_vs_fair", "best_score", "coverage_sensitivity",
+            "resource_usage", "tool_ranking",
         ]
         for i, name in enumerate(main_fig_names, 1):
-            final_output += [f"{RESULT_ROOT}/benchmarks/figures/main/fig{i}_{name}.pdf"]
-            final_output += [f"{RESULT_ROOT}/benchmarks/data/fig{i}_source_data.tsv"]
+            final_output += [f"{RESULT_ROOT}/benchmarks/figures/fig{i}_{name}.pdf"]
+            final_output += [f"{RESULT_ROOT}/benchmarks/figures/fig{i}_{name}_data.tsv"]
         supp_fig_names = [
-            "per_comparison", "score_distributions",
+            "per_comparison", "native_vs_fair_detail",
             "threshold_robustness", "effect_sizes", "score_heatmap",
         ]
         for i, name in enumerate(supp_fig_names, 1):
-            final_output += [f"{RESULT_ROOT}/benchmarks/figures/supplementary/sfig{i}_{name}.pdf"]
+            final_output += [f"{RESULT_ROOT}/benchmarks/figures/sfig{i}_{name}.pdf"]
 
     logger.debug("=" * 60)
     logger.debug(f"NanoRNAMod — Final output files ({len(final_output)} total)")

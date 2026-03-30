@@ -69,14 +69,44 @@ if config.get("benchmark", {}).get("truth_set", ""):
             "../scripts/benchmark_coverage.py"
 
 
+    rule benchmark_prediction_union:
+        """Union of ALL positions reported by ANY tool.
+
+        Unlike the coverage union (truth-covered sites only), this includes
+        every position any tool reports — giving fair mode the negatives it
+        needs for meaningful metrics.
+        """
+        input:
+            results=lambda wc: expand(
+                f"{{project}}/results/modifications/{{tool}}/{{comparison}}/{{tool}}_results.tsv",
+                project=wc.project,
+                comparison=wc.comparison,
+                tool=get_active_comparison_tools(),
+            ),
+        output:
+            prediction_union="{project}/results/benchmarks/coverage/{comparison}/union_predictions.tsv",
+        resources:
+            mem_mb=1024 * 10,
+        threads: 1
+        priority: 31
+        log:
+            "logs/{project}/benchmark_prediction_union/{comparison}.log",
+        benchmark:
+            "benchmarks/{project}/benchmark_prediction_union/{comparison}.benchmark.txt"
+        container:
+            get_container("python3")
+        script:
+            "../scripts/benchmark_coverage.py"
+
+
     rule benchmark_tool_native:
         input:
             results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
             truth_set=config["benchmark"]["truth_set"],
         output:
-            scores="{project}/results/benchmarks/native/{tool}/{comparison}/score_comparison.tsv",
-            best_metrics="{project}/results/benchmarks/native/{tool}/{comparison}/best_metrics.tsv",
-            best_score="{project}/results/benchmarks/native/{tool}/{comparison}/best_score.txt",
+            scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/native/score_comparison.tsv",
+            best_metrics="{project}/results/benchmarks/per_tool/{tool}/{comparison}/native/best_metrics.tsv",
+            best_score="{project}/results/benchmarks/per_tool/{tool}/{comparison}/native/best_score.txt",
         params:
             window=config["benchmark"]["window"],
         resources:
@@ -96,12 +126,12 @@ if config.get("benchmark", {}).get("truth_set", ""):
     rule benchmark_tool_fair:
         input:
             results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
-            union="{project}/results/benchmarks/coverage/{comparison}/union.tsv",
+            union="{project}/results/benchmarks/coverage/{comparison}/union_predictions.tsv",
             truth_set=config["benchmark"]["truth_set"],
         output:
-            scores="{project}/results/benchmarks/fair/{tool}/{comparison}/score_comparison.tsv",
-            best_metrics="{project}/results/benchmarks/fair/{tool}/{comparison}/best_metrics.tsv",
-            best_score="{project}/results/benchmarks/fair/{tool}/{comparison}/best_score.txt",
+            scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/fair/score_comparison.tsv",
+            best_metrics="{project}/results/benchmarks/per_tool/{tool}/{comparison}/fair/best_metrics.tsv",
+            best_score="{project}/results/benchmarks/per_tool/{tool}/{comparison}/fair/best_score.txt",
         params:
             window=config["benchmark"]["window"],
         resources:
@@ -124,9 +154,9 @@ if config.get("benchmark", {}).get("truth_set", ""):
             results="{project}/results/modifications/{tool}/{sample}/{tool}_results.tsv",
             truth_set=config["benchmark"]["truth_set"],
         output:
-            scores="{project}/results/benchmarks/native/{tool}/{sample}/score_comparison.tsv",
-            best_metrics="{project}/results/benchmarks/native/{tool}/{sample}/best_metrics.tsv",
-            best_score="{project}/results/benchmarks/native/{tool}/{sample}/best_score.txt",
+            scores="{project}/results/benchmarks/per_tool/{tool}/{sample}/native/score_comparison.tsv",
+            best_metrics="{project}/results/benchmarks/per_tool/{tool}/{sample}/native/best_metrics.tsv",
+            best_score="{project}/results/benchmarks/per_tool/{tool}/{sample}/native/best_score.txt",
         params:
             window=config["benchmark"]["window"],
         resources:
@@ -147,12 +177,12 @@ if config.get("benchmark", {}).get("truth_set", ""):
         input:
             native_metrics=lambda wc: (
                 expand(
-                    f"{{project}}/results/benchmarks/native/{{tool}}/{{comparison}}/best_metrics.tsv",
+                    f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{comparison}}/native/best_metrics.tsv",
                     project=wc.project,
                     tool=get_active_comparison_tools(),
                     comparison=comparisons,
                 ) + expand(
-                    f"{{project}}/results/benchmarks/native/{{tool}}/{{sample}}/best_metrics.tsv",
+                    f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{sample}}/native/best_metrics.tsv",
                     project=wc.project,
                     tool=get_active_per_sample_tools(),
                     sample=list(samples.index),
@@ -160,25 +190,25 @@ if config.get("benchmark", {}).get("truth_set", ""):
             ),
             native_all_scores=lambda wc: (
                 expand(
-                    f"{{project}}/results/benchmarks/native/{{tool}}/{{comparison}}/score_comparison.tsv",
+                    f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{comparison}}/native/score_comparison.tsv",
                     project=wc.project,
                     tool=get_active_comparison_tools(),
                     comparison=comparisons,
                 ) + expand(
-                    f"{{project}}/results/benchmarks/native/{{tool}}/{{sample}}/score_comparison.tsv",
+                    f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{sample}}/native/score_comparison.tsv",
                     project=wc.project,
                     tool=get_active_per_sample_tools(),
                     sample=list(samples.index),
                 )
             ),
             fair_metrics=lambda wc: expand(
-                f"{{project}}/results/benchmarks/fair/{{tool}}/{{comparison}}/best_metrics.tsv",
+                f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{comparison}}/fair/best_metrics.tsv",
                 project=wc.project,
                 tool=get_active_comparison_tools(),
                 comparison=comparisons,
             ),
             fair_all_scores=lambda wc: expand(
-                f"{{project}}/results/benchmarks/fair/{{tool}}/{{comparison}}/score_comparison.tsv",
+                f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{comparison}}/fair/score_comparison.tsv",
                 project=wc.project,
                 tool=get_active_comparison_tools(),
                 comparison=comparisons,
@@ -190,14 +220,14 @@ if config.get("benchmark", {}).get("truth_set", ""):
             ),
             truth_set=config["benchmark"]["truth_set"],
         output:
-            summary="{project}/results/benchmarks/aggregated/accuracy_summary.tsv",
-            overall="{project}/results/benchmarks/aggregated/accuracy_summary_overall.tsv",
-            by_comparison="{project}/results/benchmarks/aggregated/accuracy_summary_by_comparison.tsv",
-            by_negative_type="{project}/results/benchmarks/aggregated/accuracy_summary_by_negative_type.tsv",
-            by_tool="{project}/results/benchmarks/aggregated/by_tool.tsv",
-            best_scores="{project}/results/benchmarks/aggregated/best_scores.tsv",
-            called_sites_comp="{project}/results/benchmarks/aggregated/called_sites_by_comparison.tsv",
-            called_sites_sum="{project}/results/benchmarks/aggregated/called_sites_summary.tsv",
+            summary="{project}/results/benchmarks/cross_tool/accuracy_summary.tsv",
+            overall="{project}/results/benchmarks/cross_tool/accuracy_summary_overall.tsv",
+            by_comparison="{project}/results/benchmarks/cross_tool/accuracy_summary_by_comparison.tsv",
+            by_negative_type="{project}/results/benchmarks/cross_tool/accuracy_summary_by_negative_type.tsv",
+            by_tool="{project}/results/benchmarks/cross_tool/by_tool.tsv",
+            best_scores="{project}/results/benchmarks/cross_tool/best_scores.tsv",
+            called_sites_comp="{project}/results/benchmarks/cross_tool/called_sites_by_comparison.tsv",
+            called_sites_sum="{project}/results/benchmarks/cross_tool/called_sites_summary.tsv",
             done=touch("{project}/results/benchmarks/.benchmark_complete"),
         resources:
             mem_mb=1024 * 10,

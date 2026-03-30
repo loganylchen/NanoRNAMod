@@ -37,8 +37,17 @@ def to_list(x):
 
 
 def tool_comparison_from_path(path, mode):
-    """Extract tool and comparison from path like .../native/{tool}/{comparison}/best_metrics.tsv"""
+    """Extract tool and comparison from path like .../per_tool/{tool}/{comp}/{mode}/best_metrics.tsv"""
     parts = path.replace("\\", "/").split("/")
+    # New layout: per_tool/{tool}/{comp_or_sample}/{mode}/file.tsv
+    for i, part in enumerate(parts):
+        if part == "per_tool" and i + 3 < len(parts):
+            tool = parts[i + 1]
+            comparison = parts[i + 2]
+            found_mode = parts[i + 3]
+            if found_mode == mode:
+                return tool, comparison
+    # Legacy fallback: .../native/{tool}/{comp}/file.tsv
     for i, part in enumerate(parts):
         if part == mode and i + 2 < len(parts):
             return parts[i + 1], parts[i + 2]
@@ -260,9 +269,19 @@ else:
     selected_df[available_summary_cols].to_csv(out_summary, sep="\t", index=False)
 
     # --- Output: accuracy_summary_by_comparison.tsv ---
-    # Same as summary but includes mode column
-    by_comp_cols = available_summary_cols + (["mode"] if "mode" in selected_df.columns else [])
-    selected_df[by_comp_cols].to_csv(out_by_comparison, sep="\t", index=False)
+    # Includes both native and fair rows (mode column) for downstream visualization
+    # Filter fair data to the same best score columns selected from native
+    if not fair_df.empty:
+        best_selections = selected_df[["tool", "score_column"]].drop_duplicates()
+        fair_selected = fair_df.merge(
+            best_selections, on=["tool", "score_column"], how="inner"
+        )
+        by_comp_combined = pd.concat([selected_df, fair_selected], ignore_index=True)
+    else:
+        by_comp_combined = selected_df.copy()
+    by_comp_cols = available_summary_cols + (["mode"] if "mode" in by_comp_combined.columns else [])
+    by_comp_available = [c for c in by_comp_cols if c in by_comp_combined.columns]
+    by_comp_combined[by_comp_available].to_csv(out_by_comparison, sep="\t", index=False)
 
     # --- Output: accuracy_summary_overall.tsv (cross-comparison aggregate per tool) ---
     overall_records = []

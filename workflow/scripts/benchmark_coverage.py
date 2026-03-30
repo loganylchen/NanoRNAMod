@@ -89,6 +89,64 @@ def run_per_tool_mode(truth_path, results_path, output_covered, window_param):
     out_df.to_csv(output_covered, sep='\t', index=False)
 
 
+def run_prediction_union_mode(result_paths, output_union):
+    """Create union of ALL positions reported by ANY tool.
+
+    Unlike the coverage union (which only contains truth-covered sites),
+    this includes every (transcript, position) any tool reports — giving
+    fair mode the negatives it needs for meaningful metrics.
+    """
+    site_tools = {}
+
+    for path in result_paths:
+        # Extract tool name from path: .../modifications/{tool}/{comparison}/{tool}_results.tsv
+        parts = path.replace("\\", "/").split("/")
+        tool = None
+        for i, part in enumerate(parts):
+            if part == "modifications" and i + 1 < len(parts):
+                tool = parts[i + 1]
+                break
+        if tool is None:
+            tool = os.path.basename(path).replace("_results.tsv", "")
+
+        sep = ',' if path.endswith('.csv') else '\t'
+        try:
+            df = pd.read_csv(path, sep=sep)
+        except Exception:
+            continue
+
+        df = normalize_columns(df)
+        if df.empty or 'transcript' not in df.columns or 'position' not in df.columns:
+            continue
+
+        df['position'] = pd.to_numeric(df['position'], errors='coerce')
+        df = df.dropna(subset=['position'])
+        df['position'] = df['position'].astype(int)
+
+        for _, row in df.iterrows():
+            key = (row['transcript'], int(row['position']))
+            if key not in site_tools:
+                site_tools[key] = set()
+            site_tools[key].add(tool)
+
+    if not site_tools:
+        pd.DataFrame(columns=['transcript', 'position', 'reported_by_tools']).to_csv(
+            output_union, sep='\t', index=False
+        )
+        return
+
+    union_rows = []
+    for (tx, pos), tools_set in sorted(site_tools.items()):
+        union_rows.append({
+            'transcript': tx,
+            'position': pos,
+            'reported_by_tools': ','.join(sorted(tools_set)),
+        })
+
+    union_df = pd.DataFrame(union_rows)
+    union_df.to_csv(output_union, sep='\t', index=False)
+
+
 def run_union_mode(covered_paths, output_union, output_called_sites):
     site_tools = {}
 
@@ -158,6 +216,12 @@ if 'covered' in output_keys:
         output_covered=snakemake.output.covered,
         window_param=snakemake.params.window,
     )
+elif 'prediction_union' in output_keys:
+    result_paths = list(snakemake.input.results)
+    run_prediction_union_mode(
+        result_paths=result_paths,
+        output_union=snakemake.output.prediction_union,
+    )
 elif 'union' in output_keys:
     covered_paths = list(snakemake.input.covered)
     run_union_mode(
@@ -167,5 +231,5 @@ elif 'union' in output_keys:
     )
 else:
     raise ValueError(
-        "Cannot determine mode: snakemake.output must have 'covered' or 'union' key"
+        "Cannot determine mode: snakemake.output must have 'covered', 'prediction_union', or 'union' key"
     )
