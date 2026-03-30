@@ -175,14 +175,15 @@ def get_final_output():
                     comp=comparisons,
                 )
         elif tool in PER_SAMPLE_TOOLS:
+            # Per-sample tools only need native samples (no control required)
             final_output += expand(
                 f"{RESULT_ROOT}/modifications/{tool}/{{sample}}/{tool}_results.tsv",
-                sample=list(samples.index),
+                sample=native_samples,
             )
             if has_gtf:
                 final_output += expand(
                     f"{RESULT_ROOT}/modifications/{tool}/{{sample}}/{tool}_annotated_results.tsv",
-                    sample=list(samples.index),
+                    sample=native_samples,
                 )
 
     # Benchmarking outputs - resource metrics
@@ -223,7 +224,7 @@ def get_final_output():
         if active_ps_tools:
             final_output += expand(
                 f"{RESULT_ROOT}/benchmarks/per_tool/{{tool}}/{{sample}}/figures/score_distribution.pdf",
-                tool=active_ps_tools, sample=list(samples.index),
+                tool=active_ps_tools, sample=native_samples,
             )
 
         # Cross-tool comparison curves (overlaid ROC/PR, bar chart, score dist)
