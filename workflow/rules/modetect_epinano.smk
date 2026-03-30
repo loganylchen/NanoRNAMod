@@ -29,8 +29,8 @@ rule epinano_prep:
 
 rule epinano:
     input:
-        control="{project}/results/alignments/{control}.plus_strand.per.site.var.csv",
-        native="{project}/results/alignments/{native}.plus_strand.per.site.var.csv",
+        control="{project}/results/alignments/{control}.plus_strand.per.site.var.csv.per.site.var.sum_err.csv",
+        native="{project}/results/alignments/{native}.plus_strand.per.site.var.csv.per.site.var.sum_err.csv",
     output:
         results="{project}/results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv",
         output_dir=KEEP_OR_NOT(
