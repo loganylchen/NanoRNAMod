@@ -133,6 +133,16 @@ def build_labels_and_scores(preds_df, truth_pos, score_col, is_pval, window):
     scores = np.where(np.isposinf(scores), INF_CAP, scores)
     scores = np.where(np.isneginf(scores), -INF_CAP, scores)
 
+    # Auto-detect inverted score direction: if AUROC < 0.5, negate scores
+    try:
+        from sklearn.metrics import roc_auc_score
+
+        auroc_check = roc_auc_score(labels, scores)
+        if auroc_check < 0.5:
+            scores = -scores
+    except Exception:
+        pass
+
     return labels, scores, len(labels)
 
 

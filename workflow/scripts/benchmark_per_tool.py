@@ -186,6 +186,17 @@ def evaluate_column(scores_arr, labels, col_name, is_pval):
     if len(np.unique(labels)) < 2:
         return empty_result
 
+    # Auto-detect inverted score direction: if AUROC < 0.5, lower scores
+    # indicate modification. Negate scores so higher = more modified.
+    try:
+        auroc_check = roc_auc_score(labels, scores_arr)
+    except Exception:
+        auroc_check = np.nan
+
+    if not np.isnan(auroc_check) and auroc_check < 0.5:
+        scores_arr = -scores_arr
+        transform = f"negated({transform})" if transform != 'none' else 'negated'
+
     try:
         auroc = roc_auc_score(labels, scores_arr)
     except Exception:
@@ -211,8 +222,15 @@ def evaluate_column(scores_arr, labels, col_name, is_pval):
             best_precision = precision
             best_recall = recall
 
-    if is_pval:
+    # Map threshold back to original score space
+    negated = transform.startswith('negated')
+    if is_pval and negated:
+        # negated(-log10(p)): thresh_orig = 10^(best_thresh) (note: best_thresh is negative of -log10)
+        best_thresh_original = float(10 ** best_thresh)
+    elif is_pval:
         best_thresh_original = float(10 ** (-best_thresh))
+    elif negated:
+        best_thresh_original = float(-best_thresh)
     else:
         best_thresh_original = float(best_thresh)
 
@@ -232,8 +250,12 @@ def evaluate_column(scores_arr, labels, col_name, is_pval):
         youden_sensitivity = float(tpr[best_j_idx])
         youden_specificity = float(1 - fpr[best_j_idx])
         youden_thresh = float(roc_thresholds[best_j_idx])
-        if is_pval:
+        if is_pval and negated:
+            youden_thresh_original = float(10 ** youden_thresh)
+        elif is_pval:
             youden_thresh_original = float(10 ** (-youden_thresh))
+        elif negated:
+            youden_thresh_original = float(-youden_thresh)
         else:
             youden_thresh_original = float(youden_thresh)
     except Exception:
