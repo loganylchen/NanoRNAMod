@@ -226,6 +226,14 @@ def get_final_output():
                 tool=active_ps_tools, sample=list(samples.index),
             )
 
+        # Cross-tool comparison curves (overlaid ROC/PR, bar chart, score dist)
+        for ct_fig in [
+            "cross_tool_roc", "cross_tool_pr",
+            "cross_tool_auroc_auprc", "cross_tool_score_distribution",
+        ]:
+            final_output += [f"{RESULT_ROOT}/benchmarks/cross_tool/figures/{ct_fig}.pdf"]
+            final_output += [f"{RESULT_ROOT}/benchmarks/cross_tool/figures/{ct_fig}_data.tsv"]
+
         # Publication figures (flat layout with co-located data)
         main_fig_names = [
             "overall_accuracy", "precision_recall", "auroc",

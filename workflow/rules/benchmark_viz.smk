@@ -438,6 +438,37 @@ rule benchmark_per_sample_figures:
         "../scripts/benchmark_per_sample_figures.py"
 
 
+rule benchmark_cross_tool_curves:
+    """Generate cross-tool overlaid ROC/PR curves, AUROC/AUPRC bar chart, and score distribution plots."""
+    input:
+        results=lambda wc: get_all_result_tsvs(wc),
+        truth_set=config["benchmark"]["truth_set"],
+        best_scores="{project}/results/benchmarks/cross_tool/best_scores.tsv",
+    output:
+        roc_pdf="{project}/results/benchmarks/cross_tool/figures/cross_tool_roc.pdf",
+        roc_data="{project}/results/benchmarks/cross_tool/figures/cross_tool_roc_data.tsv",
+        pr_pdf="{project}/results/benchmarks/cross_tool/figures/cross_tool_pr.pdf",
+        pr_data="{project}/results/benchmarks/cross_tool/figures/cross_tool_pr_data.tsv",
+        bar_pdf="{project}/results/benchmarks/cross_tool/figures/cross_tool_auroc_auprc.pdf",
+        bar_data="{project}/results/benchmarks/cross_tool/figures/cross_tool_auroc_auprc_data.tsv",
+        dist_pdf="{project}/results/benchmarks/cross_tool/figures/cross_tool_score_distribution.pdf",
+        dist_data="{project}/results/benchmarks/cross_tool/figures/cross_tool_score_distribution_data.tsv",
+    params:
+        window=config["benchmark"]["window"],
+    resources:
+        mem_mb=1024 * 10,
+    threads: 1
+    priority: 35
+    log:
+        "logs/{project}/benchmark_cross_tool_curves/curves.log",
+    benchmark:
+        "benchmarks/{project}/benchmark_cross_tool_curves.benchmark.txt"
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_cross_tool_curves.py"
+
+
 rule benchmark_resource_by_tool:
     """Analyze resource usage by modification tool including prerequisite steps."""
     input:
