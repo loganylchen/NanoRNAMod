@@ -213,9 +213,9 @@ def analyze_score_distribution(
             logger.warning(f"No score column for tool {tool}")
             continue
 
-        # Separate by truth status; drop NaN and inf (e.g. from -log10(0) transforms)
-        pos_scores = tool_df[tool_df['truth'] == 1]['score'].values
-        neg_scores = tool_df[tool_df['truth'] == 0]['score'].values
+        # Separate by truth status; coerce to numeric and drop NaN/inf
+        pos_scores = pd.to_numeric(tool_df[tool_df['truth'] == 1]['score'], errors='coerce').values
+        neg_scores = pd.to_numeric(tool_df[tool_df['truth'] == 0]['score'], errors='coerce').values
         pos_scores = pos_scores[np.isfinite(pos_scores)]
         neg_scores = neg_scores[np.isfinite(neg_scores)]
 
