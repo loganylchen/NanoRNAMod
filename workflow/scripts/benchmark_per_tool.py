@@ -141,12 +141,19 @@ def compute_f1_at_threshold(scores, labels, threshold):
     return f1, precision, recall
 
 
+INF_CAP = 1000.0  # Replace inf/-inf with a large finite value
+
+
 def evaluate_column(scores_arr, labels, col_name, is_pval):
     if is_pval:
         scores_arr = -np.log10(np.clip(scores_arr, 1e-300, None))
         transform = '-log10'
     else:
         transform = 'none'
+
+    # Cap inf values (e.g. differr's "-log10 P value" column contains inf from -log10(0))
+    scores_arr = np.where(np.isposinf(scores_arr), INF_CAP, scores_arr)
+    scores_arr = np.where(np.isneginf(scores_arr), -INF_CAP, scores_arr)
 
     if len(np.unique(labels)) < 2:
         return {

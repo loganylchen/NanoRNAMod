@@ -208,6 +208,9 @@ def compute_ranking_metrics(pred_df, truth_pos_subset, truth_neg_subset, score_c
     if len(set(labels)) < 2 or len(scores) == 0:
         return np.nan, np.nan
 
+    # Cap inf values (e.g. differr's "-log10 P value" column contains inf)
+    scores = [1000.0 if s == float('inf') else (-1000.0 if s == float('-inf') else s) for s in scores]
+
     try:
         from sklearn.metrics import roc_auc_score, average_precision_score
         auroc = roc_auc_score(labels, scores)

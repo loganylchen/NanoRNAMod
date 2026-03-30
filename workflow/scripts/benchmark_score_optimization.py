@@ -327,6 +327,10 @@ def compute_auc_metrics(pred_df, truth_pos, score_col, is_pvalue, window=0):
         # Need both positive and negative samples for ROC/PR
         return {'auprc': np.nan, 'auroc': np.nan}
 
+    # Cap inf values (e.g. differr's "-log10 P value" column contains inf)
+    y_scores = np.where(np.isposinf(y_scores), 1000.0, y_scores)
+    y_scores = np.where(np.isneginf(y_scores), -1000.0, y_scores)
+
     # For p-values (lower=better), invert scores for AUROC/AUPRC computation
     # sklearn expects higher scores = more likely positive
     if is_pvalue:
