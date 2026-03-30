@@ -194,66 +194,19 @@ def get_final_output():
     if config.get("benchmark", {}).get("truth_set", ""):
         active_comp_tools = get_active_comparison_tools()
 
-        # Per-tool coverage, native and fair evaluation (comparison tools)
-        final_output += expand(
-            f"{RESULT_ROOT}/benchmarks/coverage/{{comp}}/{{tool}}_covered.tsv",
-            comp=comparisons, tool=active_comp_tools,
-        )
-        final_output += expand(
-            f"{RESULT_ROOT}/benchmarks/coverage/{{comp}}/union.tsv",
-            comp=comparisons,
-        )
-        final_output += expand(
-            f"{RESULT_ROOT}/benchmarks/coverage/{{comp}}/union_predictions.tsv",
-            comp=comparisons,
-        )
-        final_output += expand(
-            f"{RESULT_ROOT}/benchmarks/per_tool/{{tool}}/{{comp}}/native/best_metrics.tsv",
-            tool=active_comp_tools, comp=comparisons,
-        )
-        final_output += expand(
-            f"{RESULT_ROOT}/benchmarks/per_tool/{{tool}}/{{comp}}/fair/best_metrics.tsv",
-            tool=active_comp_tools, comp=comparisons,
-        )
-
-        # Cross-tool summaries
+        # Cross-tool summaries (coverage and per-tool metrics are built
+        # automatically as dependencies of the aggregate rule)
         for agg_file in [
             "accuracy_summary.tsv", "accuracy_summary_overall.tsv",
             "accuracy_summary_by_comparison.tsv", "by_tool.tsv",
-            "best_scores.tsv", "called_sites_by_comparison.tsv",
-            "called_sites_summary.tsv",
+            "best_scores.tsv",
         ]:
             final_output += [f"{RESULT_ROOT}/benchmarks/cross_tool/{agg_file}"]
 
-        # Visualization and reports
-        final_output += [f"{RESULT_ROOT}/benchmarks/viz/benchmark_report.html"]
+        # PDF report (intermediate files like statistics/, sensitivity/,
+        # coverage/, threshold_* are built automatically as dependencies
+        # of R figures and the PDF report)
         final_output += [f"{RESULT_ROOT}/benchmarks/benchmark_report.pdf"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/optimal_thresholds.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/detailed_predictions.tsv"]
-
-        # Multi-threshold evaluation
-        final_output += [f"{RESULT_ROOT}/benchmarks/threshold_evaluation.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/optimal_thresholds_detailed.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/score_distributions.tsv"]
-
-        # Negative control strategies
-        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_kmer_negatives.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/kmer_negative_sites.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/accuracy_summary_same_base_negatives.tsv"]
-        final_output += [f"{RESULT_ROOT}/benchmarks/same_base_negative_sites.tsv"]
-
-        # Statistical analysis
-        for stat_file in ["bootstrap_ci.tsv", "significance_tests.tsv",
-                          "fdr_corrected.tsv", "effect_sizes.tsv"]:
-            final_output += [f"{RESULT_ROOT}/benchmarks/statistics/{stat_file}"]
-
-        # Sensitivity analysis
-        for sens_file in ["coverage_analysis.tsv", "score_distribution.tsv",
-                          "threshold_robustness.tsv"]:
-            final_output += [f"{RESULT_ROOT}/benchmarks/sensitivity/{sens_file}"]
-
-        # Score column analysis
-        final_output += [f"{RESULT_ROOT}/benchmarks/score_column_summary.tsv"]
 
         # Per-tool comparison figures (one representative file per tool×comp)
         final_output += expand(
