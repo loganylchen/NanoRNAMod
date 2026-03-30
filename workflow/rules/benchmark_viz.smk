@@ -438,7 +438,7 @@ rule benchmark_per_sample_figures:
 rule benchmark_resource_by_tool:
     """Analyze resource usage by modification tool including prerequisite steps."""
     input:
-        benchmark_dir="benchmarks/{project}",
+        done="{project}/results/benchmarks/.benchmark_complete",
     output:
         tsv="{project}/results/benchmarks/resource_by_tool.tsv",
         pdf="{project}/results/benchmarks/resource_by_tool.pdf",
