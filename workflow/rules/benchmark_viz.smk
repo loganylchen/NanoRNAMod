@@ -444,6 +444,11 @@ rule benchmark_cross_tool_curves:
         results=lambda wc: get_all_result_tsvs(wc),
         truth_set=config["benchmark"]["truth_set"],
         best_scores="{project}/results/benchmarks/cross_tool/best_scores.tsv",
+        union_predictions=lambda wc: expand(
+            f"{{project}}/results/benchmarks/coverage/{{comparison}}/union_predictions.tsv",
+            project=wc.project,
+            comparison=comparisons,
+        ),
     output:
         roc_pdf="{project}/results/benchmarks/cross_tool/figures/cross_tool_roc.pdf",
         roc_data="{project}/results/benchmarks/cross_tool/figures/cross_tool_roc_data.tsv",

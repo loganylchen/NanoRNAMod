@@ -912,8 +912,23 @@ auc_comp_df <- load_with_fallback(input_files$auc_comparison)
 # Assign tool colors
 tool_colors <- assign_tool_colors(unique(accuracy_df$tool))
 
+# Split by_comp_df into native/fair subsets for per-mode figures
+# accuracy_df is native-only; by_comp_df has both modes
+has_fair_mode <- !is.null(by_comp_df) && "mode" %in% names(by_comp_df) &&
+  any(by_comp_df$mode == "fair", na.rm = TRUE)
+native_df <- accuracy_df  # default: accuracy_summary is native-only
+fair_df <- NULL
+if (has_fair_mode) {
+  fair_df <- by_comp_df %>% dplyr::filter(mode == "fair")
+  if (nrow(fair_df) == 0) fair_df <- NULL
+}
+eval_modes <- list(list(label = "native", data = native_df))
+if (!is.null(fair_df)) {
+  eval_modes <- c(eval_modes, list(list(label = "fair", data = fair_df)))
+}
+
 # =============================================================================
-# Generate Main Figures
+# Generate Main Figures (for each evaluation mode: native + fair)
 # =============================================================================
 
 message("\n", paste(rep("=", 70), collapse = ""))
@@ -921,55 +936,77 @@ message("Generating Main Figures")
 message(paste(rep("=", 70), collapse = ""))
 message("Narrative flow: Overall Performance -> Precision/Recall ->")
 message("  Score Column Analysis -> Best Score -> Coverage -> Resources")
-
-# ── Fig 1: Overall Performance (AUROC + F1 with CI) ──────────────────────────
-# The headline result: how well does each tool discriminate modified vs unmodified?
-message("\n[1/8] Overall Performance (AUROC + F1 with Bootstrap CI)...")
-p1 <- create_fig1_overall_accuracy(accuracy_df, ci_df, tool_colors)
-if (!is.null(p1)) {
-  save_figure(p1, file.path(main_dir, paste0("fig1_overall_accuracy.", fig_format)),
-              width = 85, height = 70, dpi = dpi)
-  export_source_data(
-    accuracy_df %>% dplyr::group_by(tool) %>% dplyr::summarise(f1 = mean(f1, na.rm = TRUE), .groups = "drop"),
-    "fig1_overall_accuracy_data.tsv", data_out_dir
-  )
+if (has_fair_mode) {
+  message("  Generating figures for both native and fair evaluation modes")
 }
 
-# ── Fig 2: Precision vs Recall Trade-off ─────────────────────────────────────
-# Shows how each tool balances false positives vs missed sites.
-message("[2/8] Precision, Recall, and PRAUC...")
-p2 <- create_fig2_pr_curves(accuracy_df, ci_df, tool_colors)
-if (!is.null(p2)) {
-  save_figure(p2, file.path(main_dir, paste0("fig2_precision_recall.", fig_format)),
-              width = 85, height = 70, dpi = dpi)
-  fig2_data <- accuracy_df %>% dplyr::group_by(tool) %>%
-    dplyr::summarise(
-      precision = mean(precision, na.rm = TRUE),
-      recall = mean(recall, na.rm = TRUE),
-      prauc = if ("prauc" %in% names(accuracy_df)) mean(prauc, na.rm = TRUE) else NA_real_,
-      .groups = "drop"
+for (eval_mode in eval_modes) {
+  mode_label <- eval_mode$label
+  mode_df <- eval_mode$data
+  mode_suffix <- if (mode_label == "native") "" else paste0("_", mode_label)
+  mode_tag <- if (mode_label == "native") "" else paste0(" [", mode_label, "]")
+
+  message(paste0("\n--- Mode: ", toupper(mode_label), " ---"))
+
+  # ── Fig 1: Overall Performance (AUROC + F1 with CI) ──────────────────────
+  message(paste0("[1/8] Overall Performance", mode_tag, "..."))
+  p1 <- create_fig1_overall_accuracy(mode_df, ci_df, tool_colors)
+  if (!is.null(p1)) {
+    save_figure(p1, file.path(main_dir, paste0("fig1_overall_accuracy", mode_suffix, ".", fig_format)),
+                width = 85, height = 70, dpi = dpi)
+    export_source_data(
+      mode_df %>% dplyr::group_by(tool) %>% dplyr::summarise(f1 = mean(f1, na.rm = TRUE), .groups = "drop"),
+      paste0("fig1_overall_accuracy", mode_suffix, "_data.tsv"), data_out_dir
     )
-  export_source_data(fig2_data, "fig2_precision_recall_data.tsv", data_out_dir)
+  }
+
+  # ── Fig 2: Precision vs Recall Trade-off ─────────────────────────────────
+  message(paste0("[2/8] Precision, Recall, and PRAUC", mode_tag, "..."))
+  p2 <- create_fig2_pr_curves(mode_df, ci_df, tool_colors)
+  if (!is.null(p2)) {
+    save_figure(p2, file.path(main_dir, paste0("fig2_precision_recall", mode_suffix, ".", fig_format)),
+                width = 85, height = 70, dpi = dpi)
+    fig2_data <- mode_df %>% dplyr::group_by(tool) %>%
+      dplyr::summarise(
+        precision = mean(precision, na.rm = TRUE),
+        recall = mean(recall, na.rm = TRUE),
+        prauc = if ("prauc" %in% names(mode_df)) mean(prauc, na.rm = TRUE) else NA_real_,
+        .groups = "drop"
+      )
+    export_source_data(fig2_data, paste0("fig2_precision_recall", mode_suffix, "_data.tsv"), data_out_dir)
+  }
+
+  # ── Fig 3: AUROC Comparison with CI ──────────────────────────────────────
+  message(paste0("[3/8] AUROC Comparison", mode_tag, "..."))
+  p3 <- create_fig3_roc_curves(mode_df, ci_df, tool_colors)
+  if (!is.null(p3)) {
+    save_figure(p3, file.path(main_dir, paste0("fig3_auroc", mode_suffix, ".", fig_format)),
+                width = 85, height = 70, dpi = dpi)
+    export_source_data(
+      mode_df %>% dplyr::group_by(tool) %>%
+        dplyr::summarise(auroc = mean(auroc, na.rm = TRUE), .groups = "drop") %>%
+        dplyr::filter(!is.na(auroc)),
+      paste0("fig3_auroc", mode_suffix, "_data.tsv"), data_out_dir
+    )
+  }
+
+  # ── Fig 8: Tool Ranking ──────────────────────────────────────────────────
+  message(paste0("[8/8] Tool Ranking (lollipop)", mode_tag, "..."))
+  p8 <- create_fig8_tool_ranking(mode_df, ci_df, tool_colors)
+  if (!is.null(p8)) {
+    save_figure(p8, file.path(main_dir, paste0("fig8_tool_ranking", mode_suffix, ".", fig_format)),
+                width = 120, height = 100, dpi = dpi)
+    export_source_data(
+      mode_df %>% dplyr::group_by(tool) %>%
+        dplyr::summarise(auroc = mean(auroc, na.rm = TRUE), f1 = mean(f1, na.rm = TRUE), .groups = "drop") %>%
+        dplyr::arrange(desc(auroc)),
+      paste0("fig8_tool_ranking", mode_suffix, "_data.tsv"), data_out_dir
+    )
+  }
 }
 
-# ── Fig 3: AUROC Comparison with CI ──────────────────────────────────────────
-# Threshold-independent discrimination ability.
-message("[3/8] AUROC Comparison...")
-p3 <- create_fig3_roc_curves(accuracy_df, ci_df, tool_colors)
-if (!is.null(p3)) {
-  save_figure(p3, file.path(main_dir, paste0("fig3_auroc.", fig_format)),
-              width = 85, height = 70, dpi = dpi)
-  export_source_data(
-    accuracy_df %>% dplyr::group_by(tool) %>%
-      dplyr::summarise(auroc = mean(auroc, na.rm = TRUE), .groups = "drop") %>%
-      dplyr::filter(!is.na(auroc)),
-    "fig3_auroc_data.tsv", data_out_dir
-  )
-}
-
-# ── Fig 4: Native vs Fair Comparison ──────────────────────────────────────────
-# Grouped bar chart: native/fair AUROC per tool.
-message("[4/8] Native vs Fair Comparison...")
+# ── Fig 4: Native vs Fair Comparison (always uses both modes) ────────────────
+message("\n[4/8] Native vs Fair Comparison...")
 p4 <- create_fig4_native_vs_fair(by_comp_df, tool_colors)
 if (!is.null(p4)) {
   save_figure(p4, file.path(main_dir, paste0("fig4_native_vs_fair.", fig_format)),
@@ -977,8 +1014,7 @@ if (!is.null(p4)) {
   export_source_data(by_comp_df, "fig4_native_vs_fair_data.tsv", data_out_dir)
 }
 
-# ── Fig 5: Best Score Selection Summary (NEW) ────────────────────────────────
-# Dot plot showing which score column was selected for each tool and why.
+# ── Fig 5: Best Score Selection Summary ──────────────────────────────────────
 message("[5/8] Best Score Selection Summary (dot plot)...")
 p5 <- create_fig_best_score_dotplot(score_col_df, tool_colors)
 if (!is.null(p5)) {
@@ -993,7 +1029,6 @@ if (!is.null(p5)) {
 }
 
 # ── Fig 6: Coverage Sensitivity ──────────────────────────────────────────────
-# How does performance vary with sequencing depth?
 message("[6/8] Coverage Sensitivity...")
 p6 <- create_fig5_coverage_sensitivity(coverage_df, tool_colors)
 if (!is.null(p6)) {
@@ -1003,28 +1038,12 @@ if (!is.null(p6)) {
 }
 
 # ── Fig 7: Resource Usage ────────────────────────────────────────────────────
-# Practical considerations: runtime vs memory, bubble size = F1.
 message("[7/8] Resource Usage...")
 p7 <- create_fig6_resource_usage(resource_df, accuracy_df, tool_colors)
 if (!is.null(p7)) {
   save_figure(p7, file.path(main_dir, paste0("fig7_resource_usage.", fig_format)),
               width = 100, height = 85, dpi = dpi)
   export_source_data(resource_df, "fig7_resource_usage_data.tsv", data_out_dir)
-}
-
-# ── Fig 8: Tool Ranking ──────────────────────────────────────────────────────
-# Lollipop chart: tools ranked by performance (mean AUROC).
-message("[8/8] Tool Ranking (lollipop)...")
-p8 <- create_fig8_tool_ranking(accuracy_df, ci_df, tool_colors)
-if (!is.null(p8)) {
-  save_figure(p8, file.path(main_dir, paste0("fig8_tool_ranking.", fig_format)),
-              width = 120, height = 100, dpi = dpi)
-  export_source_data(
-    accuracy_df %>% dplyr::group_by(tool) %>%
-      dplyr::summarise(auroc = mean(auroc, na.rm = TRUE), f1 = mean(f1, na.rm = TRUE), .groups = "drop") %>%
-      dplyr::arrange(desc(auroc)),
-    "fig8_tool_ranking_data.tsv", data_out_dir
-  )
 }
 
 # =============================================================================
