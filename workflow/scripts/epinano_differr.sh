@@ -28,7 +28,7 @@ echo "  native:  ${native}"
 echo "  prefix:  ${prefix}"
 echo "  extra:   ${extra}"
 
-Rscript /opt/Epinano/Epinano_DiffErr.R \
+Rscript /opt/epinano/Epinano_DiffErr.R \
     -k "${control}" \
     -w "${native}" \
     -o "${prefix}" \

@@ -98,6 +98,16 @@ def load_all_metrics(files, mode):
                 "f1": pd.to_numeric(row.get("f1", np.nan), errors="coerce"),
                 "precision": pd.to_numeric(row.get("precision", np.nan), errors="coerce"),
                 "recall": pd.to_numeric(row.get("recall", np.nan), errors="coerce"),
+                "youden_threshold": pd.to_numeric(row.get("youden_threshold", np.nan), errors="coerce"),
+                "youden_threshold_original": pd.to_numeric(
+                    row.get("youden_threshold_original", np.nan), errors="coerce"
+                ),
+                "youden_j": pd.to_numeric(row.get("youden_j", np.nan), errors="coerce"),
+                "youden_sensitivity": pd.to_numeric(row.get("youden_sensitivity", np.nan), errors="coerce"),
+                "youden_specificity": pd.to_numeric(row.get("youden_specificity", np.nan), errors="coerce"),
+                "n_sites": pd.to_numeric(row.get("n_sites", np.nan), errors="coerce"),
+                "n_positive": pd.to_numeric(row.get("n_positive", np.nan), errors="coerce"),
+                "n_negative": pd.to_numeric(row.get("n_negative", np.nan), errors="coerce"),
             })
     return pd.DataFrame(records)
 
@@ -264,6 +274,9 @@ else:
         "tool", "comparison", "score_column", "is_pvalue", "transform",
         "auroc", "prauc", "best_threshold", "best_threshold_original",
         "f1", "precision", "recall",
+        "youden_threshold", "youden_threshold_original", "youden_j",
+        "youden_sensitivity", "youden_specificity",
+        "n_sites", "n_positive", "n_negative",
     ]
     available_summary_cols = [c for c in summary_cols if c in selected_df.columns]
     selected_df[available_summary_cols].to_csv(out_summary, sep="\t", index=False)
@@ -304,6 +317,11 @@ else:
             "recall_std": grp["recall"].std(),
             "threshold_mean": grp["best_threshold"].mean(),
             "threshold_std": grp["best_threshold"].std(),
+            "youden_j_mean": grp["youden_j"].mean() if "youden_j" in grp.columns else np.nan,
+            "youden_threshold_mean": grp["youden_threshold"].mean() if "youden_threshold" in grp.columns else np.nan,
+            "n_sites_mean": grp["n_sites"].mean() if "n_sites" in grp.columns else np.nan,
+            "n_positive_mean": grp["n_positive"].mean() if "n_positive" in grp.columns else np.nan,
+            "n_negative_mean": grp["n_negative"].mean() if "n_negative" in grp.columns else np.nan,
             "total_truth": total_truth,
         }
         overall_records.append(rec)
@@ -330,6 +348,9 @@ else:
             "recall_mean": round(grp["recall"].mean(), 4),
             "threshold_mean": round(grp["best_threshold"].mean(), 4),
             "threshold_original_mean": round(grp["best_threshold_original"].mean(), 6),
+            "youden_j_mean": round(grp["youden_j"].mean(), 4) if "youden_j" in grp.columns and grp["youden_j"].notna().any() else np.nan,
+            "youden_threshold_mean": round(grp["youden_threshold"].mean(), 4) if "youden_threshold" in grp.columns and grp["youden_threshold"].notna().any() else np.nan,
+            "n_sites_mean": int(round(grp["n_sites"].mean())) if "n_sites" in grp.columns and grp["n_sites"].notna().any() else np.nan,
         }
 
         # Add per-comparison AUROC breakdown

@@ -440,6 +440,155 @@ def compute_all_pairwise_tests(
 # FDR Correction
 # =============================================================================
 
+def bootstrap_auc_comparison(
+    values1: np.ndarray,
+    values2: np.ndarray,
+    n_bootstrap: int = 2000,
+    seed: int = 42
+) -> Dict[str, float]:
+    """
+    Bootstrap-based test for comparing two correlated AUC values.
+
+    Uses paired bootstrap resampling across comparisons to test whether
+    the difference in AUC between two tools is significant.
+    This is analogous to the DeLong test but works on aggregated AUC values
+    across comparisons rather than raw predictions.
+
+    Args:
+        values1: AUC values for tool 1 (one per comparison)
+        values2: AUC values for tool 2 (one per comparison)
+        n_bootstrap: Number of bootstrap resamples
+        seed: Random seed
+
+    Returns:
+        Dict with observed_diff, ci_lower, ci_upper, p_value, z_statistic
+    """
+    rng = np.random.default_rng(seed)
+
+    # Remove paired NaN
+    valid = ~(np.isnan(values1) | np.isnan(values2))
+    v1, v2 = values1[valid], values2[valid]
+
+    if len(v1) < 2:
+        return {
+            'observed_diff': np.nan, 'ci_lower': np.nan, 'ci_upper': np.nan,
+            'p_value': np.nan, 'z_statistic': np.nan
+        }
+
+    observed_diff = np.mean(v1) - np.mean(v2)
+
+    # Paired bootstrap
+    diffs = []
+    n = len(v1)
+    for _ in range(n_bootstrap):
+        idx = rng.integers(0, n, size=n)
+        diffs.append(np.mean(v1[idx]) - np.mean(v2[idx]))
+
+    diffs = np.array(diffs)
+    se = np.std(diffs)
+
+    if se > 0:
+        z_stat = observed_diff / se
+        # Two-sided p-value from bootstrap null (centered at 0)
+        p_value = np.mean(np.abs(diffs - observed_diff) >= np.abs(observed_diff))
+    else:
+        z_stat = 0.0
+        p_value = 1.0
+
+    ci_lower = np.percentile(diffs, 2.5)
+    ci_upper = np.percentile(diffs, 97.5)
+
+    return {
+        'observed_diff': observed_diff,
+        'ci_lower': ci_lower,
+        'ci_upper': ci_upper,
+        'p_value': p_value,
+        'z_statistic': z_stat
+    }
+
+
+def run_auc_comparison(
+    by_comparison_df: pd.DataFrame,
+    auc_metrics: List[str] = None,
+    n_bootstrap: int = 2000,
+    seed: int = 42,
+    alpha: float = 0.05
+) -> pd.DataFrame:
+    """
+    Pairwise AUC comparison between all tools using bootstrap test.
+
+    Analogous to the DeLong test for comparing correlated AUROCs.
+    Tests each pair of tools across all comparisons.
+
+    Args:
+        by_comparison_df: Per-comparison metrics (must have 'tool', 'comparison' columns)
+        auc_metrics: AUC metric columns to compare (default: ['auroc', 'prauc'])
+        n_bootstrap: Number of bootstrap resamples
+        seed: Random seed
+        alpha: Significance level
+
+    Returns:
+        DataFrame with pairwise AUC comparison results
+    """
+    if auc_metrics is None:
+        auc_metrics = ['auroc', 'prauc']
+    auc_metrics = [m for m in auc_metrics if m in by_comparison_df.columns]
+
+    if not auc_metrics:
+        logger.warning("No AUC metrics found in data")
+        return pd.DataFrame()
+
+    # Use 'comparison' as the pairing variable
+    comp_col = 'comparison' if 'comparison' in by_comparison_df.columns else None
+    if comp_col is None:
+        logger.warning("No 'comparison' column found; cannot do paired AUC comparison")
+        return pd.DataFrame()
+
+    tools = sorted(by_comparison_df['tool'].unique())
+    comparisons = sorted(by_comparison_df[comp_col].unique())
+    results = []
+
+    for metric in auc_metrics:
+        for i, tool1 in enumerate(tools):
+            for tool2 in tools[i+1:]:
+                # Get paired values across comparisons
+                v1_list, v2_list = [], []
+                for comp in comparisons:
+                    mask1 = (by_comparison_df['tool'] == tool1) & (by_comparison_df[comp_col] == comp)
+                    mask2 = (by_comparison_df['tool'] == tool2) & (by_comparison_df[comp_col] == comp)
+                    vals1 = by_comparison_df.loc[mask1, metric].values
+                    vals2 = by_comparison_df.loc[mask2, metric].values
+                    if len(vals1) > 0 and len(vals2) > 0:
+                        v1_list.append(vals1[0])
+                        v2_list.append(vals2[0])
+
+                v1 = np.array(v1_list)
+                v2 = np.array(v2_list)
+
+                result = bootstrap_auc_comparison(v1, v2, n_bootstrap=n_bootstrap, seed=seed)
+
+                results.append({
+                    'tool1': tool1,
+                    'tool2': tool2,
+                    'metric': metric,
+                    'tool1_mean': np.nanmean(v1),
+                    'tool2_mean': np.nanmean(v2),
+                    'n_comparisons': len(v1),
+                    **result
+                })
+
+    results_df = pd.DataFrame(results)
+
+    # Apply FDR correction
+    if not results_df.empty and 'p_value' in results_df.columns:
+        valid_p = results_df['p_value'].values
+        rejected, adj_p = benjamini_hochberg_correction(valid_p, alpha)
+        results_df['adj_p_value'] = adj_p
+        results_df['significant'] = rejected
+
+    return results_df
+
+
 def apply_fdr_correction(
     p_values: np.ndarray,
     method: str = 'benjamini-hochberg',
@@ -642,6 +791,7 @@ def main():
         output_significance = snakemake.output.significance
         output_fdr = snakemake.output.fdr
         output_effects = snakemake.output.effects
+        output_auc_comparison = snakemake.output.auc_comparison
 
         n_bootstrap = snakemake.params.get('n_bootstrap', 1000)
         alpha = snakemake.params.get('alpha', 0.05)
@@ -660,6 +810,7 @@ def main():
         parser.add_argument('--output-significance', required=True, help='Output significance TSV')
         parser.add_argument('--output-fdr', required=True, help='Output FDR TSV')
         parser.add_argument('--output-effects', required=True, help='Output effect sizes TSV')
+        parser.add_argument('--output-auc-comparison', required=True, help='Output AUC comparison TSV')
         parser.add_argument('--n-bootstrap', type=int, default=1000, help='Bootstrap iterations')
         parser.add_argument('--alpha', type=float, default=0.05, help='Significance level')
         parser.add_argument('--fdr-method', default='benjamini-hochberg', help='FDR method')
@@ -672,6 +823,7 @@ def main():
         output_significance = args.output_significance
         output_fdr = args.output_fdr
         output_effects = args.output_effects
+        output_auc_comparison = args.output_auc_comparison
         n_bootstrap = args.n_bootstrap
         alpha = args.alpha
         fdr_method = args.fdr_method
@@ -679,7 +831,7 @@ def main():
         logger.info("Running in command line mode")
 
     # Create output directory
-    for output_path in [output_ci, output_significance, output_fdr, output_effects]:
+    for output_path in [output_ci, output_significance, output_fdr, output_effects, output_auc_comparison]:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     # Load data
@@ -690,7 +842,7 @@ def main():
     by_comparison_df = pd.read_csv(by_comparison_input, sep='\t')
 
     # Define metrics to analyze
-    metrics = ['precision', 'recall', 'f1', 'auprc', 'auroc', 'mcc', 'specificity']
+    metrics = ['precision', 'recall', 'f1', 'prauc', 'auroc', 'mcc', 'specificity']
     metrics = [m for m in metrics if m in summary_df.columns]
 
     logger.info(f"Analyzing metrics: {metrics}")
@@ -738,6 +890,32 @@ def main():
         effects_df.to_csv(output_effects, sep='\t', index=False)
         logger.info(f"Saved effect sizes to: {output_effects}")
 
+    # Run AUC comparison (DeLong-like bootstrap test)
+    logger.info("=" * 60)
+    logger.info("PHASE 4: Pairwise AUC Comparison (Bootstrap DeLong-like Test)")
+    logger.info("=" * 60)
+    auc_comparison_df = run_auc_comparison(
+        by_comparison_df,
+        auc_metrics=['auroc', 'prauc'],
+        n_bootstrap=max(n_bootstrap, 2000),
+        seed=42,
+        alpha=alpha
+    )
+
+    if not auc_comparison_df.empty:
+        auc_comparison_df.to_csv(output_auc_comparison, sep='\t', index=False)
+        logger.info(f"Saved AUC comparison to: {output_auc_comparison}")
+        n_sig_auc = auc_comparison_df['significant'].sum() if 'significant' in auc_comparison_df.columns else 0
+        logger.info(f"Significant AUC differences: {n_sig_auc}/{len(auc_comparison_df)}")
+    else:
+        # Write empty file with header
+        pd.DataFrame(columns=[
+            'tool1', 'tool2', 'metric', 'tool1_mean', 'tool2_mean',
+            'n_comparisons', 'observed_diff', 'ci_lower', 'ci_upper',
+            'p_value', 'z_statistic', 'adj_p_value', 'significant'
+        ]).to_csv(output_auc_comparison, sep='\t', index=False)
+        logger.info("No AUC comparison results (insufficient data)")
+
     # Summary statistics
     logger.info("=" * 60)
     logger.info("SUMMARY")
@@ -745,6 +923,7 @@ def main():
     logger.info(f"Bootstrap CI records: {len(bootstrap_df)}")
     logger.info(f"Significance test records: {len(significance_df)}")
     logger.info(f"Effect size records: {len(effects_df)}")
+    logger.info(f"AUC comparison records: {len(auc_comparison_df)}")
 
     if not significance_df.empty:
         n_significant = significance_df['significant'].sum()

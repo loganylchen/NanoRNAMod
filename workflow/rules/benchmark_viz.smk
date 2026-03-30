@@ -196,6 +196,7 @@ rule benchmark_statistics:
         significance="{project}/results/benchmarks/statistics/significance_tests.tsv",
         fdr="{project}/results/benchmarks/statistics/fdr_corrected.tsv",
         effects="{project}/results/benchmarks/statistics/effect_sizes.tsv",
+        auc_comparison="{project}/results/benchmarks/statistics/auc_comparison.tsv",
     params:
         n_bootstrap=config.get("benchmark", {}).get("n_bootstrap", 1000),
         alpha=config.get("benchmark", {}).get("alpha", 0.05),
@@ -270,6 +271,7 @@ rule benchmark_r_figures:
         significance="{project}/results/benchmarks/statistics/significance_tests.tsv",
         fdr="{project}/results/benchmarks/statistics/fdr_corrected.tsv",
         effect_sizes="{project}/results/benchmarks/statistics/effect_sizes.tsv",
+        auc_comparison="{project}/results/benchmarks/statistics/auc_comparison.tsv",
         # Sensitivity analysis results
         coverage="{project}/results/benchmarks/sensitivity/coverage_analysis.tsv",
         score_dist="{project}/results/benchmarks/sensitivity/score_distribution.tsv",
@@ -346,6 +348,7 @@ rule benchmark_per_tool_comparison_figures:
         native_scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/native/score_comparison.tsv",
         fair_scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/fair/score_comparison.tsv",
         results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
+        union_predictions="{project}/results/benchmarks/coverage/{comparison}/union_predictions.tsv",
         truth_set=config["benchmark"]["truth_set"],
     output:
         roc_pdf="{project}/results/benchmarks/per_tool/{tool}/{comparison}/figures/roc_curve.pdf",

@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-from sklearn.metrics import roc_auc_score, average_precision_score
+from sklearn.metrics import roc_auc_score, average_precision_score, roc_curve, precision_recall_curve
 
 
 
@@ -92,6 +92,9 @@ GENERIC_SCORE_PATTERNS = [
 OUTPUT_COLUMNS = [
     'score_column', 'is_pvalue', 'transform', 'auroc', 'prauc',
     'best_threshold', 'best_threshold_original', 'f1', 'precision', 'recall',
+    'youden_threshold', 'youden_threshold_original', 'youden_j',
+    'youden_sensitivity', 'youden_specificity',
+    'n_sites', 'n_positive', 'n_negative',
 ]
 
 
@@ -155,19 +158,33 @@ def evaluate_column(scores_arr, labels, col_name, is_pval):
     scores_arr = np.where(np.isposinf(scores_arr), INF_CAP, scores_arr)
     scores_arr = np.where(np.isneginf(scores_arr), -INF_CAP, scores_arr)
 
+    n_sites = len(labels)
+    n_positive = int(np.sum(labels == 1))
+    n_negative = int(np.sum(labels == 0))
+
+    empty_result = {
+        'score_column': col_name,
+        'is_pvalue': is_pval,
+        'transform': transform,
+        'auroc': np.nan,
+        'prauc': np.nan,
+        'best_threshold': np.nan,
+        'best_threshold_original': np.nan,
+        'f1': 0.0,
+        'precision': 0.0,
+        'recall': 0.0,
+        'youden_threshold': np.nan,
+        'youden_threshold_original': np.nan,
+        'youden_j': np.nan,
+        'youden_sensitivity': np.nan,
+        'youden_specificity': np.nan,
+        'n_sites': n_sites,
+        'n_positive': n_positive,
+        'n_negative': n_negative,
+    }
+
     if len(np.unique(labels)) < 2:
-        return {
-            'score_column': col_name,
-            'is_pvalue': is_pval,
-            'transform': transform,
-            'auroc': np.nan,
-            'prauc': np.nan,
-            'best_threshold': np.nan,
-            'best_threshold_original': np.nan,
-            'f1': 0.0,
-            'precision': 0.0,
-            'recall': 0.0,
-        }
+        return empty_result
 
     try:
         auroc = roc_auc_score(labels, scores_arr)
@@ -179,6 +196,7 @@ def evaluate_column(scores_arr, labels, col_name, is_pval):
     except Exception:
         prauc = np.nan
 
+    # --- F1-optimal threshold (from grid search) ---
     thresholds = np.linspace(scores_arr.min(), scores_arr.max(), 100)
     best_f1 = -1.0
     best_thresh = thresholds[0]
@@ -198,6 +216,29 @@ def evaluate_column(scores_arr, labels, col_name, is_pval):
     else:
         best_thresh_original = float(best_thresh)
 
+    # --- Youden's J threshold (from ROC curve) ---
+    # J = sensitivity + specificity - 1 = TPR - FPR
+    youden_thresh = np.nan
+    youden_thresh_original = np.nan
+    youden_j = np.nan
+    youden_sensitivity = np.nan
+    youden_specificity = np.nan
+
+    try:
+        fpr, tpr, roc_thresholds = roc_curve(labels, scores_arr)
+        j_scores = tpr - fpr
+        best_j_idx = np.argmax(j_scores)
+        youden_j = float(j_scores[best_j_idx])
+        youden_sensitivity = float(tpr[best_j_idx])
+        youden_specificity = float(1 - fpr[best_j_idx])
+        youden_thresh = float(roc_thresholds[best_j_idx])
+        if is_pval:
+            youden_thresh_original = float(10 ** (-youden_thresh))
+        else:
+            youden_thresh_original = float(youden_thresh)
+    except Exception:
+        pass
+
     return {
         'score_column': col_name,
         'is_pvalue': is_pval,
@@ -209,6 +250,14 @@ def evaluate_column(scores_arr, labels, col_name, is_pval):
         'f1': best_f1,
         'precision': best_precision,
         'recall': best_recall,
+        'youden_threshold': youden_thresh,
+        'youden_threshold_original': youden_thresh_original,
+        'youden_j': youden_j,
+        'youden_sensitivity': youden_sensitivity,
+        'youden_specificity': youden_specificity,
+        'n_sites': n_sites,
+        'n_positive': n_positive,
+        'n_negative': n_negative,
     }
 
 

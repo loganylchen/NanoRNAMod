@@ -55,5 +55,6 @@ rule pybaleen_run:
         "--ivt-blow5 {input.control_blow5} "
         "--ref {input.ref} "
         "-o {params.output_dir} "
+        "--threads {threads} "
         "{params.extra} "
         "1> {log.out} 2> {log.err}"

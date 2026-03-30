@@ -68,7 +68,8 @@ benchmarks/
 │   ├── bootstrap_ci.tsv                 # 95% bootstrap confidence intervals
 │   ├── significance_tests.tsv           # Paired Wilcoxon tests
 │   ├── fdr_corrected.tsv                # FDR-corrected p-values
-│   └── effect_sizes.tsv                 # Cohen's d, Cliff's delta
+│   ├── effect_sizes.tsv                 # Cohen's d, Cliff's delta
+│   └── auc_comparison.tsv              # Pairwise AUC comparison (bootstrap DeLong-like test)
 │
 ├── sensitivity/                         # Sensitivity analysis (intermediate)
 │   ├── coverage_analysis.tsv            # Performance stratified by read depth
@@ -117,6 +118,36 @@ This penalizes inconsistent columns — a column with AUROC 0.75 ± 0.01 beats 0
 | **F1** | Harmonic mean of precision and recall at the optimal threshold |
 | **Precision** | Fraction of positive predictions that are correct (TP / (TP + FP)) |
 | **Recall** | Fraction of true positives that are detected (TP / (TP + FN)) |
+| **Youden's J** | Sensitivity + Specificity - 1 (optimal point on ROC curve, range -1 to 1) |
+
+### Threshold Selection
+
+Each score column is evaluated with two threshold selection methods, computed independently for native and fair modes:
+
+| Method | Criterion | Use case |
+|--------|-----------|----------|
+| **F1-optimal** (`best_threshold`) | Maximizes F1 = 2PR/(P+R) | Balanced precision-recall trade-off |
+| **Youden-optimal** (`youden_threshold`) | Maximizes TPR - FPR (Youden's J) | Optimal point on the ROC curve |
+
+The `_original` variants give the threshold in the original scale (before `-log10` transform for p-values).
+
+**Native vs Fair thresholds**: These are computed separately because the evaluation sites differ:
+- **Native**: Only sites the tool reports (smaller n, high-confidence sites)
+- **Fair**: Union of all tools' reported sites (larger n, includes uncalled sites filled with worst-case scores)
+
+Comparing thresholds across modes helps decide whether to use a tool's native output or to apply it within a multi-tool ensemble.
+
+### AUC Comparison (Bootstrap DeLong-like Test)
+
+The `statistics/auc_comparison.tsv` file contains pairwise comparisons of AUROC and PRAUC between all tool pairs. For each pair:
+
+- **observed_diff**: Mean AUC difference (tool1 - tool2) across comparisons
+- **ci_lower / ci_upper**: 95% bootstrap confidence interval on the difference
+- **p_value**: Two-sided bootstrap p-value testing H0: no difference
+- **adj_p_value**: FDR-corrected p-value (Benjamini-Hochberg)
+- **significant**: Whether the difference is significant after FDR correction
+
+This is analogous to the DeLong test but operates on aggregated AUC values across comparisons using paired bootstrap resampling, rather than on raw prediction scores.
 
 ## Primary Output Files
 
@@ -127,7 +158,9 @@ These are the files most useful for analysis:
 | `cross_tool/by_tool.tsv` | **Start here.** Per-tool summary: best score column, AUROC, F1, precision, recall, coverage |
 | `cross_tool/accuracy_summary_by_comparison.tsv` | Per-tool × comparison metrics with native/fair mode breakdown |
 | `cross_tool/best_scores.tsv` | Why each score column was selected (all candidates with mean AUROC) |
+| `figures/fig2_precision_recall.pdf` | Precision, recall, and PRAUC comparison |
 | `figures/fig4_native_vs_fair.pdf` | Visual comparison of native vs fair AUROC |
 | `figures/fig8_tool_ranking.pdf` | Tools ranked by overall performance |
 | `per_tool/{tool}/figures/` | Detailed per-tool analysis across comparisons |
+| `statistics/auc_comparison.tsv` | Pairwise AUC significance tests between tools |
 | `benchmark_report.pdf` | Comprehensive multi-page report |

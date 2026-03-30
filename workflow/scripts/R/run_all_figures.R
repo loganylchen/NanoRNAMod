@@ -74,7 +74,9 @@ input_files <- list(
   score_dist = NULL,
   threshold_robust = NULL,
   # Score column analysis
-  score_column_summary = NULL
+  score_column_summary = NULL,
+  # AUC comparison
+  auc_comparison = NULL
 )
 
 # Check if running as Snakemake script
@@ -95,6 +97,7 @@ if (exists("snakemake")) {
   input_files$score_dist <- snakemake@input[["score_dist"]]
   input_files$threshold_robust <- snakemake@input[["threshold_robust"]]
   input_files$score_column_summary <- snakemake@input[["score_column_summary"]]
+  input_files$auc_comparison <- snakemake@input[["auc_comparison"]]
 
   output_dir <- snakemake@output[["dir"]]
   if (is.null(output_dir)) {
@@ -150,6 +153,7 @@ if (exists("snakemake")) {
   input_files$score_dist <- file.path(data_dir, "sensitivity/score_distribution.tsv")
   input_files$threshold_robust <- file.path(data_dir, "sensitivity/threshold_robustness.tsv")
   input_files$score_column_summary <- file.path(data_dir, "score_column_summary.tsv")
+  input_files$auc_comparison <- file.path(data_dir, "statistics/auc_comparison.tsv")
 }
 
 # Define output directories (flat layout — all figures and data co-located)
@@ -250,42 +254,77 @@ create_fig1_overall_accuracy <- function(accuracy_df, ci_df, tool_colors) {
 }
 
 # -----------------------------------------------------------------------------
-# Figure 2: PR Curves with AUPRC
+# Figure 2: Precision, Recall, and PRAUC
 # -----------------------------------------------------------------------------
-create_fig2_pr_curves <- function(accuracy_df, tool_colors) {
+create_fig2_pr_curves <- function(accuracy_df, ci_df, tool_colors) {
   if (is.null(accuracy_df)) return(NULL)
 
+  # Build summary with prauc if available
+  has_prauc <- "prauc" %in% names(accuracy_df)
+
   df_plot <- accuracy_df %>%
-    dplyr::select(tool, precision, recall, f1) %>%
     dplyr::group_by(tool) %>%
     dplyr::summarise(
       precision = mean(precision, na.rm = TRUE),
       recall = mean(recall, na.rm = TRUE),
       f1 = mean(f1, na.rm = TRUE),
+      prauc = if (has_prauc) mean(prauc, na.rm = TRUE) else NA_real_,
       .groups = "drop"
     ) %>%
     dplyr::arrange(desc(f1))
 
+  pivot_cols <- c("precision", "recall")
+  fill_vals <- c("precision" = "#0072B2", "recall" = "#D55E00")
+  fill_labels <- c("Precision", "Recall")
+
+  if (has_prauc && !all(is.na(df_plot$prauc))) {
+    pivot_cols <- c(pivot_cols, "prauc")
+    fill_vals <- c(fill_vals, "prauc" = "#009E73")
+    fill_labels <- c(fill_labels, "PRAUC")
+  }
+
   df_long <- df_plot %>%
     tidyr::pivot_longer(
-      cols = c(precision, recall),
+      cols = dplyr::all_of(pivot_cols),
       names_to = "metric",
       values_to = "value"
     )
 
   df_long$tool <- factor(df_long$tool, levels = df_plot$tool)
+  df_long$metric <- factor(df_long$metric, levels = names(fill_vals))
+
+  # Add CI for prauc if available
+  if (!is.null(ci_df) && "metric" %in% names(ci_df) && has_prauc) {
+    ci_prauc <- ci_df %>%
+      dplyr::filter(metric == "prauc") %>%
+      dplyr::select(tool, ci_lower, ci_upper) %>%
+      dplyr::mutate(metric = "prauc")
+    df_long <- df_long %>%
+      dplyr::left_join(ci_prauc, by = c("tool", "metric"))
+  }
 
   p <- ggplot(df_long, aes(x = tool, y = value, fill = metric)) +
     geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
-    scale_fill_manual(
-      values = c("precision" = "#0072B2", "recall" = "#D55E00"),
-      labels = c("Precision", "Recall"),
-      name = NULL
-    ) +
+    scale_fill_manual(values = fill_vals, labels = fill_labels, name = NULL)
+
+  # Add CI error bars for prauc
+  if ("ci_lower" %in% names(df_long)) {
+    ci_data <- df_long %>% dplyr::filter(!is.na(ci_lower))
+    if (nrow(ci_data) > 0) {
+      p <- p + geom_errorbar(
+        data = ci_data,
+        aes(ymin = ci_lower, ymax = ci_upper),
+        position = position_dodge(width = 0.8), width = 0.2, linewidth = 0.5
+      )
+    }
+  }
+
+  p <- p +
     geom_text(aes(label = sprintf("%.2f", value)),
               position = position_dodge(width = 0.8), vjust = -0.5, size = 2) +
     labs(
-      title = "Precision vs Recall Trade-off",
+      title = "Precision, Recall, and PRAUC",
+      subtitle = if (has_prauc) "Area Under Precision-Recall Curve shown in green" else NULL,
       x = "Tool",
       y = "Score"
     ) +
@@ -822,6 +861,7 @@ thresh_robust_df <- load_with_fallback(input_files$threshold_robust)
 by_comp_df <- load_with_fallback(input_files$accuracy_by_comparison)
 resource_df <- load_with_fallback(input_files$resources)
 score_col_df <- load_with_fallback(input_files$score_column_summary)
+auc_comp_df <- load_with_fallback(input_files$auc_comparison)
 
 # Assign tool colors
 tool_colors <- assign_tool_colors(unique(accuracy_df$tool))
@@ -851,17 +891,19 @@ if (!is.null(p1)) {
 
 # ── Fig 2: Precision vs Recall Trade-off ─────────────────────────────────────
 # Shows how each tool balances false positives vs missed sites.
-message("[2/8] Precision vs Recall Trade-off...")
-p2 <- create_fig2_pr_curves(accuracy_df, tool_colors)
+message("[2/8] Precision, Recall, and PRAUC...")
+p2 <- create_fig2_pr_curves(accuracy_df, ci_df, tool_colors)
 if (!is.null(p2)) {
   save_figure(p2, file.path(main_dir, paste0("fig2_precision_recall.", fig_format)),
               width = 85, height = 70, dpi = dpi)
-  export_source_data(
-    accuracy_df %>% dplyr::group_by(tool) %>%
-      dplyr::summarise(precision = mean(precision, na.rm = TRUE),
-                       recall = mean(recall, na.rm = TRUE), .groups = "drop"),
-    "fig2_precision_recall_data.tsv", data_out_dir
-  )
+  fig2_data <- accuracy_df %>% dplyr::group_by(tool) %>%
+    dplyr::summarise(
+      precision = mean(precision, na.rm = TRUE),
+      recall = mean(recall, na.rm = TRUE),
+      prauc = if ("prauc" %in% names(accuracy_df)) mean(prauc, na.rm = TRUE) else NA_real_,
+      .groups = "drop"
+    )
+  export_source_data(fig2_data, "fig2_precision_recall_data.tsv", data_out_dir)
 }
 
 # ── Fig 3: AUROC Comparison with CI ──────────────────────────────────────────
@@ -1007,6 +1049,7 @@ if (!is.null(coverage_df)) export_source_data(coverage_df, "coverage_analysis_so
 if (!is.null(score_dist_df)) export_source_data(score_dist_df, "score_distribution_source.tsv", data_out_dir)
 if (!is.null(thresh_robust_df)) export_source_data(thresh_robust_df, "threshold_robustness_source.tsv", data_out_dir)
 if (!is.null(score_col_df)) export_source_data(score_col_df, "score_column_summary_source.tsv", data_out_dir)
+if (!is.null(auc_comp_df)) export_source_data(auc_comp_df, "auc_comparison_source.tsv", data_out_dir)
 
 # =============================================================================
 # Ensure all declared Snakemake outputs exist (create empty placeholders if skipped)
