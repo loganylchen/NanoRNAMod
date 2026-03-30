@@ -16,13 +16,12 @@ rule baleen_dataprep:
         mem_mb=1024 * 450,
     priority: 10
     log:
-        out="logs/{project}/baleen_dataprep/{sample}.log",
-        err="logs/{project}/baleen_dataprep/{sample}.error",
+        "logs/{project}/baleen_dataprep/{sample}.log",
     shell:
         "Baleen.py dataprep "
         "--eventalign {input.eventalign} "
         "--output-dir {output.dir} "
-        "--threads {threads} 1> {log.out} 2> {log.err}"
+        "--threads {threads} > {log} 2>&1"
 
 
 rule baleen_modcall:
@@ -48,14 +47,13 @@ rule baleen_modcall:
         mem_mb=1024 * 650,
     priority: 5
     log:
-        out="logs/{project}/baleen_modcall/N_{native}_C_{control}.log",
-        err="logs/{project}/baleen_modcall/N_{native}_C_{control}.error",
+        "logs/{project}/baleen_modcall/N_{native}_C_{control}.log",
     shell:
         "Baleen.py modcall "
         "--native-dataprep {input.native_dataprep} "
         "--control-dataprep {input.control_dataprep} "
         "{params.params} "
-        "--output-dir {params.output_dir} 1>{log.out} 2> {log.err}"
+        "--output-dir {params.output_dir} > {log} 2>&1"
 
 
 rule baleen_postcall:
@@ -74,11 +72,10 @@ rule baleen_postcall:
     resources:
         mem_mb=1024 * 250,
     log:
-        out="logs/{project}/baleen_postcall/N_{native}_C_{control}.log",
-        err="logs/{project}/baleen_postcall/N_{native}_C_{control}.error",
+        "logs/{project}/baleen_postcall/N_{native}_C_{control}.log",
     shell:
         "Baleen.py postcall "
         "--modcall-sm-dir {input.modcall} "
         "--threads {threads} "
         "{params.params} "
-        "--output-dir {params.dir} 2> {log.err} 1> {log.out}"
+        "--output-dir {params.dir} > {log} 2>&1"

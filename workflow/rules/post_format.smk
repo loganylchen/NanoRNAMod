@@ -36,8 +36,7 @@ rule tandemmod_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/tandemmod_annotate/{sample}.log",
-        err="logs/{project}/tandemmod_annotate/{sample}.error",
+        "logs/{project}/tandemmod_annotate/{sample}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -46,7 +45,7 @@ rule tandemmod_annotate:
         "--loc-column position "
         "--gtf {params.gtf} "
         "--output {output.result} "
-        "2> {log.err} 1> {log.out}"
+        "> {log} 2>&1"
 
 
 rule post_directrm:
@@ -87,8 +86,7 @@ rule directrm_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/directrm_annotate/{sample}.log",
-        err="logs/{project}/directrm_annotate/{sample}.error",
+        "logs/{project}/directrm_annotate/{sample}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -97,7 +95,7 @@ rule directrm_annotate:
         "--loc-column position "
         "--gtf {params.gtf} "
         "--output {output.result} "
-        "2> {log.err} 1> {log.out}"
+        "> {log} 2>&1"
 
 
 rule post_m6atm:
@@ -138,8 +136,7 @@ rule m6atm_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/m6atm_annotate/{sample}.log",
-        err="logs/{project}/m6atm_annotate/{sample}.error",
+        "logs/{project}/m6atm_annotate/{sample}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -148,7 +145,7 @@ rule m6atm_annotate:
         "--loc-column position "
         "--gtf {params.gtf} "
         "--output {output.result} "
-        "2> {log.err} 1> {log.out}"
+        "> {log} 2>&1"
 
 
 rule post_rnano:
@@ -189,8 +186,7 @@ rule rnano_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/rnano_annotate/{sample}.log",
-        err="logs/{project}/rnano_annotate/{sample}.error",
+        "logs/{project}/rnano_annotate/{sample}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -199,7 +195,7 @@ rule rnano_annotate:
         "--loc-column position "
         "--gtf {params.gtf} "
         "--output {output.result} "
-        "2> {log.err} 1> {log.out}"
+        "> {log} 2>&1"
 
 
 rule post_xpore:
@@ -239,8 +235,7 @@ rule xpore_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/xpore_annotate/N_{native}_C_{control}.log",
-        err="logs/{project}/xpore_annotate/N_{native}_C_{control}.error",
+        "logs/{project}/xpore_annotate/N_{native}_C_{control}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -248,7 +243,7 @@ rule xpore_annotate:
         "--transcript-column id "
         "--loc-column position "
         "--gtf {params.gtf} "
-        "--output {output.result} 2> {log.err} 1> {log.out}"
+        "--output {output.result} > {log} 2>&1"
 
 
 rule post_nanocompore:
@@ -289,8 +284,7 @@ rule nanocompore_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/nanocompore_annotate/N_{native}_C_{control}.log",
-        err="logs/{project}/nanocompore_annotate/N_{native}_C_{control}.error",
+        "logs/{project}/nanocompore_annotate/N_{native}_C_{control}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -298,7 +292,7 @@ rule nanocompore_annotate:
         "--transcript-column ref_id "
         "--loc-column pos "
         "--gtf {params.gtf} "
-        "--output {output.result} 2> {log.err} 1> {log.out}"
+        "--output {output.result} > {log} 2>&1"
 
 
 rule post_baleen:
@@ -338,8 +332,7 @@ rule baleen_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/baleen_annotate/N_{native}_C_{control}.log",
-        err="logs/{project}/baleen_annotate/N_{native}_C_{control}.error",
+        "logs/{project}/baleen_annotate/N_{native}_C_{control}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -347,7 +340,7 @@ rule baleen_annotate:
         "--transcript-column transcript "
         "--loc-column position "
         "--gtf {params.gtf} "
-        "--output {output.result} 2> {log.err} 1> {log.out}"
+        "--output {output.result} > {log} 2>&1"
 
 
 rule post_differr:
@@ -387,8 +380,7 @@ rule differr_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/differr_annotate/N_{native}_C_{control}.log",
-        err="logs/{project}/differr_annotate/N_{native}_C_{control}.error",
+        "logs/{project}/differr_annotate/N_{native}_C_{control}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -396,7 +388,7 @@ rule differr_annotate:
         "--transcript-column chrom "
         "--loc-column start "
         "--gtf {params.gtf} "
-        "--output {output.result} 2> {log.err} 1> {log.out}"
+        "--output {output.result} > {log} 2>&1"
 
 
 rule post_epinano:
@@ -437,8 +429,7 @@ rule epinano_annotate:
     priority: 20
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/epinano_annotate/N_{native}_C_{control}.log",
-        err="logs/{project}/epinano_annotate/N_{native}_C_{control}.error",
+        "logs/{project}/epinano_annotate/N_{native}_C_{control}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -446,7 +437,7 @@ rule epinano_annotate:
         "--transcript-column chrom "
         "--loc-column pos "
         "--gtf {params.gtf} "
-        "--output {output.result} 2> {log.err} 1> {log.out}"
+        "--output {output.result} > {log} 2>&1"
 
 
 rule post_eligos2:
@@ -487,8 +478,7 @@ rule eligos2_annotate:
     threads: get_threads("baleen", 1)
     priority: 20
     log:
-        out="logs/{project}/eligos2_annotate/N_{native}_C_{control}.log",
-        err="logs/{project}/eligos2_annotate/N_{native}_C_{control}.error",
+        "logs/{project}/eligos2_annotate/N_{native}_C_{control}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -496,7 +486,7 @@ rule eligos2_annotate:
         "--transcript-column chrom "
         "--loc-column start_loc "
         "--gtf {params.gtf} "
-        "--output {output.result} 2> {log.err} 1> {log.out}"
+        "--output {output.result} > {log} 2>&1"
 
 
 rule post_drummer:
@@ -536,8 +526,7 @@ rule drummer_annotate:
     threads: get_threads("baleen", 1)
     priority: 20
     log:
-        out="logs/{project}/drummer_annotate/N_{native}_C_{control}.log",
-        err="logs/{project}/drummer_annotate/N_{native}_C_{control}.error",
+        "logs/{project}/drummer_annotate/N_{native}_C_{control}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -545,7 +534,7 @@ rule drummer_annotate:
         "--transcript-column transcript_id "
         "--loc-column transcript_pos "
         "--gtf {params.gtf} "
-        "--output {output.result} 2> {log.err} 1> {log.out}"
+        "--output {output.result} > {log} 2>&1"
 
 
 rule post_psipore:
@@ -585,8 +574,7 @@ rule psipore_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/psipore_annotate/N_{native}_C_{control}.log",
-        err="logs/{project}/psipore_annotate/N_{native}_C_{control}.error",
+        "logs/{project}/psipore_annotate/N_{native}_C_{control}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -595,7 +583,7 @@ rule psipore_annotate:
         "--loc-column position "
         "--gtf {params.gtf} "
         "--output {output.result} "
-        "2> {log.err} 1> {log.out}"
+        "> {log} 2>&1"
 
 
 rule post_nanopsu:
@@ -636,8 +624,7 @@ rule nanopsu_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/nanopsu_annotate/{sample}.log",
-        err="logs/{project}/nanopsu_annotate/{sample}.error",
+        "logs/{project}/nanopsu_annotate/{sample}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -646,7 +633,7 @@ rule nanopsu_annotate:
         "--loc-column position "
         "--gtf {params.gtf} "
         "--output {output.result} "
-        "2> {log.err} 1> {log.out}"
+        "> {log} 2>&1"
 
 
 rule post_nanomud:
@@ -687,8 +674,7 @@ rule nanomud_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/nanomud_annotate/{sample}.log",
-        err="logs/{project}/nanomud_annotate/{sample}.error",
+        "logs/{project}/nanomud_annotate/{sample}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -697,7 +683,7 @@ rule nanomud_annotate:
         "--loc-column position "
         "--gtf {params.gtf} "
         "--output {output.result} "
-        "2> {log.err} 1> {log.out}"
+        "> {log} 2>&1"
 
 
 rule post_penguin:
@@ -738,8 +724,7 @@ rule penguin_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/penguin_annotate/{sample}.log",
-        err="logs/{project}/penguin_annotate/{sample}.error",
+        "logs/{project}/penguin_annotate/{sample}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -748,7 +733,7 @@ rule penguin_annotate:
         "--loc-column position "
         "--gtf {params.gtf} "
         "--output {output.result} "
-        "2> {log.err} 1> {log.out}"
+        "> {log} 2>&1"
 
 
 # pybaleen post-processing
@@ -787,8 +772,7 @@ rule pybaleen_annotate:
         mem_mb=1024 * 50,
     threads: get_threads("baleen", 1)
     log:
-        out="logs/{project}/pybaleen_annotate/{native}_{control}.log",
-        err="logs/{project}/pybaleen_annotate/{native}_{control}.error",
+        "logs/{project}/pybaleen_annotate/N_{native}_C_{control}.log",
     shell:
         "Baleen.py annotate "
         "--transcript-mod-file {input.transcripts} "
@@ -797,4 +781,4 @@ rule pybaleen_annotate:
         "--loc-column position "
         "--gtf {params.gtf} "
         "--output {output.result} "
-        "2> {log.err} 1> {log.out}"
+        "> {log} 2>&1"

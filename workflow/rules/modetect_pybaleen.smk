@@ -4,6 +4,7 @@
 rule pybaleen_run:
     input:
         native_bam="{project}/results/alignments/{native}.bam",
+        native_bai="{project}/results/alignments/{native}.bam.bai",
         native_fastq="{project}/results/fastq/{native}.fq.gz",
         native_blow5="{project}/results/blow5/{native}.blow5",
         native_blow5_index="{project}/results/blow5/{native}.blow5.idx",
@@ -15,6 +16,7 @@ rule pybaleen_run:
             ".index.readdb",
         ),
         control_bam="{project}/results/alignments/{control}.bam",
+        control_bai="{project}/results/alignments/{control}.bam.bai",
         control_fastq="{project}/results/fastq/{control}.fq.gz",
         control_blow5="{project}/results/blow5/{control}.blow5",
         control_blow5_index="{project}/results/blow5/{control}.blow5.idx",
@@ -43,8 +45,7 @@ rule pybaleen_run:
         gpu=1,
     priority: 5
     log:
-        out="logs/{project}/pybaleen/N_{native}_C_{control}.log",
-        err="logs/{project}/pybaleen/N_{native}_C_{control}.error",
+        "logs/{project}/pybaleen/N_{native}_C_{control}.log",
     shell:
         "baleen run "
         "--native-bam {input.native_bam} "
@@ -57,4 +58,4 @@ rule pybaleen_run:
         "-o {params.output_dir} "
         "--threads {threads} "
         "{params.extra} "
-        "1> {log.out} 2> {log.err}"
+        "> {log} 2>&1"
