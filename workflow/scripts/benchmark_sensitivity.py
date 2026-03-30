@@ -489,6 +489,10 @@ def main():
         predictions_df['truth'] = (predictions_df['truth_match'] == 'yes').astype(int)
         logger.info("Derived 'truth' column from 'truth_match'")
 
+    # Coerce score column to numeric (may be string from TSV)
+    if 'score' in predictions_df.columns:
+        predictions_df['score'] = pd.to_numeric(predictions_df['score'], errors='coerce')
+
     # Ensure required columns
     required_cols = ['tool', 'score', 'truth']
     missing = [col for col in required_cols if col not in predictions_df.columns]
