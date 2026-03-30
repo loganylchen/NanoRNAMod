@@ -315,15 +315,21 @@ for col_name, is_pval in candidate_cols:
         scores_arr = scores_arr[valid_mask]
         labels_eval = labels[valid_mask]
     else:
-        # Fair mode: uncalled sites get the minimum possible score so they
+        # Fair mode: uncalled sites must get the worst possible score so they
         # are always classified as negative regardless of threshold.
-        # This correctly counts them as TN (truth=0) or FN (truth=1).
-        valid_scores = scores_arr[valid_mask]
-        if len(valid_scores) > 0:
-            min_score = np.min(valid_scores) - 1.0
+        # For p-values (lower = more significant): fill with 1.0 (not significant),
+        #   then -log10(1.0) = 0 (lowest after transform, no NaN/Inf issues).
+        # For regular scores (higher = more modified): fill with min - 1.0
+        #   so they always rank below any called site.
+        if is_pval:
+            fill_value = 1.0
         else:
-            min_score = -1.0
-        scores_arr = np.where(np.isnan(scores_arr), min_score, scores_arr)
+            valid_scores = scores_arr[valid_mask]
+            if len(valid_scores) > 0:
+                fill_value = np.min(valid_scores) - 1.0
+            else:
+                fill_value = -1.0
+        scores_arr = np.where(np.isnan(scores_arr), fill_value, scores_arr)
         labels_eval = labels
 
     if len(scores_arr) == 0:
