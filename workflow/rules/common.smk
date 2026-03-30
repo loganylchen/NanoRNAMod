@@ -123,16 +123,17 @@ def get_final_output():
         sample=list(samples.index),
         RESULT_ROOT=RESULT_ROOT,
     )
-    final_output += expand(
-        "{RESULT_ROOT}/polya/{sample}.genome.nanopolish.polya.tsv.gz",
-        sample=list(samples.index),
-        RESULT_ROOT=RESULT_ROOT,
-    )
-    final_output += expand(
-        "{RESULT_ROOT}/polya/{sample}.transcriptome.nanopolish.polya.tsv.gz",
-        sample=list(samples.index),
-        RESULT_ROOT=RESULT_ROOT,
-    )
+    # Poly-A estimation disabled — uncomment to enable
+    # final_output += expand(
+    #     "{RESULT_ROOT}/polya/{sample}.genome.nanopolish.polya.tsv.gz",
+    #     sample=list(samples.index),
+    #     RESULT_ROOT=RESULT_ROOT,
+    # )
+    # final_output += expand(
+    #     "{RESULT_ROOT}/polya/{sample}.transcriptome.nanopolish.polya.tsv.gz",
+    #     sample=list(samples.index),
+    #     RESULT_ROOT=RESULT_ROOT,
+    # )
     if config["qc"]:
         final_output += expand(
             "{RESULT_ROOT}/qc/{sample}/{sample}_rnaseq.pdf",
