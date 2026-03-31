@@ -7,7 +7,7 @@ rule eligos2:
         reference=config["reference"]["transcriptome_fasta"],
         region="{project}/results/eligos2/{native}_{control}.bed",
     output:
-        directory=KEEP_OR_NOT(directory("{project}/results/eligos2/{native}_{control}")),
+        directory=temp(directory("{project}/results/eligos2/{native}_{control}")),
         result="{project}/results/eligos2/{native}_{control}/{native}_vs_{control}_on_{native}_{control}_baseExt0.txt",
     params:
         prefix="{native}_{control}",

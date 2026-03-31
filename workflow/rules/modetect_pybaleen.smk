@@ -29,11 +29,11 @@ rule pybaleen_run:
         ),
         ref=config["reference"]["transcriptome_fasta"],
     output:
-        result=KEEP_OR_NOT(
-            "{project}/results/pybaleen/{native}_{control}/site_results.tsv"
+        result="{project}/results/pybaleen/{native}_{control}/site_results.tsv",
+        output_dir=KEEP_OR_NOT(
+            directory("{project}/results/pybaleen/{native}_{control}")
         ),
     params:
-        output_dir="{project}/results/pybaleen/{native}_{control}/",
         extra=config["params"].get("pybaleen", ""),
     container:
         get_container("pybaleen")
@@ -55,7 +55,7 @@ rule pybaleen_run:
         "--ivt-fastq {input.control_fastq} "
         "--ivt-blow5 {input.control_blow5} "
         "--ref {input.ref} "
-        "-o {params.output_dir} "
+        "-o {output.output_dir} "
         "--threads {threads} "
         "{params.extra} "
         "> {log} 2>&1"

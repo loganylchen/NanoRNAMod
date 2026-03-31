@@ -57,7 +57,7 @@ rule nanocompore:
         native_file="{project}/results/nanocompore_eventalign_collapse/{native}/{native}_eventalign_collapse.tsv",
         reference=config["reference"]["transcriptome_fasta"],
     output:
-        output_dir=KEEP_OR_NOT(
+        output_dir=temp(
             directory("{project}/results/nanocompore/{native}_{control}")
         ),
         output_file="{project}/results/nanocompore/{native}_{control}/nanocompore_results.tsv",

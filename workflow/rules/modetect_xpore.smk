@@ -27,7 +27,7 @@ rule xpore_dataprep:
         eventalign="{project}/results/eventalign/{sample}_simple.tsv.bz2.tmp",
         reference=config["reference"]["transcriptome_fasta"],
     output:
-        KEEP_OR_NOT(directory("{project}/results/dataprep/{sample}_xpore_dataprep")),
+        temp(directory("{project}/results/dataprep/{sample}_xpore_dataprep")),
     log:
         "logs/{project}/xpore_dataprep/{sample}.log",
     benchmark:
@@ -73,7 +73,7 @@ rule xpore_run:
         "{project}/results/dataprep/{control}_xpore_dataprep",
         "{project}/results/dataprep/{native}_xpore_dataprep",
     output:
-        difftable=KEEP_OR_NOT(
+        difftable=temp(
             "{project}/results/xpore/{native}_{control}/diffmod.table"
         ),
     container:
@@ -94,7 +94,7 @@ rule xpore_postprocessing:
     input:
         "{project}/results/xpore/{native}_{control}/diffmod.table",
     output:
-        KEEP_OR_NOT(
+        temp(
             "{project}/results/xpore/{native}_{control}/majority_direction_kmer_diffmod.table"
         ),
     container:

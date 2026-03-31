@@ -4,7 +4,7 @@ rule nanopsu_predict:
         bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
     output:
-        outdir=KEEP_OR_NOT(directory("{project}/results/dataprep/{sample}_nanopsu_dataprep")),
+        outdir=temp(directory("{project}/results/dataprep/{sample}_nanopsu_dataprep")),
     container:
         get_container("nanopsu")
     threads: get_threads("nanopsu", 4)

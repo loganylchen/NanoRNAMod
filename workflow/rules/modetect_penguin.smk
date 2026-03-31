@@ -4,7 +4,7 @@ rule penguin_predict:
         bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
     output:
-        outdir=KEEP_OR_NOT(directory("{project}/results/dataprep/{sample}_penguin_dataprep")),
+        outdir=temp(directory("{project}/results/dataprep/{sample}_penguin_dataprep")),
     container:
         get_container("penguin")
     threads: get_threads("penguin", 4)

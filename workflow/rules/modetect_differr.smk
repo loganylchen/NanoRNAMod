@@ -6,7 +6,7 @@ rule differr:
         native_bai="{project}/results/alignments/{native}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
     output:
-        KEEP_OR_NOT("{project}/results/differr/{native}_{control}/differr.bed"),
+        temp("{project}/results/differr/{native}_{control}/differr.bed"),
     params:
         prefix="",
         extra=config["params"]["differr"],

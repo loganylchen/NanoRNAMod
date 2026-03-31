@@ -4,7 +4,7 @@ rule nanomud_predict:
         bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
     output:
-        outdir=KEEP_OR_NOT(directory("{project}/results/dataprep/{sample}_nanomud_dataprep")),
+        outdir=temp(directory("{project}/results/dataprep/{sample}_nanomud_dataprep")),
     container:
         get_container("nanomud")
     threads: get_threads("nanomud", 4)

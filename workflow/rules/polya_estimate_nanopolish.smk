@@ -12,7 +12,7 @@ rule nanopolish_transcriptome_polya:
         ),
         fastq="{project}/results/fastq/{sample}.fq.gz",
     output:
-        polya_estimate=KEEP_OR_NOT("{project}/results/polya/{sample}.transcriptome.nanopolish.polya.tsv.gz"),
+        polya_estimate=temp("{project}/results/polya/{sample}.transcriptome.nanopolish.polya.tsv.gz"),
     container:
         get_container("nanopolish")
     log:
@@ -45,7 +45,7 @@ rule nanopolish_genome_polya:
         ),
         fastq="{project}/results/fastq/{sample}.fq.gz",
     output:
-        polya_estimate=KEEP_OR_NOT("{project}/results/polya/{sample}.genome.nanopolish.polya.tsv.gz"),
+        polya_estimate=temp("{project}/results/polya/{sample}.genome.nanopolish.polya.tsv.gz"),
     container:
         get_container("nanopolish")
     log:

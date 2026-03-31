@@ -4,7 +4,7 @@ rule baleen_dataprep:
         completion="{project}/results/eventalign/{sample}_full.tsv.completed",
     output:
         data="{project}/results/dataprep/{sample}_baleen_dataprep/eventalign.index",
-        dir=KEEP_OR_NOT(
+        dir=temp(
             directory("{project}/results/dataprep/{sample}_baleen_dataprep")
         ),
     container:
@@ -31,7 +31,7 @@ rule baleen_modcall:
         control_dataprep="{project}/results/dataprep/{control}_baleen_dataprep/",
         control_eventalign_index="{project}/results/dataprep/{control}_baleen_dataprep/eventalign.index",
     output:
-        result=KEEP_OR_NOT(
+        result=temp(
             "{project}/results/baleen/{native}_{control}/transcript_mod_results.csv"
         ),
     params:

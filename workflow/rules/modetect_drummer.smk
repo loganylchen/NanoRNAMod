@@ -37,7 +37,7 @@ rule drummer:
     resources:
         mem_mb = 1024 * 20
     output:
-        outdir=KEEP_OR_NOT(directory("{project}/results/drummer/{native}_{control}/")),
+        outdir=temp(directory("{project}/results/drummer/{native}_{control}/")),
         # summary="results/drummer/{native}_{control}/{control}_filtered-{native}_filtered/summary.txt"
     benchmark:
         "benchmarks/{project}/{native}_{control}.drummer.benchmark.txt"
