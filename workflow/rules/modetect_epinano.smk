@@ -32,7 +32,7 @@ rule epinano:
         control="{project}/results/alignments/{control}.plus_strand.per.site.var.csv.per.site.var.sum_err.csv",
         native="{project}/results/alignments/{native}.plus_strand.per.site.var.csv.per.site.var.sum_err.csv",
     output:
-        results="{project}/results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv",
+        results=temp("{project}/results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv"),
         output_dir=temp(
             directory("{project}/results/epinano/{native}_{control}")
         ),

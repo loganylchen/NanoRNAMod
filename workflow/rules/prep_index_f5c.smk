@@ -3,13 +3,15 @@ rule f5c_index:
         blow5="{project}/results/blow5/{sample}.blow5",
         fastq="{project}/results/fastq/{sample}.fq.gz",
     output:
-        blow5_index="{project}/results/blow5/{sample}.blow5.idx",
-        fastq_index=multiext(
-            "{project}/results/fastq/{sample}.fq.gz",
-            ".index",
-            ".index.fai",
-            ".index.gzi",
-            ".index.readdb",
+        blow5_index=temp("{project}/results/blow5/{sample}.blow5.idx"),
+        fastq_index=temp(
+            multiext(
+                "{project}/results/fastq/{sample}.fq.gz",
+                ".index",
+                ".index.fai",
+                ".index.gzi",
+                ".index.readdb",
+            )
         ),
     container:
         get_container("f5c")

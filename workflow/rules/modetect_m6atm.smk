@@ -4,7 +4,7 @@ rule m6atm_config:
         bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"]
     output:
-        config="{project}/results/m6atm/{sample}_m6atm_config.yaml"
+        config=temp("{project}/results/m6atm/{sample}_m6atm_config.yaml"),
     container:
         get_container("m6atm")
     threads: get_threads("m6atm", 1)
@@ -56,7 +56,7 @@ rule m6atm_postprocess:
         predictions="{project}/results/m6atm/{sample}_predictions.completed",
         pred_file="{project}/results/m6atm/{sample}_predictions.tsv"
     output:
-        directory("{project}/results/dataprep/{sample}_m6atm_dataprep")
+        temp(directory("{project}/results/dataprep/{sample}_m6atm_dataprep"))
     container:
         get_container("m6atm")
     threads: get_threads("m6atm", 1)

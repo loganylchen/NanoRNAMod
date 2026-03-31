@@ -53,7 +53,7 @@ rule xpore_config:
         control_dir="{project}/results/dataprep/{control}_xpore_dataprep",
         native_dir="{project}/results/dataprep/{native}_xpore_dataprep",
     output:
-        conf="{project}/results/xpore/{native}_{control}.xpore_config.yaml",
+        conf=temp("{project}/results/xpore/{native}_{control}.xpore_config.yaml"),
     container:
         get_container("xpore")
     threads: get_threads("default", 1)

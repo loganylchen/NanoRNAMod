@@ -4,7 +4,7 @@ rule directrm_config:
         bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"]
     output:
-        config="{project}/results/directrm/{sample}_directrm_config.yaml"
+        config=temp("{project}/results/directrm/{sample}_directrm_config.yaml"),
     container:
         get_container("directrm")
     threads: get_threads("directrm", 1)
@@ -56,7 +56,7 @@ rule directrm_postprocess:
         predictions="{project}/results/directrm/{sample}_predictions.completed",
         pred_file="{project}/results/directrm/{sample}_predictions.tsv"
     output:
-        directory("{project}/results/dataprep/{sample}_directrm_dataprep")
+        temp(directory("{project}/results/dataprep/{sample}_directrm_dataprep"))
     container:
         get_container("directrm")
     threads: get_threads("directrm", 1)

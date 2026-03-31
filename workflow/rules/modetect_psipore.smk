@@ -28,7 +28,7 @@ rule psipore_run:
         reference=config["reference"]["transcriptome_fasta"],
         region="{project}/results/psipore/{native}_{control}_regions.bed",
     output:
-        result="{project}/results/psipore/{native}_{control}/psipore_results.tsv",
+        result=temp("{project}/results/psipore/{native}_{control}/psipore_results.tsv"),
     container:
         get_container("psipore")
     threads: get_threads("psipore", 4)

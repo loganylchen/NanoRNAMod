@@ -3,9 +3,9 @@ rule samtools_filter_mapped:
         bam="{project}/results/alignments/{sample}.bam",
         csi="{project}/results/alignments/{sample}.bam.csi",
     output:
-        bam="{project}/results/alignments/{sample}_filtered.bam",
-        bai="{project}/results/alignments/{sample}_filtered.bam.bai",
-        csi="{project}/results/alignments/{sample}_filtered.bam.csi",
+        bam=temp("{project}/results/alignments/{sample}_filtered.bam"),
+        bai=temp("{project}/results/alignments/{sample}_filtered.bam.bai"),
+        csi=temp("{project}/results/alignments/{sample}_filtered.bam.csi"),
     container:
         get_container("samtools")
     log:
@@ -57,9 +57,9 @@ rule samtools_filter_mapped_epi:
         bam="{project}/results/alignments/{sample}_3.2.4.bam",
         csi="{project}/results/alignments/{sample}_3.2.4.bam.csi",
     output:
-        bam="{project}/results/alignments/{sample}_of.bam",
-        bai="{project}/results/alignments/{sample}_of.bam.bai",
-        csi="{project}/results/alignments/{sample}_of.bam.csi",
+        bam=temp("{project}/results/alignments/{sample}_of.bam"),
+        bai=temp("{project}/results/alignments/{sample}_of.bam.bai"),
+        csi=temp("{project}/results/alignments/{sample}_of.bam.csi"),
     container:
         get_container("samtools")
     log:

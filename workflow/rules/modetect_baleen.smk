@@ -3,7 +3,7 @@ rule baleen_dataprep:
         eventalign="{project}/results/eventalign/{sample}_full.tsv.bz2",
         completion="{project}/results/eventalign/{sample}_full.tsv.completed",
     output:
-        data="{project}/results/dataprep/{sample}_baleen_dataprep/eventalign.index",
+        data=temp("{project}/results/dataprep/{sample}_baleen_dataprep/eventalign.index"),
         dir=temp(
             directory("{project}/results/dataprep/{sample}_baleen_dataprep")
         ),
@@ -60,7 +60,7 @@ rule baleen_postcall:
     input:
         modcall="{project}/results/baleen/{native}_{control}/modcall_sm",
     output:
-        result="{project}/results/baleen/{native}_{control}/transcripts.csv",
+        result=temp("{project}/results/baleen/{native}_{control}/transcripts.csv"),
     params:
         params=config["params"]["baleen_postcall"],
         dir="{project}/results/baleen/{native}_{control}/",

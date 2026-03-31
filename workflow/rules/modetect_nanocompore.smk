@@ -60,7 +60,7 @@ rule nanocompore:
         output_dir=temp(
             directory("{project}/results/nanocompore/{native}_{control}")
         ),
-        output_file="{project}/results/nanocompore/{native}_{control}/nanocompore_results.tsv",
+        output_file=temp("{project}/results/nanocompore/{native}_{control}/nanocompore_results.tsv"),
     params:
         prefix="{native}_{control}",
         extra=config["params"]["nanocompore"],

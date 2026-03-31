@@ -4,7 +4,7 @@ rule tandemmod_config:
         bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"]
     output:
-        config="{project}/results/tandemmod/{sample}_tandemmod_config.yaml"
+        config=temp("{project}/results/tandemmod/{sample}_tandemmod_config.yaml"),
     container:
         get_container("tandemmod")
     threads: get_threads("tandemmod", 1)
@@ -56,7 +56,7 @@ rule tandemmod_postprocess:
         predictions="{project}/results/tandemmod/{sample}_predictions.completed",
         pred_file="{project}/results/tandemmod/{sample}_predictions.tsv"
     output:
-        directory("{project}/results/dataprep/{sample}_tandemmod_dataprep")
+        temp(directory("{project}/results/dataprep/{sample}_tandemmod_dataprep"))
     container:
         get_container("tandemmod")
     threads: get_threads("tandemmod", 1)
