@@ -228,6 +228,23 @@ def get_final_output():
                 tool=active_ps_tools, sample=native_samples,
             )
 
+        # Modification ratio distributions (per comparison)
+        final_output += expand(
+            f"{RESULT_ROOT}/benchmarks/mod_ratio/{{comp}}/mod_ratio_violin.pdf",
+            comp=comparisons,
+        )
+        # Modification ratio distributions (per-sample tools)
+        if active_ps_tools:
+            # Only per-sample tools that have a mod_ratio column
+            mod_ratio_ps_tools = [t for t in active_ps_tools
+                                  if t in ['tandemmod', 'm6atm', 'directrm', 'rnano',
+                                           'nanopsu', 'nanomud', 'penguin']]
+            if mod_ratio_ps_tools:
+                final_output += expand(
+                    f"{RESULT_ROOT}/benchmarks/mod_ratio/{{tool}}/{{sample}}/mod_ratio_violin.pdf",
+                    tool=mod_ratio_ps_tools, sample=native_samples,
+                )
+
         # Cross-tool comparison curves (overlaid ROC/PR, bar chart, score dist)
         for ct_fig in [
             "cross_tool_roc", "cross_tool_pr",

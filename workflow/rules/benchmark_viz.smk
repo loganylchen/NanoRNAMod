@@ -342,6 +342,53 @@ rule benchmark_pdf_report:
         "../scripts/benchmark_pdf_report.py"
 
 
+rule benchmark_mod_ratio_data:
+    """Extract modification ratio for tools on truth sites (native + fair)."""
+    input:
+        results=lambda wc: expand(
+            f"{{project}}/results/modifications/{{tool}}/{{comparison}}/{{tool}}_results.tsv",
+            project=wc.project,
+            comparison=wc.comparison,
+            tool=get_active_comparison_tools(),
+        ),
+        union_predictions="{project}/results/benchmarks/coverage/{comparison}/union_predictions.tsv",
+        truth_set=config["benchmark"]["truth_set"],
+    output:
+        data="{project}/results/benchmarks/mod_ratio/{comparison}/mod_ratio_data.tsv",
+    params:
+        window=config["benchmark"]["window"],
+    resources:
+        mem_mb=1024 * 10,
+    threads: 1
+    priority: 35
+    log:
+        "logs/{project}/benchmark_mod_ratio_data/{comparison}.log",
+    benchmark:
+        "benchmarks/{project}/benchmark_mod_ratio_data/{comparison}.benchmark.txt"
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_mod_ratio.py"
+
+
+rule benchmark_mod_ratio_violin:
+    """Violin plots of modification ratio distributions."""
+    input:
+        data="{project}/results/benchmarks/mod_ratio/{comparison}/mod_ratio_data.tsv",
+    output:
+        pdf="{project}/results/benchmarks/mod_ratio/{comparison}/mod_ratio_violin.pdf",
+    resources:
+        mem_mb=1024 * 5,
+    threads: 1
+    priority: 36
+    log:
+        "logs/{project}/benchmark_mod_ratio_violin/{comparison}.log",
+    container:
+        get_container("r_viz")
+    script:
+        "../scripts/R/mod_ratio_violin.R"
+
+
 rule benchmark_per_tool_comparison_figures:
     """Generate per-tool × comparison figures (ROC, PR, score dist, native vs fair)."""
     input:
@@ -411,6 +458,47 @@ rule benchmark_per_tool_summary_figures:
         get_container("python3")
     script:
         "../scripts/benchmark_per_tool_summary.py"
+
+
+rule benchmark_mod_ratio_per_sample_data:
+    """Extract modification ratio for per-sample tools (native only)."""
+    input:
+        results="{project}/results/modifications/{tool}/{sample}/{tool}_results.tsv",
+        truth_set=config["benchmark"]["truth_set"],
+    output:
+        data="{project}/results/benchmarks/mod_ratio/{tool}/{sample}/mod_ratio_data.tsv",
+    params:
+        window=config["benchmark"]["window"],
+    resources:
+        mem_mb=1024 * 10,
+    threads: 1
+    priority: 35
+    log:
+        "logs/{project}/benchmark_mod_ratio_per_sample_data/{tool}/{sample}.log",
+    benchmark:
+        "benchmarks/{project}/benchmark_mod_ratio_per_sample_data/{tool}/{sample}.benchmark.txt"
+    container:
+        get_container("python3")
+    script:
+        "../scripts/benchmark_mod_ratio.py"
+
+
+rule benchmark_mod_ratio_per_sample_violin:
+    """Violin plots for per-sample tool modification ratio."""
+    input:
+        data="{project}/results/benchmarks/mod_ratio/{tool}/{sample}/mod_ratio_data.tsv",
+    output:
+        pdf="{project}/results/benchmarks/mod_ratio/{tool}/{sample}/mod_ratio_violin.pdf",
+    resources:
+        mem_mb=1024 * 5,
+    threads: 1
+    priority: 36
+    log:
+        "logs/{project}/benchmark_mod_ratio_per_sample_violin/{tool}/{sample}.log",
+    container:
+        get_container("r_viz")
+    script:
+        "../scripts/R/mod_ratio_violin.R"
 
 
 rule benchmark_per_sample_figures:
