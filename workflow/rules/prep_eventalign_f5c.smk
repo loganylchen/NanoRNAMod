@@ -13,8 +13,8 @@ rule f5c_eventalign_with_readname:
         index="{project}/results/blow5/{sample}.blow5.idx",
         blow5="{project}/results/blow5/{sample}.blow5",
     output:
-        outfile=KEEP_OR_NOT("{project}/results/eventalign/{sample}_full.tsv.bz2"),
-        completion=KEEP_OR_NOT(
+        outfile=temp("{project}/results/eventalign/{sample}_full.tsv.bz2"),
+        completion=temp(
             "{project}/results/eventalign/{sample}_full.tsv.completed"
         ),
     container:
@@ -55,8 +55,8 @@ rule f5c_eventalign_simple:
         index="{project}/results/blow5/{sample}.blow5.idx",
         blow5="{project}/results/blow5/{sample}.blow5",
     output:
-        outfile=KEEP_OR_NOT("{project}/results/eventalign/{sample}_simple.tsv.bz2"),
-        completion=KEEP_OR_NOT(
+        outfile=temp("{project}/results/eventalign/{sample}_simple.tsv.bz2"),
+        completion=temp(
             "{project}/results/eventalign/{sample}_simple.tsv.completed"
         ),
     container:
