@@ -20,12 +20,40 @@ def get_all_result_tsvs(wildcards):
     return result_files
 
 
+def get_truth_set(wildcards):
+    """Return truth set path, using converted coordinates if groundtruth_level is 'genome'."""
+    if config.get("benchmark", {}).get("groundtruth_level", "transcript") == "genome":
+        return f"{wildcards.project}/results/benchmarks/truth_set_transcript.tsv"
+    return config["benchmark"]["truth_set"]
+
+
 if config.get("benchmark", {}).get("truth_set", ""):
+
+    rule benchmark_convert_truth_genome_to_transcript:
+        """Convert genome-coordinate truth set to transcript coordinates via GTF."""
+        input:
+            truth_set=config["benchmark"]["truth_set"],
+            gtf=config["reference"]["transcriptome_gtf"],
+        output:
+            converted="{project}/results/benchmarks/truth_set_transcript.tsv",
+        resources:
+            mem_mb=1024 * 10,
+        threads: 1
+        priority: 29
+        log:
+            "logs/{project}/benchmark_convert_truth_genome_to_transcript.log",
+        benchmark:
+            "benchmarks/{project}/benchmark_convert_truth_genome_to_transcript.benchmark.txt"
+        container:
+            get_container("python3")
+        script:
+            "../scripts/benchmark_genome_to_transcript.py"
+
 
     rule benchmark_tool_coverage:
         input:
             results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
-            truth_set=config["benchmark"]["truth_set"],
+            truth_set=get_truth_set,
         output:
             covered="{project}/results/benchmarks/coverage/{comparison}/{tool}_covered.tsv",
         params:
@@ -102,7 +130,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
     rule benchmark_tool_native:
         input:
             results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
-            truth_set=config["benchmark"]["truth_set"],
+            truth_set=get_truth_set,
         output:
             scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/native/score_comparison.tsv",
             best_metrics="{project}/results/benchmarks/per_tool/{tool}/{comparison}/native/best_metrics.tsv",
@@ -127,7 +155,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
         input:
             results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
             union="{project}/results/benchmarks/coverage/{comparison}/union_predictions.tsv",
-            truth_set=config["benchmark"]["truth_set"],
+            truth_set=get_truth_set,
         output:
             scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/fair/score_comparison.tsv",
             best_metrics="{project}/results/benchmarks/per_tool/{tool}/{comparison}/fair/best_metrics.tsv",
@@ -152,7 +180,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
         """Benchmark per-sample tools (tandemmod, directrm, etc.) against truth set."""
         input:
             results="{project}/results/modifications/{tool}/{sample}/{tool}_results.tsv",
-            truth_set=config["benchmark"]["truth_set"],
+            truth_set=get_truth_set,
         output:
             scores="{project}/results/benchmarks/per_tool/{tool}/{sample}/native/score_comparison.tsv",
             best_metrics="{project}/results/benchmarks/per_tool/{tool}/{sample}/native/best_metrics.tsv",
@@ -176,7 +204,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
     rule benchmark_kmer_ref_negatives:
         """Generate reference-based 5-mer matched negative sites from transcriptome."""
         input:
-            truth_set=config["benchmark"]["truth_set"],
+            truth_set=get_truth_set,
             transcriptome_fasta=config["reference"]["transcriptome_fasta"],
         output:
             negatives="{project}/results/benchmarks/kmer_ref/negative_sites.tsv",
@@ -202,7 +230,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
         """Per-tool benchmark using kmer-ref negatives, native eval (tool's own predictions only)."""
         input:
             results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
-            truth_set=config["benchmark"]["truth_set"],
+            truth_set=get_truth_set,
             negatives="{project}/results/benchmarks/kmer_ref/negative_sites.tsv",
         output:
             scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/kmer_ref_native/score_comparison.tsv",
@@ -229,7 +257,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
         input:
             results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
             union="{project}/results/benchmarks/coverage/{comparison}/union_predictions.tsv",
-            truth_set=config["benchmark"]["truth_set"],
+            truth_set=get_truth_set,
             negatives="{project}/results/benchmarks/kmer_ref/negative_sites.tsv",
         output:
             scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/kmer_ref_fair/score_comparison.tsv",
@@ -320,7 +348,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
                 project=wc.project,
                 comparison=comparisons,
             ),
-            truth_set=config["benchmark"]["truth_set"],
+            truth_set=get_truth_set,
         output:
             summary="{project}/results/benchmarks/cross_tool/accuracy_summary.tsv",
             overall="{project}/results/benchmarks/cross_tool/accuracy_summary_overall.tsv",

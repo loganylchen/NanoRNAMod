@@ -34,7 +34,7 @@ rule benchmark_threshold:
     """Find optimal score thresholds for each tool."""
     input:
         results=lambda wc: get_all_result_tsvs(wc),
-        truth_set=config["benchmark"]["truth_set"],
+        truth_set=get_truth_set,
     output:
         "{project}/results/benchmarks/optimal_thresholds.tsv",
     params:
@@ -58,7 +58,7 @@ rule benchmark_detailed:
     """Generate detailed site-by-site comparison reports."""
     input:
         results=lambda wc: get_all_result_tsvs(wc),
-        truth_set=config["benchmark"]["truth_set"],
+        truth_set=get_truth_set,
     output:
         predictions="{project}/results/benchmarks/detailed_predictions.tsv",
         truth="{project}/results/benchmarks/detailed_truth.tsv",
@@ -82,7 +82,7 @@ rule benchmark_kmer_negatives:
     """K-mer negative benchmarking - use sites with same k-mer as negative controls."""
     input:
         results=lambda wc: get_all_result_tsvs(wc),
-        truth_set=config["benchmark"]["truth_set"],
+        truth_set=get_truth_set,
     output:
         metrics="{project}/results/benchmarks/accuracy_summary_kmer_negatives.tsv",
         negatives="{project}/results/benchmarks/kmer_negative_sites.tsv",
@@ -107,7 +107,7 @@ rule benchmark_same_base_negatives:
     """Same-base negative benchmarking - use sites with same nucleotide as negative controls (Strategy 2)."""
     input:
         results=lambda wc: get_all_result_tsvs(wc),
-        truth_set=config["benchmark"]["truth_set"],
+        truth_set=get_truth_set,
     output:
         metrics="{project}/results/benchmarks/accuracy_summary_same_base_negatives.tsv",
         negatives="{project}/results/benchmarks/same_base_negative_sites.tsv",
@@ -132,7 +132,7 @@ rule benchmark_multithreshold:
     """Multi-threshold evaluation with automatic threshold generation."""
     input:
         results=lambda wc: get_all_result_tsvs(wc),
-        truth_set=config["benchmark"]["truth_set"],
+        truth_set=get_truth_set,
     output:
         evaluation="{project}/results/benchmarks/threshold_evaluation.tsv",
         optimal="{project}/results/benchmarks/optimal_thresholds_detailed.tsv",
@@ -159,7 +159,7 @@ rule benchmark_score_optimization:
     """Per-tool internal score column optimization - find best score column and threshold for each tool."""
     input:
         results=lambda wc: get_all_result_tsvs(wc),
-        truth_set=config["benchmark"]["truth_set"],
+        truth_set=get_truth_set,
     output:
         optimal="{project}/results/benchmarks/optimal_score_per_tool.tsv",
         all_eval="{project}/results/benchmarks/all_scores_evaluation.tsv",
@@ -227,7 +227,7 @@ rule benchmark_sensitivity:
     """
     input:
         predictions="{project}/results/benchmarks/detailed_predictions.tsv",
-        truth_set=config["benchmark"]["truth_set"],
+        truth_set=get_truth_set,
     output:
         coverage="{project}/results/benchmarks/sensitivity/coverage_analysis.tsv",
         score_dist="{project}/results/benchmarks/sensitivity/score_distribution.tsv",
@@ -352,7 +352,7 @@ rule benchmark_mod_ratio_data:
             tool=get_active_comparison_tools(),
         ),
         union_predictions="{project}/results/benchmarks/coverage/{comparison}/union_predictions.tsv",
-        truth_set=config["benchmark"]["truth_set"],
+        truth_set=get_truth_set,
     output:
         data="{project}/results/benchmarks/mod_ratio/{comparison}/mod_ratio_data.tsv",
     params:
@@ -396,7 +396,7 @@ rule benchmark_per_tool_comparison_figures:
         fair_scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/fair/score_comparison.tsv",
         results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
         union_predictions="{project}/results/benchmarks/coverage/{comparison}/union_predictions.tsv",
-        truth_set=config["benchmark"]["truth_set"],
+        truth_set=get_truth_set,
     output:
         roc_pdf="{project}/results/benchmarks/per_tool/{tool}/{comparison}/figures/roc_curve.pdf",
         roc_data="{project}/results/benchmarks/per_tool/{tool}/{comparison}/figures/roc_curve_data.tsv",
@@ -464,7 +464,7 @@ rule benchmark_mod_ratio_per_sample_data:
     """Extract modification ratio for per-sample tools (native only)."""
     input:
         results="{project}/results/modifications/{tool}/{sample}/{tool}_results.tsv",
-        truth_set=config["benchmark"]["truth_set"],
+        truth_set=get_truth_set,
     output:
         data="{project}/results/benchmarks/mod_ratio/{tool}/{sample}/mod_ratio_data.tsv",
     params:
@@ -506,7 +506,7 @@ rule benchmark_per_sample_figures:
     input:
         native_scores="{project}/results/benchmarks/per_tool/{tool}/{sample}/native/score_comparison.tsv",
         results="{project}/results/modifications/{tool}/{sample}/{tool}_results.tsv",
-        truth_set=config["benchmark"]["truth_set"],
+        truth_set=get_truth_set,
     output:
         dist_pdf="{project}/results/benchmarks/per_tool/{tool}/{sample}/figures/score_distribution.pdf",
         dist_data="{project}/results/benchmarks/per_tool/{tool}/{sample}/figures/score_distribution_data.tsv",
@@ -530,7 +530,7 @@ rule benchmark_cross_tool_curves:
     """Generate cross-tool overlaid ROC/PR curves, AUROC/AUPRC bar chart, and score distribution plots."""
     input:
         results=lambda wc: get_all_result_tsvs(wc),
-        truth_set=config["benchmark"]["truth_set"],
+        truth_set=get_truth_set,
         best_scores="{project}/results/benchmarks/cross_tool/best_scores.tsv",
         union_predictions=lambda wc: expand(
             f"{{project}}/results/benchmarks/coverage/{{comparison}}/union_predictions.tsv",

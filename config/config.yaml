@@ -153,6 +153,7 @@ tools:
 
 benchmark:
   truth_set: "config/benchmark_ecoli_rRNA.tsv"  # path to ground truth TSV (leave empty to skip accuracy benchmarking)
+  groundtruth_level: "transcript"  # "transcript" (default) or "genome" — if "genome", converts truth set coords via GTF
   window: [0, 1, 2, 5]  # multiple windows for evaluation (list of integers)
   n_thresholds: 50  # number of thresholds to evaluate in multi-threshold analysis
   custom_thresholds: []  # optional: custom thresholds to evaluate (e.g., [0.5, 0.7, 0.9])
