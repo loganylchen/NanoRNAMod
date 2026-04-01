@@ -11,8 +11,9 @@ if (exists("snakemake")) {
   input_data <- snakemake@input[["data"]]
   output_pdf <- snakemake@output[["pdf"]]
   log_file <- snakemake@log[[1]]
-  sink(log_file, type = "message")
-  sink(log_file, type = "output", append = TRUE)
+  log_con <- file(log_file, open = "wt")
+  sink(log_con, type = "output")
+  sink(log_con, type = "message")
 } else {
   args <- commandArgs(trailingOnly = TRUE)
   input_data <- args[1]
