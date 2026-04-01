@@ -173,6 +173,82 @@ if config.get("benchmark", {}).get("truth_set", ""):
             "../scripts/benchmark_per_tool.py"
 
 
+    rule benchmark_kmer_ref_negatives:
+        """Generate reference-based 5-mer matched negative sites from transcriptome."""
+        input:
+            truth_set=config["benchmark"]["truth_set"],
+            transcriptome_fasta=config["reference"]["transcriptome_fasta"],
+        output:
+            negatives="{project}/results/benchmarks/kmer_ref/negative_sites.tsv",
+        params:
+            window=max(config["benchmark"]["window"]) if isinstance(config["benchmark"]["window"], list) else config["benchmark"]["window"],
+        resources:
+            mem_mb=1024 * 10,
+        threads: 1
+        priority: 31
+        log:
+            "logs/{project}/benchmark_kmer_ref_negatives.log",
+        benchmark:
+            "benchmarks/{project}/benchmark_kmer_ref_negatives.benchmark.txt"
+        conda:
+            "../envs/pyfastx.yaml"
+        script:
+            "../scripts/benchmark_kmer_ref_negatives.py"
+
+
+    rule benchmark_tool_kmer_ref_native:
+        """Per-tool benchmark using kmer-ref negatives, native eval (tool's own predictions only)."""
+        input:
+            results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
+            truth_set=config["benchmark"]["truth_set"],
+            negatives="{project}/results/benchmarks/kmer_ref/negative_sites.tsv",
+        output:
+            scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/kmer_ref_native/score_comparison.tsv",
+            best_metrics="{project}/results/benchmarks/per_tool/{tool}/{comparison}/kmer_ref_native/best_metrics.tsv",
+            best_score="{project}/results/benchmarks/per_tool/{tool}/{comparison}/kmer_ref_native/best_score.txt",
+        params:
+            window=config["benchmark"]["window"],
+        resources:
+            mem_mb=1024 * 10,
+        threads: 1
+        priority: 32
+        log:
+            "logs/{project}/benchmark_tool_kmer_ref_native/{tool}/{comparison}.log",
+        benchmark:
+            "benchmarks/{project}/benchmark_tool_kmer_ref_native/{tool}/{comparison}.benchmark.txt"
+        container:
+            get_container("python3")
+        script:
+            "../scripts/benchmark_per_tool.py"
+
+
+    rule benchmark_tool_kmer_ref_fair:
+        """Per-tool benchmark using kmer-ref negatives, fair eval (union of all tools' predictions)."""
+        input:
+            results="{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv",
+            union="{project}/results/benchmarks/coverage/{comparison}/union_predictions.tsv",
+            truth_set=config["benchmark"]["truth_set"],
+            negatives="{project}/results/benchmarks/kmer_ref/negative_sites.tsv",
+        output:
+            scores="{project}/results/benchmarks/per_tool/{tool}/{comparison}/kmer_ref_fair/score_comparison.tsv",
+            best_metrics="{project}/results/benchmarks/per_tool/{tool}/{comparison}/kmer_ref_fair/best_metrics.tsv",
+            best_score="{project}/results/benchmarks/per_tool/{tool}/{comparison}/kmer_ref_fair/best_score.txt",
+        params:
+            window=config["benchmark"]["window"],
+        resources:
+            mem_mb=1024 * 10,
+        threads: 1
+        priority: 33
+        log:
+            "logs/{project}/benchmark_tool_kmer_ref_fair/{tool}/{comparison}.log",
+        benchmark:
+            "benchmarks/{project}/benchmark_tool_kmer_ref_fair/{tool}/{comparison}.benchmark.txt"
+        container:
+            get_container("python3")
+        script:
+            "../scripts/benchmark_per_tool.py"
+
+
     rule benchmark_aggregate:
         input:
             native_metrics=lambda wc: (
@@ -209,6 +285,30 @@ if config.get("benchmark", {}).get("truth_set", ""):
             ),
             fair_all_scores=lambda wc: expand(
                 f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{comparison}}/fair/score_comparison.tsv",
+                project=wc.project,
+                tool=get_active_comparison_tools(),
+                comparison=comparisons,
+            ),
+            kmer_ref_native_metrics=lambda wc: expand(
+                f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{comparison}}/kmer_ref_native/best_metrics.tsv",
+                project=wc.project,
+                tool=get_active_comparison_tools(),
+                comparison=comparisons,
+            ),
+            kmer_ref_native_all_scores=lambda wc: expand(
+                f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{comparison}}/kmer_ref_native/score_comparison.tsv",
+                project=wc.project,
+                tool=get_active_comparison_tools(),
+                comparison=comparisons,
+            ),
+            kmer_ref_fair_metrics=lambda wc: expand(
+                f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{comparison}}/kmer_ref_fair/best_metrics.tsv",
+                project=wc.project,
+                tool=get_active_comparison_tools(),
+                comparison=comparisons,
+            ),
+            kmer_ref_fair_all_scores=lambda wc: expand(
+                f"{{project}}/results/benchmarks/per_tool/{{tool}}/{{comparison}}/kmer_ref_fair/score_comparison.tsv",
                 project=wc.project,
                 tool=get_active_comparison_tools(),
                 comparison=comparisons,

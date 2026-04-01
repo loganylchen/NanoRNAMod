@@ -283,6 +283,7 @@ output_best_metrics = snakemake.output.best_metrics
 output_best_score = snakemake.output.best_score
 
 fair_mode = 'union' in snakemake.input.keys()
+has_negatives = 'negatives' in snakemake.input.keys()
 
 tool_name = tool_from_path(results_path)
 
@@ -328,6 +329,28 @@ else:
     truth_transcripts = set(truth_pos['transcript'].unique())
     tool_on_truth = tool_df[tool_df['transcript'].isin(truth_transcripts)]
     eval_sites = list(zip(tool_on_truth['transcript'], tool_on_truth['position']))
+
+if has_negatives:
+    neg_df = pd.read_csv(snakemake.input.negatives, sep='\t')
+    neg_df = normalize_columns(neg_df)
+    neg_df['position'] = pd.to_numeric(neg_df['position'], errors='coerce')
+    neg_df = neg_df.dropna(subset=['position'])
+    neg_df['position'] = neg_df['position'].astype(int)
+    neg_sites = set(zip(neg_df['transcript'], neg_df['position']))
+
+    # Build per-transcript positive positions for fast window lookup
+    pos_by_tx = {}
+    for _, row in truth_pos.iterrows():
+        pos_by_tx.setdefault(row['transcript'], []).append(int(row['position']))
+
+    # Only keep eval sites that are in truth positives (within window) or negatives
+    filtered = []
+    for tx, pos in eval_sites:
+        pos_int = int(pos)
+        is_pos = any(abs(pos_int - tp) <= max_window for tp in pos_by_tx.get(tx, []))
+        if is_pos or (tx, pos_int) in neg_sites:
+            filtered.append((tx, pos))
+    eval_sites = filtered
 
 if not eval_sites:
     write_empty(output_scores, output_best_metrics, output_best_score)

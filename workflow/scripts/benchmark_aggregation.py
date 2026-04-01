@@ -203,6 +203,10 @@ native_all_files = to_list(snakemake.input.native_all_scores)
 fair_all_files = to_list(snakemake.input.fair_all_scores)
 native_best_files = to_list(snakemake.input.native_metrics)
 fair_best_files = to_list(snakemake.input.fair_metrics)
+kmer_ref_native_all_files = to_list(snakemake.input.get("kmer_ref_native_all_scores", []))
+kmer_ref_native_best_files = to_list(snakemake.input.get("kmer_ref_native_metrics", []))
+kmer_ref_fair_all_files = to_list(snakemake.input.get("kmer_ref_fair_all_scores", []))
+kmer_ref_fair_best_files = to_list(snakemake.input.get("kmer_ref_fair_metrics", []))
 called_sites_files = to_list(snakemake.input.called_sites)
 truth_set_path = snakemake.input.truth_set
 
@@ -233,6 +237,13 @@ if native_df.empty:
 fair_df = load_all_metrics(fair_all_files, "fair")
 if fair_df.empty:
     fair_df = load_all_metrics(fair_best_files, "fair")
+
+kmer_ref_native_df = load_all_metrics(kmer_ref_native_all_files, "kmer_ref_native")
+if kmer_ref_native_df.empty:
+    kmer_ref_native_df = load_all_metrics(kmer_ref_native_best_files, "kmer_ref_native")
+kmer_ref_fair_df = load_all_metrics(kmer_ref_fair_all_files, "kmer_ref_fair")
+if kmer_ref_fair_df.empty:
+    kmer_ref_fair_df = load_all_metrics(kmer_ref_fair_best_files, "kmer_ref_fair")
 
 # Use native as primary, fair as secondary
 if not native_df.empty:
@@ -284,14 +295,15 @@ else:
     # --- Output: accuracy_summary_by_comparison.tsv ---
     # Includes both native and fair rows (mode column) for downstream visualization
     # Filter fair data to the same best score columns selected from native
-    if not fair_df.empty:
-        best_selections = selected_df[["tool", "score_column"]].drop_duplicates()
-        fair_selected = fair_df.merge(
-            best_selections, on=["tool", "score_column"], how="inner"
-        )
-        by_comp_combined = pd.concat([selected_df, fair_selected], ignore_index=True)
-    else:
-        by_comp_combined = selected_df.copy()
+    best_selections = selected_df[["tool", "score_column"]].drop_duplicates()
+    by_comp_parts = [selected_df]
+    for extra_df in [fair_df, kmer_ref_native_df, kmer_ref_fair_df]:
+        if not extra_df.empty:
+            extra_selected = extra_df.merge(
+                best_selections, on=["tool", "score_column"], how="inner"
+            )
+            by_comp_parts.append(extra_selected)
+    by_comp_combined = pd.concat(by_comp_parts, ignore_index=True)
     by_comp_cols = available_summary_cols + (["mode"] if "mode" in by_comp_combined.columns else [])
     by_comp_available = [c for c in by_comp_cols if c in by_comp_combined.columns]
     by_comp_combined[by_comp_available].to_csv(out_by_comparison, sep="\t", index=False)
