@@ -386,13 +386,31 @@ def compute_all_pairwise_tests(
     tools = sorted(df[tool_col].unique())
     groups = df[group_col].unique()
 
+    # Determine the pairing column (comparison) for paired tests
+    pair_col = 'comparison' if 'comparison' in df.columns else None
+
     for group in groups:
         group_df = df[df[group_col] == group]
 
         for i, tool1 in enumerate(tools):
             for tool2 in tools[i+1:]:
-                v1 = group_df[group_df[tool_col] == tool1][metric_col].values
-                v2 = group_df[group_df[tool_col] == tool2][metric_col].values
+                if pair_col is not None:
+                    # Pair values by comparison so arrays have equal length
+                    merged = pd.merge(
+                        group_df[group_df[tool_col] == tool1][[pair_col, metric_col]],
+                        group_df[group_df[tool_col] == tool2][[pair_col, metric_col]],
+                        on=pair_col,
+                        suffixes=('_1', '_2')
+                    )
+                    v1 = merged[f'{metric_col}_1'].values
+                    v2 = merged[f'{metric_col}_2'].values
+                else:
+                    # Fallback: truncate to minimum length
+                    v1_raw = group_df[group_df[tool_col] == tool1][metric_col].values
+                    v2_raw = group_df[group_df[tool_col] == tool2][metric_col].values
+                    min_len = min(len(v1_raw), len(v2_raw))
+                    v1 = v1_raw[:min_len]
+                    v2 = v2_raw[:min_len]
 
                 # Wilcoxon test (paired)
                 stat_w, p_w, eff_w = paired_wilcoxon_test(v1, v2)
