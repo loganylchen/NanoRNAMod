@@ -148,7 +148,7 @@ def select_best_score_per_tool(metrics_df):
     )
 
     # For each tool, pick the score column with highest selection score
-    best_idx = candidate_stats.groupby("tool")["selection_score"].idxmax()
+    best_idx = candidate_stats.groupby("tool")["selection_score"].idxmax().dropna()
     best_selections = candidate_stats.loc[best_idx][["tool", "score_column"]].copy()
     best_selections = best_selections.rename(columns={"score_column": "best_score_column"})
 
