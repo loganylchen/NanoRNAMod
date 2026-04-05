@@ -219,7 +219,7 @@ if config.get("benchmark", {}).get("truth_set", ""):
         benchmark:
             "benchmarks/{project}/benchmark_kmer_ref_negatives.benchmark.txt"
         conda:
-            "../envs/pyfastx.yaml"
+            "../envs/pandas.yaml"
         container:
             get_container("python3")
         script:

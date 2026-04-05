@@ -18,12 +18,35 @@ Params:
 """
 
 import pandas as pd
-import pyfastx
 
 truth_path = snakemake.input.truth_set
 fasta_path = snakemake.input.transcriptome_fasta
 output_path = snakemake.output.negatives
 window = int(snakemake.params.window)
+
+
+def read_fasta(path):
+    """Parse a FASTA file into a dict of {name: sequence}."""
+    import gzip
+
+    sequences = {}
+    opener = gzip.open if path.endswith(".gz") else open
+    with opener(path, "rt") as fh:
+        name = None
+        parts = []
+        for line in fh:
+            line = line.rstrip("\n")
+            if line.startswith(">"):
+                if name is not None:
+                    sequences[name] = "".join(parts)
+                name = line[1:].split()[0]
+                parts = []
+            else:
+                parts.append(line)
+        if name is not None:
+            sequences[name] = "".join(parts)
+    return sequences
+
 
 # Load truth set
 truth_df = pd.read_csv(truth_path, sep="\t")
@@ -46,8 +69,11 @@ positive_by_tx = {}
 for tx, pos in positive_set:
     positive_by_tx.setdefault(tx, []).append(pos)
 
+# Load reference transcriptome
+fasta = read_fasta(fasta_path)
+print(f"Loaded {len(fasta)} transcripts from reference FASTA")
+
 # Extract 5-mers at positive sites from reference
-fasta = pyfastx.Fasta(fasta_path)
 positive_kmers = set()
 flanking = 2  # 5-mer: center +-2
 
@@ -56,7 +82,7 @@ for _, row in truth_pos.iterrows():
     pos = int(row["position"])
     if tx not in fasta:
         continue
-    seq = fasta[tx].seq
+    seq = fasta[tx]
     start = pos - flanking
     end = pos + flanking + 1
     if start < 0 or end > len(seq):
@@ -76,8 +102,8 @@ if not positive_kmers:
 
 # Scan all transcripts for matching 5-mers
 negatives = []
-for tx_name in fasta.keys():
-    seq = fasta[tx_name].seq.upper()
+for tx_name, seq in fasta.items():
+    seq = seq.upper()
     tx_positives = positive_by_tx.get(tx_name, [])
 
     for i in range(flanking, len(seq) - flanking):
