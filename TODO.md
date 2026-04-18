@@ -42,11 +42,6 @@
   - 其他规则需逐一排查
 - **Fix**: 审查所有规则的 params 是否被对应脚本实际消费，移除未使用的 params 或在脚本中使用
 
-### 7. Benchmark 脚本大量代码重复
-- **Files**: `benchmark_*.py`（15+ 文件）
-- **Problem**: `tool_from_path()`, `normalize_columns()`, `detect_score_column()`, `TOOL_SCORE_COLUMNS` 等函数/常量在 10+ 文件中重复定义。任何一处修改都需要同步所有文件。
-- **Fix**: 将公共函数和常量集中到 `benchmark_utils.py`，其他脚本 `from benchmark_utils import ...`
-
 ---
 
 ## Medium Priority
@@ -86,11 +81,6 @@
 - **File**: `post_format.smk`
 - **Problem**: `post_epinano`, `post_eligos2`, `post_nanocompore` 等规则同时声明了具体文件和其父目录作为输入。目录输入是多余的。
 - **Fix**: 删除冗余的目录输入
-
-### 14. Schema 定义了 config 中不存在的参数
-- **File**: `workflow/schemas/config.schema.yaml`
-- **Problem**: Schema 定义了 `n_bootstrap`, `alpha`, `fdr_method`, `coverage_bins` 等 benchmark 参数，但实际 config.yaml 中没有。benchmark 脚本使用 `config.get()` 带默认值处理，所以不会崩溃，但 schema 与实际不一致。
-- **Fix**: 在 config.yaml 中添加这些参数（带默认值），或从 schema 中移除
 
 ---
 

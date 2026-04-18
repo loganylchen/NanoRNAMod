@@ -59,8 +59,6 @@ threads:
   nanomud: 4
   penguin: 4
   pybaleen: 4
-  benchmark_viz: 1
-  benchmark_multithreshold: 2
 
 # Container images for each tool
 # 每个工具的容器镜像配置
@@ -150,28 +148,5 @@ tools:
     activate: True
   pybaleen:
     activate: True
-
-benchmark:
-  truth_set: "config/benchmark_ecoli_rRNA.tsv"  # path to ground truth TSV (leave empty to skip accuracy benchmarking)
-  groundtruth_level: "transcript"  # "transcript" (default) or "genome" — if "genome", converts truth set coords via GTF
-  window: [0, 1, 2, 5]  # multiple windows for evaluation (list of integers)
-  n_thresholds: 50  # number of thresholds to evaluate in multi-threshold analysis
-  custom_thresholds: []  # optional: custom thresholds to evaluate (e.g., [0.5, 0.7, 0.9])
-  # Truth set TSV format:
-  #   transcript  position  modification_type  label
-  #   ENST001     1234      m6A                positive    # positive site
-  #   ENST001     5678      m6A                -           # negative site
-  #   ENST002     100       m6A                            # no label = positive (backward compatible)
-  # Metrics: precision, recall, f1, tp, fp, fn, tn, specificity, mcc, auprc, auroc
-  # Output files:
-  #   - accuracy_summary.tsv             # per-modification metrics
-  #   - accuracy_summary_overall.tsv     # aggregated metrics
-  #   - optimal_thresholds.tsv           # best score thresholds per tool
-  #   - threshold_evaluation.tsv         # metrics at each evaluated threshold
-  #   - optimal_thresholds_detailed.tsv  # comprehensive optimal threshold analysis
-  #   - score_distributions.tsv          # score statistics per tool
-  #   - detailed_predictions.tsv         # site-by-site prediction analysis
-  #   - detailed_truth.tsv               # site-by-site truth coverage
-  #   - viz/benchmark_report.html        # interactive HTML report with plots
 
 target_region: ''

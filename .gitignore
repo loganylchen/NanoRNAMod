@@ -9,7 +9,6 @@ logs/**
 .test/.cache/
 .test/.conda/
 .test/.condarc
-.test/benchmarks/
 .test/data/A/fastq/pass.fq.gz.index
 .test/data/A/fastq/pass.fq.gz.index.fai
 .test/data/A/fastq/pass.fq.gz.index.gzi

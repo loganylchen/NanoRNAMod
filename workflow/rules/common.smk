@@ -108,12 +108,6 @@ def get_final_output():
     logger.info(f"  Inactive tools   ({len(inactive)}): {', '.join(inactive) or 'none'}")
     logger.info(f"  Samples: {', '.join(samples.index)}")
     logger.info(f"  Comparisons: {', '.join(comparisons)}")
-    if config.get("benchmark", {}).get("truth_set", ""):
-        logger.info(f"  Benchmarking: enabled (truth_set={config['benchmark']['truth_set']})")
-        logger.info(f"    Comparison tools to benchmark: {', '.join(active_comp) or 'none'}")
-        logger.info(f"    Per-sample tools to benchmark: {', '.join(active_persample) or 'none'}")
-    else:
-        logger.info("  Benchmarking: disabled (no truth_set)")
     logger.info("=" * 60)
 
     final_output = [f"{RESULT_ROOT}/workflow_version.json"]
@@ -186,88 +180,6 @@ def get_final_output():
                     f"{RESULT_ROOT}/modifications/{tool}/{{sample}}/{tool}_annotated_results.tsv",
                     sample=native_samples,
                 )
-
-    # Benchmarking outputs - resource metrics
-    final_output += [f"{RESULT_ROOT}/benchmarks/resource_summary.tsv"]
-    final_output += [f"{RESULT_ROOT}/benchmarks/resource_by_tool.tsv"]
-    final_output += [f"{RESULT_ROOT}/benchmarks/resource_by_tool.pdf"]
-
-    # Accuracy benchmarking outputs (requires truth_set)
-    if config.get("benchmark", {}).get("truth_set", ""):
-        active_comp_tools = get_active_comparison_tools()
-
-        # Cross-tool summaries (coverage and per-tool metrics are built
-        # automatically as dependencies of the aggregate rule)
-        for agg_file in [
-            "accuracy_summary.tsv", "accuracy_summary_overall.tsv",
-            "accuracy_summary_by_comparison.tsv", "by_tool.tsv",
-            "best_scores.tsv",
-        ]:
-            final_output += [f"{RESULT_ROOT}/benchmarks/cross_tool/{agg_file}"]
-
-        # PDF report (intermediate files like statistics/, sensitivity/,
-        # coverage/, threshold_* are built automatically as dependencies
-        # of R figures and the PDF report)
-        final_output += [f"{RESULT_ROOT}/benchmarks/benchmark_report.pdf"]
-
-        # Per-tool comparison figures (one representative file per tool×comp)
-        final_output += expand(
-            f"{RESULT_ROOT}/benchmarks/per_tool/{{tool}}/{{comp}}/figures/roc_curve.pdf",
-            tool=active_comp_tools, comp=comparisons,
-        )
-        # Per-tool summary figures (one representative file per tool)
-        final_output += expand(
-            f"{RESULT_ROOT}/benchmarks/per_tool/{{tool}}/figures/accuracy_by_comparison.pdf",
-            tool=active_comp_tools,
-        )
-        # Per-sample figures
-        active_ps_tools = get_active_per_sample_tools()
-        if active_ps_tools:
-            final_output += expand(
-                f"{RESULT_ROOT}/benchmarks/per_tool/{{tool}}/{{sample}}/figures/score_distribution.pdf",
-                tool=active_ps_tools, sample=native_samples,
-            )
-
-        # Modification ratio distributions (per comparison)
-        final_output += expand(
-            f"{RESULT_ROOT}/benchmarks/mod_ratio/{{comp}}/mod_ratio_violin.pdf",
-            comp=comparisons,
-        )
-        # Modification ratio distributions (per-sample tools)
-        if active_ps_tools:
-            # Only per-sample tools that have a mod_ratio column
-            mod_ratio_ps_tools = [t for t in active_ps_tools
-                                  if t in ['tandemmod', 'm6atm', 'directrm', 'rnano',
-                                           'nanopsu', 'nanomud', 'penguin']]
-            if mod_ratio_ps_tools:
-                final_output += expand(
-                    f"{RESULT_ROOT}/benchmarks/mod_ratio/{{tool}}/{{sample}}/mod_ratio_violin.pdf",
-                    tool=mod_ratio_ps_tools, sample=native_samples,
-                )
-
-        # Cross-tool comparison curves (overlaid ROC/PR, bar chart, score dist)
-        for ct_fig in [
-            "cross_tool_roc", "cross_tool_pr",
-            "cross_tool_auroc_auprc", "cross_tool_score_distribution",
-        ]:
-            final_output += [f"{RESULT_ROOT}/benchmarks/cross_tool/figures/{ct_fig}.pdf"]
-            final_output += [f"{RESULT_ROOT}/benchmarks/cross_tool/figures/{ct_fig}_data.tsv"]
-
-        # Publication figures (flat layout with co-located data)
-        main_fig_names = [
-            "overall_accuracy", "precision_recall", "auroc",
-            "native_vs_fair", "best_score", "coverage_sensitivity",
-            "resource_usage", "tool_ranking",
-        ]
-        for i, name in enumerate(main_fig_names, 1):
-            final_output += [f"{RESULT_ROOT}/benchmarks/figures/fig{i}_{name}.pdf"]
-            final_output += [f"{RESULT_ROOT}/benchmarks/figures/fig{i}_{name}_data.tsv"]
-        supp_fig_names = [
-            "per_comparison", "native_vs_fair_detail",
-            "threshold_robustness", "effect_sizes", "score_heatmap",
-        ]
-        for i, name in enumerate(supp_fig_names, 1):
-            final_output += [f"{RESULT_ROOT}/benchmarks/figures/sfig{i}_{name}.pdf"]
 
     logger.debug("=" * 60)
     logger.debug(f"NanoRNAMod — Final output files ({len(final_output)} total)")

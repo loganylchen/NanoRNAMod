@@ -60,9 +60,3 @@ tools:
     activate: True
 
 target_region: ''
-
-benchmark:
-  truth_set: "config/benchmark_ecoli_rRNA.tsv"
-  window: [0, 1, 2, 5]
-  n_thresholds: 50
-  custom_thresholds: []

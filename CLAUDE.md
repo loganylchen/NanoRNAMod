@@ -58,7 +58,7 @@ data/{sample}/blow5/nanopore.blow5    (raw signal)
 
 Rules are split by phase and prefixed accordingly:
 - `prep_*` — data preparation (linking, alignment, filtering, indexing, signal alignment)
-- `modetect_*` — one file per tool (xpore, nanocompore, baleen, differr, drummer, eligos2, epinano, tandemmod, directrm, m6atm, rnano)
+- `modetect_*` — one file per tool (xpore, nanocompore, baleen, pybaleen, differr, drummer, eligos2, epinano, tandemmod, directrm, m6atm, rnano, psipore, nanopsu, nanomud, penguin)
 - `post_*` — output formatting and GTF annotation
 - `qc_*` — QC modules (nanoplot, qualimap, samtools, nanocount, bcftools)
 - `polya_*` — poly-A tail estimation (nanopolish)

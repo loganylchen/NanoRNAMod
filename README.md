@@ -3,7 +3,7 @@
 [![Snakemake](https://img.shields.io/badge/snakemake-≥6.3.0-brightgreen.svg)](https://snakemake.github.io)
 [![GitHub actions status](https://github.com/loganylchen/NanoRNAMod/workflows/Tests/badge.svg?branch=main)](https://github.com/loganylchen/NanoRNAMod/actions?query=branch%3Amain+workflow%3ATests)
 
-A comprehensive Snakemake workflow for **RNA modification detection from Oxford Nanopore sequencing data**. This workflow orchestrates comparison-based detection tools that require both a "Native" sample (modified RNA from biological samples) and a "Control" sample (IVT/synthetic RNA without modifications), then harmonizes their output into a unified format with integrated benchmarking capabilities.
+A comprehensive Snakemake workflow for **RNA modification detection from Oxford Nanopore sequencing data**. This workflow orchestrates comparison-based detection tools that require both a "Native" sample (modified RNA from biological samples) and a "Control" sample (IVT/synthetic RNA without modifications), then harmonizes their output into a unified format.
 
 ## Table of Contents
 
@@ -16,7 +16,6 @@ A comprehensive Snakemake workflow for **RNA modification detection from Oxford 
   - [Tool Activation](#tool-activation)
   - [Thread Configuration](#thread-configuration)
   - [Container Configuration](#container-configuration)
-  - [Benchmarking Configuration](#benchmarking-configuration)
 - [Workflow Architecture](#workflow-architecture)
   - [Data Flow](#data-flow)
   - [Rule Organization](#rule-organization)
@@ -25,11 +24,6 @@ A comprehensive Snakemake workflow for **RNA modification detection from Oxford 
   - [Per-Sample Tools](#per-sample-tools)
 - [Output Files](#output-files)
   - [Modification Results](#modification-results)
-  - [Benchmarking Results](#benchmarking-results)
-- [Benchmarking Module](#benchmarking-module)
-  - [P-value Transformation](#p-value-transformation)
-  - [Evaluation Metrics](#evaluation-metrics)
-  - [Multi-Threshold Analysis](#multi-threshold-analysis)
 - [Advanced Usage](#advanced-usage)
 - [Citation](#citation)
 
@@ -41,9 +35,6 @@ A comprehensive Snakemake workflow for **RNA modification detection from Oxford 
 - **Unified Output Format**: All tool outputs are harmonized into a standardized TSV format
 - **Containerized Execution**: Full Docker/Singularity support for reproducibility
 - **Flexible Configuration**: Per-tool thread counts, containers, and parameters
-- **Comprehensive Benchmarking**: Built-in accuracy evaluation with precision, recall, F1, AUPRC, AUROC, and more
-- **P-value Transformation**: Automatic -log10 transformation for uniform score comparison
-- **Interactive Reports**: HTML benchmarking reports with visualization plots
 
 ---
 
@@ -207,30 +198,6 @@ containers:
 snakemake --use-conda --use-singularity --cores 4
 ```
 
-### Benchmarking Configuration
-
-Configure accuracy benchmarking against a ground truth set:
-
-```yaml
-benchmark:
-  truth_set: "config/benchmark_truth.tsv"  # Path to ground truth TSV
-  window: [0, 1, 2, 5]                     # Position tolerance windows (nt)
-  n_thresholds: 50                          # Number of thresholds to evaluate
-  custom_thresholds: []                     # Optional custom thresholds
-```
-
-**Truth Set Format:**
-```tsv
-transcript	position	modification_type	label
-ENST001	        1234	        m6A	        positive
-ENST001	        5678	        m6A	        -
-ENST002	        100	        m6A	                # No label = positive (backward compatible)
-```
-
-**Label Options:**
-- `positive` - Known modification site
-- `-` - Known negative site (unmodified)
-
 ---
 
 ## Workflow Architecture
@@ -273,7 +240,6 @@ Rules are split by phase and prefixed accordingly:
 | `post_*` | Output formatting | GTF annotation, result aggregation |
 | `qc_*` | Quality control | nanoplot, qualimap, samtools, nanocount, bcftools |
 | `polya_*` | Poly-A tail estimation | nanopolish |
-| `benchmark_*` | Accuracy evaluation | multi-threshold analysis, visualization |
 
 ---
 
@@ -352,88 +318,6 @@ All modification detection results are stored in:
 | `score` | Tool-specific significance score |
 | `mod_type` | Predicted modification type |
 | `comparison` | Native vs Control comparison ID |
-
-### Benchmarking Results
-
-When benchmarking is enabled, results are stored in:
-```
-{project}/results/benchmarks/
-├── accuracy_summary.tsv             # Per-modification metrics
-├── accuracy_summary_overall.tsv     # Aggregated metrics across all tools
-├── optimal_thresholds.tsv           # Best score thresholds per tool
-├── threshold_evaluation.tsv         # Metrics at each evaluated threshold
-├── optimal_thresholds_detailed.tsv  # Comprehensive optimal threshold analysis
-├── score_distributions.tsv          # Score statistics per tool
-├── detailed_predictions.tsv         # Site-by-site prediction analysis
-├── detailed_truth.tsv               # Site-by-site truth coverage
-└── viz/
-    └── benchmark_report.html        # Interactive HTML report with plots
-```
-
----
-
-## Benchmarking Module
-
-### P-value Transformation
-
-The benchmarking module automatically detects and transforms p-value columns to ensure uniform "higher = better" score comparison:
-
-```python
-# Automatic detection of p-value columns
-def is_pvalue_column(col_name):
-    """Detect if a column contains p-values based on name patterns."""
-    patterns = ['pval', 'p_value', 'pvalue', 'p.value', 'adjusted_pval', 'padj', 'fdr']
-    return any(p in col_name.lower() for p in patterns)
-
-# -log10 transformation for p-values
-def transform_pvalue_to_log10(scores):
-    """Transform p-values to -log10(p-values) for uniform comparison."""
-    return -np.log10(scores.clip(lower=1e-300))
-```
-
-**Why this matters:**
-- Raw p-values: lower = more significant (requires reverse sorting)
-- Transformed (-log10): higher = more significant (consistent with other scores)
-- This ensures all tools are evaluated consistently regardless of their output format
-
-### Evaluation Metrics
-
-The benchmarking module computes comprehensive metrics at multiple score thresholds:
-
-| Metric | Description | Formula |
-|--------|-------------|---------|
-| **Precision** | True positives / predicted positives | TP / (TP + FP) |
-| **Recall** | True positives / actual positives | TP / (TP + FN) |
-| **F1 Score** | Harmonic mean of precision and recall | 2 × (P × R) / (P + R) |
-| **Specificity** | True negatives / actual negatives | TN / (TN + FP) |
-| **MCC** | Matthews Correlation Coefficient | Balanced measure for imbalanced data |
-| **AUPRC** | Area Under Precision-Recall Curve | Threshold-independent |
-| **AUROC** | Area Under ROC Curve | Threshold-independent |
-
-### Multi-Threshold Analysis
-
-The workflow evaluates performance across multiple thresholds:
-
-1. **Threshold Generation**: Creates `n_thresholds` evenly spaced thresholds from min to max scores
-2. **Per-Window Evaluation**: Computes metrics at each position tolerance window (0, 1, 2, 5 nt)
-3. **Optimal Threshold Selection**: Identifies threshold maximizing F1 score
-4. **Score Distribution Analysis**: Reports score statistics for positive/negative sites
-
-**Output Columns:**
-| Column | Description |
-|--------|-------------|
-| `tool` | Tool name |
-| `comparison` | Sample comparison ID |
-| `modification_type` | Type of modification (e.g., m6A, Psi) |
-| `window` | Position tolerance in nucleotides |
-| `threshold` | Score threshold evaluated |
-| `precision` | Precision at this threshold |
-| `recall` | Recall at this threshold |
-| `f1` | F1 score at this threshold |
-| `tp/fp/fn/tn` | Confusion matrix counts |
-| `auprc/auroc` | Area under curves |
-| `original_score_column` | Which score column was used |
-| `original_threshold` | Threshold in original (pre-transformed) scale |
 
 ---
 
