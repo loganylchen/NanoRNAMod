@@ -50,7 +50,13 @@ if [ -n "${found}" ]; then
     echo "Renaming ${found} -> ${expected_output}"
     mv "${found}" "${expected_output}"
 else
-    echo "ERROR: Epinano_DiffErr.R produced no *.prediction.csv in ${output_dir}"
-    echo "Check log: ${snakemake_log[0]}"
-    exit 1
+    # Empty-output safety net: Epinano_DiffErr.R ran successfully (we
+    # only reach here after `set -e` let it through) but produced no
+    # prediction file — likely due to depth/filter rejection. Emit an
+    # empty sentinel so the rule succeeds; format.py detects the empty
+    # file and propagates an empty result downstream.
+    echo "WARNING: Epinano_DiffErr.R produced no *.prediction.csv in ${output_dir}"
+    echo "  Writing empty sentinel to ${expected_output}"
+    echo "  Check log for details: ${snakemake_log[0]}"
+    : > "${expected_output}"
 fi

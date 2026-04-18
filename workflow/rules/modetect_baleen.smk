@@ -53,7 +53,12 @@ rule baleen_modcall:
         "--native-dataprep {input.native_dataprep} "
         "--control-dataprep {input.control_dataprep} "
         "{params.params} "
-        "--output-dir {params.output_dir} > {log} 2>&1"
+        "--output-dir {params.output_dir} > {log} 2>&1; "
+        "status=$?; "
+        "if [ $status -eq 0 ] && [ ! -f {output.result} ]; then "
+        "  mkdir -p $(dirname {output.result}) && touch {output.result}; "
+        "fi; "
+        "exit $status"
 
 
 rule baleen_postcall:

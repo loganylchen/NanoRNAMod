@@ -48,7 +48,14 @@ rule directrm_predict:
         "--output {output.predictions} "
         "--threads {threads} "
         "{params.extra} "
-        "2>{log} && touch {output.completion}"
+        "2>{log}; "
+        "status=$?; "
+        "if [ $status -eq 0 ]; then "
+        "  mkdir -p $(dirname {output.predictions}); "
+        "  [ -f {output.predictions} ] || touch {output.predictions}; "
+        "  touch {output.completion}; "
+        "fi; "
+        "exit $status"
 
 
 rule directrm_postprocess:

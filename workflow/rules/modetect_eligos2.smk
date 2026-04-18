@@ -29,7 +29,13 @@ rule eligos2:
         "-ref {input.reference} "
         "-t {threads} "
         "-reg {input.region} "
-        "-o {output.directory} {params.extra} 1>{log} 2>&1"
+        "-o {output.directory} {params.extra} 1>{log} 2>&1; "
+        "status=$?; "
+        "if [ $status -eq 0 ]; then "
+        "  mkdir -p {output.directory}; "
+        "  [ -f {output.result} ] || touch {output.result}; "
+        "fi; "
+        "exit $status"
 
 
 rule eligos2_prep:

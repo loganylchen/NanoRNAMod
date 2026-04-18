@@ -87,7 +87,12 @@ rule xpore_run:
     benchmark:
         "benchmarks/{project}/{native}_{control}.xpore.benchmark.txt"
     shell:
-        "xpore diffmod --config {input[0]} --n_processes {threads} 1>{log} 2>&1"
+        "xpore diffmod --config {input[0]} --n_processes {threads} 1>{log} 2>&1; "
+        "status=$?; "
+        "if [ $status -eq 0 ] && [ ! -f {output.difftable} ]; then "
+        "  mkdir -p $(dirname {output.difftable}) && touch {output.difftable}; "
+        "fi; "
+        "exit $status"
 
 
 rule xpore_postprocessing:

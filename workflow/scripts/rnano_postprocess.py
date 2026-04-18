@@ -10,14 +10,14 @@ output_dir = snakemake.output.directory
 
 os.makedirs(output_dir, exist_ok=True)
 
-if os.path.exists(predictions_file):
+output_file = f"{output_dir}/predictions.tsv"
+if os.path.exists(predictions_file) and os.path.getsize(predictions_file) > 0:
     df = pd.read_csv(predictions_file, sep='\t')
-    output_file = f"{output_dir}/predictions.tsv"
     df.to_csv(output_file, sep='\t', index=False)
     print(f"Processed RNANO predictions: {len(df)} modifications detected")
     if 'modification' in df.columns:
         print(f"Modifications found: {df['modification'].unique().tolist()}")
     print(f"Output written to {output_file}")
 else:
-    print(f"Warning: Predictions file not found: {predictions_file}")
-    open(f"{output_dir}/predictions.tsv", 'w').close()
+    print(f"Warning: Predictions file missing or empty: {predictions_file}")
+    open(output_file, 'w').close()
