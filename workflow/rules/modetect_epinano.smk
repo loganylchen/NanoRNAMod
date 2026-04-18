@@ -4,6 +4,7 @@ rule epinano_prep:
         sample_bai="{project}/results/alignments/{sample}.bam.bai",
         reference=config["reference"]["transcriptome_fasta"],
         reference_fai=config["reference"]["transcriptome_fasta"] + ".fai",
+        reference_dict=config["reference"]["transcriptome_fasta"] + ".dict",
     output:
         per_site=temp(
             "{project}/results/alignments/{sample}.plus_strand.per.site.var.csv"
