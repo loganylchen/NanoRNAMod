@@ -155,31 +155,19 @@ def get_final_output():
             RESULT_ROOT=RESULT_ROOT,
         )
 
-    has_gtf = os.path.exists(config["reference"]["transcriptome_gtf"])
-
-    # Comparison-based tool outputs
+    # Comparison-based tool outputs (transcriptome coordinates only; no GTF annotation)
     for tool in tools:
         if tool in PER_COMPARISON_TOOLS:
             final_output += expand(
                 f"{RESULT_ROOT}/modifications/{tool}/{{comp}}/{tool}_results.tsv",
                 comp=comparisons,
             )
-            if has_gtf:
-                final_output += expand(
-                    f"{RESULT_ROOT}/modifications/{tool}/{{comp}}/{tool}_annotated_results.tsv",
-                    comp=comparisons,
-                )
         elif tool in PER_SAMPLE_TOOLS:
             # Per-sample tools only need native samples (no control required)
             final_output += expand(
                 f"{RESULT_ROOT}/modifications/{tool}/{{sample}}/{tool}_results.tsv",
                 sample=native_samples,
             )
-            if has_gtf:
-                final_output += expand(
-                    f"{RESULT_ROOT}/modifications/{tool}/{{sample}}/{tool}_annotated_results.tsv",
-                    sample=native_samples,
-                )
 
     logger.debug("=" * 60)
     logger.debug(f"NanoRNAMod — Final output files ({len(final_output)} total)")
