@@ -43,7 +43,7 @@ rule pybaleen_run:
     resources:
         mem_mb=1024 * 650,
         gpu=1,
-    priority: 50
+    priority: 100
     log:
         "logs/{project}/pybaleen/N_{native}_C_{control}.log",
     shell:

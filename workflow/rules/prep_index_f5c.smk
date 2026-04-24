@@ -22,7 +22,7 @@ rule f5c_index:
     threads: get_threads("f5c", 4)
     resources:
         mem_mb = 1024 * 50,
-    priority: 49
+    priority: 100
     shell:
         "f5c index "
         "--slow5 {input.blow5} "

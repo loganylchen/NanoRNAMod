@@ -12,7 +12,7 @@ rule link_fastq:
     threads: get_threads("default", 1)
     resources:
         mem_mb=1024 * 10,
-    priority: 49
+    priority: 100
     shell:
         "ln -s {params.relative_path} {output.fastq} && "
         "echo `date` > {log} "
@@ -46,7 +46,7 @@ rule link_blow5:
     threads: get_threads("default", 1)
     resources:
         mem_mb=1024 * 10,
-    priority: 49
+    priority: 100
     shell:
         "ln -s {params.relative_path} {output.blow5} && "
         "echo `date` > {log} "
