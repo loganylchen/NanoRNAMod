@@ -1,14 +1,14 @@
 # path or URL to sample sheet (TSV format, columns: SampleName, Condition, Directory...)
 samples: config/samples.tsv
-project: RNAModProject
-only_final_results: True
-qc: False
+project: ecoliRNA
+only_final_results: true
+qc: false
 params:
   minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 10 -p 0 "
   minimap2_genome: " -ax splice -u f -k 14 -G 500000 --secondary=no "
   samtools_filtering: " -F 2324 -q 10 --min-qlen 80 "
-  f5c_eventalign_full: "--print-read-names --scale-events --min-mapq 0 --min-recalib-events 50 --samples --rna "
-  f5c_eventalign_simple: "--signal-index --scale-events --min-recalib-events 50 --min-mapq 0 --rna "
+  f5c_eventalign_full: "--print-read-names --scale-events --samples --rna "
+  f5c_eventalign_simple: "--signal-index --scale-events --rna "
   # nanocompore: "--logit --min_ref_length 50 --overwrite --min_coverage 1 "
   nanocompore: "--logit  --overwrite "
   baleen_modcall: "   "
@@ -21,7 +21,7 @@ params:
   eligos2: "--max_depth 5000000  --esb 0 --oddR 0 --pval 1"
   epinano: '-f sum_err'
   epinano_dataprep: ''
-  drummer: ' -z 0.1 -p 1 '
+  drummer: ' -z 0.1 -p 2 '
   tandemmod: "--model multi --threshold 0.5"
   directrm: "--mods all --min-prob 0.7"
   m6atm: "--stoichiometry --threshold 0.6"
@@ -31,7 +31,7 @@ params:
   nanomud: ""
   nanomud_mods: "Psi,m1Psi"
   penguin: ""
-  pybaleen: "--padding 0 --min-depth 15"
+  pybaleen: ""
 
 # Thread configuration for each tool
 # 每个工具的线程数配置
@@ -69,7 +69,7 @@ threads:
 #      例如: xpore: "docker://biocontainers/xpore:1.0"
 #   4. 如果某个工具的值为空字符串 ""，则会使用 default 容器
 #   5. 容器镜像格式: "docker://registry/image:tag" 或 "shub://user/repo:tag"
-# 
+#
 # 示例:
 #   containers:
 #     default: "docker://condaforge/mambaforge:22.11.1-4"
@@ -85,68 +85,68 @@ containers:
   baleen: "docker://btrspg/baleen:clean"
   xpore: "docker://btrspg/xpore:2.1"
   differr: "docker://btrspg/differr:0.2"
-  eligos2: "docker://piroonj/eligos2:2.1.0"
-  drummer: "docker://btrspg/drummer:dd0ccc81"
-  epinano: "docker://btrspg/epinano:1.2.5"
-  bedtools: "docker://biocontainers/bedtools:2.31.1--hf5e1c6e_1"
+  eligos2: "docker://btrspg/eligos2:2.1.0"
+  drummer: "docker://btrspg/drummer:92bb35a4a2b22ff304f5e4bcbc9fa6985f18a12e"
+  epinano: "docker://btrspg/epinano:1.2.0"
+  bedtools: "docker://btrspg/bedtools:2.31.1"
   tandemmod: "docker://btrspg/tandemmod:1.0.0"
   directrm: "docker://btrspg/directrm:1.0.0"
   m6atm: "docker://btrspg/m6atm:1.0.0"
   rnano: "docker://btrspg/rnano:1.0.0"
   psipore: "docker://btrspg/psipore:1.0.0"
   nanopsu: "docker://btrspg/nanopsu:1.0.0"
-  pybaleen: "docker://btrspg/py-baleen-gpu:9c9f536"
+  pybaleen: "docker://btrspg/py-baleen-gpu:dev"
   nanomud: "docker://btrspg/nanomud:1.0.0"
   penguin: "docker://btrspg/penguin:1.0.0"
   samtools: "docker://btrspg/minimap2:2.28"
   nanopolish: "docker://btrspg/nanopolish:0.14.0"
   nanocount: "docker://btrspg/nanocount:1.0.0"
   qualimap: "docker://btrspg/qualimap:2.2.2a"
-  python3: "docker://btrspg/misc-python3:2026-03-20"
+  python3: "docker://btrspg/misc-python3:2026-04-01"
   nanoplot: ""
   bcftools: ""
-  r_viz: "docker://6oclock/r-deseq2-edger-ggplot2:3.6.3"
+  r_viz: "docker://btrspg/rlan:20260116"
   picard: "docker://broadinstitute/picard:3.1.0"
 
 reference:
-  genome_fasta: data/ref.fa
-  transcriptome_fasta: data/ref.fa
-  transcriptome_gtf: data/ref.gtf
+  genome_fasta: ecoli_ref/ref.fa
+  transcriptome_fasta: ecoli_ref/ref.fa
+  transcriptome_gtf: ''
 
 
 
 tools:
   xpore:
-    activate: True
+    activate: false
   nanocompore:
-    activate: True
+    activate: false
   baleen:
-    activate: True
+    activate: false
   differr:
-    activate: True
+    activate: false
   drummer:
-    activate: True
+    activate: false
   eligos2:
-    activate: True
+    activate: false
   epinano:
-    activate: True
+    activate: false
   tandemmod:
-    activate: True
+    activate: false
   directrm:
-    activate: True
+    activate: false
   m6atm:
-    activate: True
+    activate: false
   rnano:
-    activate: True
+    activate: false
   psipore:
-    activate: True
+    activate: false
   nanopsu:
-    activate: True
+    activate: false
   nanomud:
-    activate: True
+    activate: false
   penguin:
-    activate: True
+    activate: false
   pybaleen:
-    activate: True
+    activate: true
 
 target_region: ''
