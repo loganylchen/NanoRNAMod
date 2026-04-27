@@ -30,8 +30,8 @@ rule pybaleen_run:
         ref=config["reference"]["transcriptome_fasta"],
     output:
         result=temp("{project}/results/pybaleen/{native}_{control}/site_results.tsv"),
-        read_bam=KEEP_OR_NOT("{project}/results/pybaleen/{native}_{control}/read_results.bam"),
-        read_bai=KEEP_OR_NOT("{project}/results/pybaleen/{native}_{control}/read_results.bam.bai"),
+        read_bam="{project}/results/pybaleen/{native}_{control}/read_results.bam",
+        read_bai="{project}/results/pybaleen/{native}_{control}/read_results.bam.bai",
     params:
         output_dir="{project}/results/pybaleen/{native}_{control}/",
         extra=config["params"].get("pybaleen", ""),
