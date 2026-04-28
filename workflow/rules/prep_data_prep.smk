@@ -1,3 +1,8 @@
+localrules:
+    link_fastq,
+    link_blow5,
+
+
 rule link_fastq:
     input:
         fastq=get_raw_fastq,
