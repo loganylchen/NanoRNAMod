@@ -3,6 +3,8 @@
 set -x
 set -e
 
+ulimit -n 65536 2>/dev/null || true
+
 exec &>"${snakemake_log[0]}"
 
 per_site="${snakemake_output[per_site]}"

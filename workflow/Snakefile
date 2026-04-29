@@ -164,6 +164,10 @@ configfile: "config/config.yaml"
 ##### setup singularity #####
 
 
+##### raise file-descriptor limit for every shell rule #####
+shell.prefix("ulimit -n 65536 2>/dev/null || true; ")
+
+
 report: "report/workflow.rst"
 
 

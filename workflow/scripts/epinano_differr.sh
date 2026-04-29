@@ -2,6 +2,8 @@
 
 set -e
 
+ulimit -n 65536 2>/dev/null || true
+
 output_dir=$(dirname "${snakemake_output[results]}")
 expected_output="${snakemake_output[results]}"
 control="${snakemake_input[control]}"
