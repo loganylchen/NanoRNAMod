@@ -1,6 +1,7 @@
 # libraries
 
 import os
+import shlex
 import subprocess
 from snakemake.utils import min_version
 
@@ -164,8 +165,39 @@ configfile: "config/config.yaml"
 ##### setup singularity #####
 
 
+##### configurable tmp directory #####
+# /tmp is often small and shared on HPC systems. Allow users to override the
+# tmp directory via config (defaults to ./tmp in the working directory).
+#
+# This follows Snakemake's idiomatic tmpdir handling:
+#   1. os.environ["TMPDIR"] is set so all subprocesses inherit it. Snakemake
+#      itself uses $TMPDIR as the default for the special `tmpdir` resource.
+#   2. We register it as a default resource so rules can refer to it via
+#      `resources.tmpdir` and so it is tracked in benchmarks/reports. Users
+#      can still override via `--default-resources tmpdir=/path` on the CLI.
+_tmpdir = os.path.abspath(os.path.expanduser(config.get("tmpdir") or "tmp"))
+os.makedirs(_tmpdir, exist_ok=True)
+os.environ["TMPDIR"] = _tmpdir
+
+# Only set the default if the user hasn't already provided one via the CLI
+# (e.g. `--default-resources "tmpdir='/scratch/...'"`). Setting unconditionally
+# would silently override the user's intent.
+try:
+    _existing = getattr(workflow.default_resources, "parsed", None) or {}
+    if "tmpdir" not in _existing:
+        workflow.default_resources.set_resource("tmpdir", _tmpdir)
+except Exception:
+    # Older Snakemake versions: env-var inheritance alone is enough.
+    pass
+
+
 ##### raise file-descriptor limit for every shell rule #####
-shell.prefix("ulimit -n 65536 2>/dev/null || true; ")
+# The mkdir keeps the tmpdir present even if some other process cleans it
+# mid-run. TMPDIR itself is inherited via os.environ above.
+shell.prefix(
+    "ulimit -n 65536 2>/dev/null || true; "
+    f"mkdir -p {shlex.quote(_tmpdir)}; "
+)
 
 
 report: "report/workflow.rst"

@@ -3,6 +3,10 @@ samples: config/samples.tsv
 project: RNAModProject
 only_final_results: True
 qc: False
+# Temp directory for all shell rules and subprocesses. Set to an absolute
+# path or a path relative to the working directory. Defaults to "tmp" in
+# the working directory to avoid filling up /tmp on shared systems.
+tmpdir: tmp
 params:
   minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 10 -p 0 "
   minimap2_genome: " -ax splice -u f -k 14 -G 500000 --secondary=no "
