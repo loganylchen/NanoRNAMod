@@ -20,34 +20,6 @@ rule post_tandemmod:
         "../scripts/format.py"
 
 
-rule tandemmod_annotate:
-    input:
-        transcripts="{project}/results/modifications/tandemmod/{sample}/tandemmod_results.tsv",
-    output:
-        result="{project}/results/modifications/tandemmod/{sample}/tandemmod_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    priority: 20
-    benchmark:
-        "benchmarks/{project}/{sample}.tandemmod_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/tandemmod_annotate/{sample}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column transcript "
-        "--loc-column position "
-        "--gtf {params.gtf} "
-        "--output {output.result} "
-        "> {log} 2>&1"
-
-
 rule post_directrm:
     input:
         predictions="{project}/results/dataprep/{sample}_directrm_dataprep/predictions.tsv",
@@ -68,34 +40,6 @@ rule post_directrm:
     threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
-
-
-rule directrm_annotate:
-    input:
-        transcripts="{project}/results/modifications/directrm/{sample}/directrm_results.tsv",
-    output:
-        result="{project}/results/modifications/directrm/{sample}/directrm_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    priority: 20
-    benchmark:
-        "benchmarks/{project}/{sample}.directrm_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/directrm_annotate/{sample}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column transcript "
-        "--loc-column position "
-        "--gtf {params.gtf} "
-        "--output {output.result} "
-        "> {log} 2>&1"
 
 
 rule post_m6atm:
@@ -120,34 +64,6 @@ rule post_m6atm:
         "../scripts/format.py"
 
 
-rule m6atm_annotate:
-    input:
-        transcripts="{project}/results/modifications/m6atm/{sample}/m6atm_results.tsv",
-    output:
-        result="{project}/results/modifications/m6atm/{sample}/m6atm_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    priority: 20
-    benchmark:
-        "benchmarks/{project}/{sample}.m6atm_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/m6atm_annotate/{sample}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column transcript "
-        "--loc-column position "
-        "--gtf {params.gtf} "
-        "--output {output.result} "
-        "> {log} 2>&1"
-
-
 rule post_rnano:
     input:
         predictions="{project}/results/dataprep/{sample}_rnano_dataprep/predictions.tsv",
@@ -170,34 +86,6 @@ rule post_rnano:
         "../scripts/format.py"
 
 
-rule rnano_annotate:
-    input:
-        transcripts="{project}/results/modifications/rnano/{sample}/rnano_results.tsv",
-    output:
-        result="{project}/results/modifications/rnano/{sample}/rnano_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    priority: 20
-    benchmark:
-        "benchmarks/{project}/{sample}.rnano_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/rnano_annotate/{sample}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column transcript "
-        "--loc-column position "
-        "--gtf {params.gtf} "
-        "--output {output.result} "
-        "> {log} 2>&1"
-
-
 rule post_xpore:
     input:
         "{project}/results/xpore/{native}_{control}/diffmod.table",
@@ -217,33 +105,6 @@ rule post_xpore:
     threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
-
-
-rule xpore_annotate:
-    input:
-        transcripts="{project}/results/modifications/xpore/{native}_{control}/xpore_results.tsv",
-    output:
-        result="{project}/results/modifications/xpore/{native}_{control}/xpore_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    priority: 20
-    benchmark:
-        "benchmarks/{project}/{native}_{control}.xpore_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/xpore_annotate/N_{native}_C_{control}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column id "
-        "--loc-column position "
-        "--gtf {params.gtf} "
-        "--output {output.result} > {log} 2>&1"
 
 
 rule post_nanocompore:
@@ -268,33 +129,6 @@ rule post_nanocompore:
         "../scripts/format.py"
 
 
-rule nanocompore_annotate:
-    input:
-        transcripts="{project}/results/modifications/nanocompore/{native}_{control}/nanocompore_results.tsv",
-    output:
-        result="{project}/results/modifications/nanocompore/{native}_{control}/nanocompore_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    priority: 20
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    benchmark:
-        "benchmarks/{project}/{native}_{control}.nanocompore_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/nanocompore_annotate/N_{native}_C_{control}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column ref_id "
-        "--loc-column pos "
-        "--gtf {params.gtf} "
-        "--output {output.result} > {log} 2>&1"
-
-
 rule post_baleen:
     input:
         "{project}/results/baleen/{native}_{control}/transcript_mod_results.csv",
@@ -316,33 +150,6 @@ rule post_baleen:
         "../scripts/format.py"
 
 
-rule baleen_annotate:
-    input:
-        transcripts="{project}/results/modifications/baleen/{native}_{control}/baleen_results.tsv",
-    output:
-        result="{project}/results/modifications/baleen/{native}_{control}/baleen_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    priority: 20
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    benchmark:
-        "benchmarks/{project}/{native}_{control}.baleen_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/baleen_annotate/N_{native}_C_{control}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column transcript "
-        "--loc-column position "
-        "--gtf {params.gtf} "
-        "--output {output.result} > {log} 2>&1"
-
-
 rule post_differr:
     input:
         "{project}/results/differr/{native}_{control}/differr.bed",
@@ -362,33 +169,6 @@ rule post_differr:
     threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
-
-
-rule differr_annotate:
-    input:
-        transcripts="{project}/results/modifications/differr/{native}_{control}/differr_results.tsv",
-    output:
-        result="{project}/results/modifications/differr/{native}_{control}/differr_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    priority: 20
-    benchmark:
-        "benchmarks/{project}/{native}_{control}.differr_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/differr_annotate/N_{native}_C_{control}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column chrom "
-        "--loc-column start "
-        "--gtf {params.gtf} "
-        "--output {output.result} > {log} 2>&1"
 
 
 rule post_epinano:
@@ -413,33 +193,6 @@ rule post_epinano:
         "../scripts/format.py"
 
 
-rule epinano_annotate:
-    input:
-        transcripts="{project}/results/modifications/epinano/{native}_{control}/epinano_results.tsv",
-    output:
-        result="{project}/results/modifications/epinano/{native}_{control}/epinano_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    benchmark:
-        "benchmarks/{project}/{native}_{control}.epinano_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    priority: 20
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/epinano_annotate/N_{native}_C_{control}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column chrom "
-        "--loc-column pos "
-        "--gtf {params.gtf} "
-        "--output {output.result} > {log} 2>&1"
-
-
 rule post_eligos2:
     input:
         "{project}/results/eligos2/{native}_{control}/{native}_vs_{control}_on_{native}_{control}_baseExt0.txt",
@@ -460,33 +213,6 @@ rule post_eligos2:
         "benchmarks/{project}/{native}_{control}.post_eligos2_sampled_format.benchmark.txt"
     script:
         "../scripts/format.py"
-
-
-rule eligos2_annotate:
-    input:
-        transcripts="{project}/results/modifications/eligos2/{native}_{control}/eligos2_results.tsv",
-    output:
-        result="{project}/results/modifications/eligos2/{native}_{control}/eligos2_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    benchmark:
-        "benchmarks/{project}/{native}_{control}.eligos2_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    priority: 20
-    log:
-        "logs/{project}/eligos2_annotate/N_{native}_C_{control}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column chrom "
-        "--loc-column start_loc "
-        "--gtf {params.gtf} "
-        "--output {output.result} > {log} 2>&1"
 
 
 rule post_drummer:
@@ -510,33 +236,6 @@ rule post_drummer:
         "../scripts/format.py"
 
 
-rule drummer_annotate:
-    input:
-        transcripts="{project}/results/modifications/drummer/{native}_{control}/drummer_results.tsv",
-    output:
-        result="{project}/results/modifications/drummer/{native}_{control}/drummer_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    benchmark:
-        "benchmarks/{project}/{native}_{control}.drummer_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    priority: 20
-    log:
-        "logs/{project}/drummer_annotate/N_{native}_C_{control}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column transcript_id "
-        "--loc-column transcript_pos "
-        "--gtf {params.gtf} "
-        "--output {output.result} > {log} 2>&1"
-
-
 rule post_psipore:
     input:
         "{project}/results/psipore/{native}_{control}/psipore_results.tsv",
@@ -556,34 +255,6 @@ rule post_psipore:
     threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
-
-
-rule psipore_annotate:
-    input:
-        transcripts="{project}/results/modifications/psipore/{native}_{control}/psipore_results.tsv",
-    output:
-        result="{project}/results/modifications/psipore/{native}_{control}/psipore_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    priority: 20
-    benchmark:
-        "benchmarks/{project}/{native}_{control}.psipore_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/psipore_annotate/N_{native}_C_{control}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column transcript "
-        "--loc-column position "
-        "--gtf {params.gtf} "
-        "--output {output.result} "
-        "> {log} 2>&1"
 
 
 rule post_nanopsu:
@@ -608,34 +279,6 @@ rule post_nanopsu:
         "../scripts/format.py"
 
 
-rule nanopsu_annotate:
-    input:
-        transcripts="{project}/results/modifications/nanopsu/{sample}/nanopsu_results.tsv",
-    output:
-        result="{project}/results/modifications/nanopsu/{sample}/nanopsu_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    priority: 20
-    benchmark:
-        "benchmarks/{project}/{sample}.nanopsu_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/nanopsu_annotate/{sample}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column transcript "
-        "--loc-column position "
-        "--gtf {params.gtf} "
-        "--output {output.result} "
-        "> {log} 2>&1"
-
-
 rule post_nanomud:
     input:
         predictions="{project}/results/dataprep/{sample}_nanomud_dataprep/predictions.tsv",
@@ -656,34 +299,6 @@ rule post_nanomud:
     threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
-
-
-rule nanomud_annotate:
-    input:
-        transcripts="{project}/results/modifications/nanomud/{sample}/nanomud_results.tsv",
-    output:
-        result="{project}/results/modifications/nanomud/{sample}/nanomud_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    priority: 20
-    benchmark:
-        "benchmarks/{project}/{sample}.nanomud_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/nanomud_annotate/{sample}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column transcript "
-        "--loc-column position "
-        "--gtf {params.gtf} "
-        "--output {output.result} "
-        "> {log} 2>&1"
 
 
 rule post_penguin:
@@ -708,34 +323,6 @@ rule post_penguin:
         "../scripts/format.py"
 
 
-rule penguin_annotate:
-    input:
-        transcripts="{project}/results/modifications/penguin/{sample}/penguin_results.tsv",
-    output:
-        result="{project}/results/modifications/penguin/{sample}/penguin_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    priority: 20
-    benchmark:
-        "benchmarks/{project}/{sample}.penguin_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/penguin_annotate/{sample}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column transcript "
-        "--loc-column position "
-        "--gtf {params.gtf} "
-        "--output {output.result} "
-        "> {log} 2>&1"
-
-
 # pybaleen post-processing
 rule post_pybaleen:
     input:
@@ -754,31 +341,3 @@ rule post_pybaleen:
     threads: get_threads("python3", 1)
     script:
         "../scripts/pybaleen_postprocess.py"
-
-
-rule pybaleen_annotate:
-    input:
-        transcripts="{project}/results/modifications/pybaleen/{native}_{control}/pybaleen_results.tsv",
-    output:
-        result="{project}/results/modifications/pybaleen/{native}_{control}/pybaleen_annotated_results.tsv",
-    container:
-        get_container("baleen")
-    params:
-        gtf=config["reference"]["transcriptome_gtf"],
-    priority: 20
-    benchmark:
-        "benchmarks/{project}/{native}_{control}.pybaleen_annotate.txt"
-    resources:
-        mem_mb=1024 * 50,
-    threads: get_threads("baleen", 1)
-    log:
-        "logs/{project}/pybaleen_annotate/N_{native}_C_{control}.log",
-    shell:
-        "Baleen.py annotate "
-        "--transcript-mod-file {input.transcripts} "
-        "--sep tab "
-        "--transcript-column transcript "
-        "--loc-column position "
-        "--gtf {params.gtf} "
-        "--output {output.result} "
-        "> {log} 2>&1"
