@@ -25,12 +25,6 @@ def format_xpore(input_file,output_file):
     df = pd.read_csv(input_file).sort_values(['id','position'])
     df.to_csv(output_file,sep='\t',index=False)
 
-def format_baleen(input_file,output_file):
-    if not _input_has_content(input_file):
-        _write_empty(output_file); return
-    df = pd.read_csv(input_file).sort_values(['transcript','position'])
-    df.to_csv(output_file,sep='\t',index=False)
-
 def format_differr(input_file,output_file):
     if not _input_has_content(input_file):
         _write_empty(output_file); return
@@ -88,89 +82,8 @@ def format_nanocompore(input_file,output_file):
     df['pos']+=2
     df.to_csv(output_file,sep='\t',index=False)
 
-def format_tandemmod(input_file,output_file):
-    if not _input_has_content(input_file):
-        _write_empty(output_file); return
-    df = pd.read_csv(input_file, sep='\t')
-    if 'transcript' in df.columns and 'position' in df.columns:
-        df = df.sort_values(['transcript', 'position'])
-    elif 'id' in df.columns and 'position' in df.columns:
-        df = df.sort_values(['id', 'position'])
-        df.rename(columns={'id': 'transcript'}, inplace=True)
-    df.to_csv(output_file, sep='\t', index=False)
-
-def format_directrm(input_file,output_file):
-    if not _input_has_content(input_file):
-        _write_empty(output_file); return
-    df = pd.read_csv(input_file, sep='\t')
-    if 'transcript' in df.columns and 'position' in df.columns:
-        df = df.sort_values(['transcript', 'position'])
-    elif 'transcript_id' in df.columns and 'transcript_pos' in df.columns:
-        df = df.sort_values(['transcript_id', 'transcript_pos'])
-        df.rename(columns={'transcript_id': 'transcript', 'transcript_pos': 'position'}, inplace=True)
-    df.to_csv(output_file, sep='\t', index=False)
-
-def format_m6atm(input_file,output_file):
-    if not _input_has_content(input_file):
-        _write_empty(output_file); return
-    df = pd.read_csv(input_file, sep='\t')
-    if 'transcript' in df.columns and 'position' in df.columns:
-        df = df.sort_values(['transcript', 'position'])
-    elif 'transcript_id' in df.columns and 'transcript_pos' in df.columns:
-        df = df.sort_values(['transcript_id', 'transcript_pos'])
-        df.rename(columns={'transcript_id': 'transcript', 'transcript_pos': 'position'}, inplace=True)
-    df.to_csv(output_file, sep='\t', index=False)
-
-def format_rnano(input_file,output_file):
-    if not _input_has_content(input_file):
-        _write_empty(output_file); return
-    df = pd.read_csv(input_file, sep='\t')
-    if 'transcript' in df.columns and 'position' in df.columns:
-        df = df.sort_values(['transcript', 'position'])
-    elif 'transcript_id' in df.columns and 'transcript_pos' in df.columns:
-        df = df.sort_values(['transcript_id', 'transcript_pos'])
-        df.rename(columns={'transcript_id': 'transcript', 'transcript_pos': 'position'}, inplace=True)
-    df.to_csv(output_file, sep='\t', index=False)
-
-def format_psipore(input_file, output_file):
-    if not _input_has_content(input_file):
-        _write_empty(output_file); return
-    df = pd.read_csv(input_file, sep='\t')
-    if 'transcript' in df.columns and 'position' in df.columns:
-        df = df.sort_values(['transcript', 'position'])
-    df.to_csv(output_file, sep='\t', index=False)
-
-def format_nanopsu(input_file, output_file):
-    if not _input_has_content(input_file):
-        _write_empty(output_file); return
-    df = pd.read_csv(input_file, sep='\t')
-    if 'transcript' in df.columns and 'position' in df.columns:
-        df = df.sort_values(['transcript', 'position'])
-    df.to_csv(output_file, sep='\t', index=False)
-
-def format_nanomud(input_file, output_file):
-    if not _input_has_content(input_file):
-        _write_empty(output_file); return
-    df = pd.read_csv(input_file, sep='\t')
-    if 'transcript' in df.columns and 'position' in df.columns:
-        sort_cols = ['transcript', 'position']
-        if 'modification' in df.columns:
-            sort_cols.append('modification')
-        df = df.sort_values(sort_cols)
-    df.to_csv(output_file, sep='\t', index=False)
-
-def format_penguin(input_file, output_file):
-    if not _input_has_content(input_file):
-        _write_empty(output_file); return
-    df = pd.read_csv(input_file, sep='\t')
-    if 'transcript' in df.columns and 'position' in df.columns:
-        df = df.sort_values(['transcript', 'position'])
-    df.to_csv(output_file, sep='\t', index=False)
-
 if snakemake.params.tool == 'xpore':
     format_xpore(snakemake.input[0],snakemake.output[0])
-elif snakemake.params.tool == 'baleen':
-    format_baleen(snakemake.input[0],snakemake.output[0])
 elif snakemake.params.tool == 'differr':
     format_differr(snakemake.input[0],snakemake.output[0])
 elif snakemake.params.tool == 'epinano':
@@ -181,19 +94,3 @@ elif snakemake.params.tool == 'drummer':
     format_drummer(snakemake.input[0],snakemake.output[0])
 elif snakemake.params.tool == 'nanocompore':
     format_nanocompore(snakemake.input[0],snakemake.output[0])
-elif snakemake.params.tool == 'tandemmod':
-    format_tandemmod(snakemake.input[0],snakemake.output[0])
-elif snakemake.params.tool == 'directrm':
-    format_directrm(snakemake.input[0],snakemake.output[0])
-elif snakemake.params.tool == 'm6atm':
-    format_m6atm(snakemake.input[0],snakemake.output[0])
-elif snakemake.params.tool == 'rnano':
-    format_rnano(snakemake.input[0],snakemake.output[0])
-elif snakemake.params.tool == 'psipore':
-    format_psipore(snakemake.input[0],snakemake.output[0])
-elif snakemake.params.tool == 'nanopsu':
-    format_nanopsu(snakemake.input[0],snakemake.output[0])
-elif snakemake.params.tool == 'nanomud':
-    format_nanomud(snakemake.input[0],snakemake.output[0])
-elif snakemake.params.tool == 'penguin':
-    format_penguin(snakemake.input[0],snakemake.output[0])

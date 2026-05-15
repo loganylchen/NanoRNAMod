@@ -15,8 +15,6 @@ params:
   f5c_eventalign_simple: "--signal-index --scale-events --min-recalib-events 50 --min-mapq 0 --rna "
   # nanocompore: "--logit --min_ref_length 50 --overwrite --min_coverage 1 "
   nanocompore: "--logit  --overwrite "
-  baleen_modcall: "    "
-  baleen_postcall: "  "
   xpore_dataprep: ""
   lafite: ""
   xpore: ""
@@ -32,7 +30,6 @@ threads:
   slow5tools: 4
   f5c: 4
   nanocompore: 4
-  baleen: 4
   xpore: 4
   sample_reads: 4
   differr: 4
@@ -51,8 +48,6 @@ tools:
   xpore:
     activate: True
   nanocompore:
-    activate: True
-  baleen:
     activate: True
   differr:
     activate: True

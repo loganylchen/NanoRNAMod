@@ -57,10 +57,10 @@ else:
     comparisons = [f"{ns}_{cs}" for ns in native_samples for cs in control_samples]
 
 
-PER_COMPARISON_TOOLS = ["xpore", "nanocompore", "baleen", "differr", "drummer",
-                        "eligos2", "epinano", "psipore", "pybaleen"]
+PER_COMPARISON_TOOLS = ["xpore", "nanocompore", "differr", "drummer",
+                        "eligos2", "epinano", "pybaleen"]
 
-PER_SAMPLE_TOOLS = ["tandemmod", "directrm", "m6atm", "rnano", "nanopsu", "nanomud", "penguin"]
+PER_SAMPLE_TOOLS = []
 
 
 def get_active_comparison_tools():

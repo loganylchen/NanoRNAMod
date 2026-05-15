@@ -15,8 +15,6 @@ params:
   f5c_eventalign_simple: "--signal-index --scale-events --rna "
   # nanocompore: "--logit --min_ref_length 50 --overwrite --min_coverage 1 "
   nanocompore: "--logit  --overwrite "
-  baleen_modcall: "   "
-  baleen_postcall: "   "
   xpore_dataprep: ""
   lafite: ""
   xpore: ""
@@ -26,15 +24,6 @@ params:
   epinano: '-f sum_err'
   epinano_dataprep: ''
   drummer: ' -z 0.1 -p 2 '
-  tandemmod: "--model multi --threshold 0.5"
-  directrm: "--mods all --min-prob 0.7"
-  m6atm: "--stoichiometry --threshold 0.6"
-  rnano: "--model pretrained --gpu False"
-  psipore: ""
-  nanopsu: ""
-  nanomud: ""
-  nanomud_mods: "Psi,m1Psi"
-  penguin: ""
   pybaleen: ""
 
 # Thread configuration for each tool
@@ -47,21 +36,12 @@ threads:
   slow5tools: 4
   f5c: 4
   nanocompore: 4
-  baleen: 4
   xpore: 4
   sample_reads: 4
   differr: 4
   eligos2: 4
   drummer: 4
   epinano: 4
-  tandemmod: 4
-  directrm: 4
-  m6atm: 4
-  rnano: 4
-  psipore: 4
-  nanopsu: 4
-  nanomud: 4
-  penguin: 4
   pybaleen: 4
 
 # Container images for each tool
@@ -86,22 +66,13 @@ containers:
   slow5tools: "docker://btrspg/slow5tools:1.3.0"
   f5c: "docker://btrspg/f5c:1.5"
   nanocompore: "docker://btrspg/nanocompore1:1.0.4"
-  baleen: "docker://btrspg/baleen:clean"
   xpore: "docker://btrspg/xpore:2.1"
   differr: "docker://btrspg/differr:0.2"
   eligos2: "docker://btrspg/eligos2:2.1.0"
   drummer: "docker://btrspg/drummer:92bb35a4a2b22ff304f5e4bcbc9fa6985f18a12e"
   epinano: "docker://btrspg/epinano:1.2.0"
   bedtools: "docker://btrspg/bedtools:2.31.1"
-  tandemmod: "docker://btrspg/tandemmod:1.0.0"
-  directrm: "docker://btrspg/directrm:1.0.0"
-  m6atm: "docker://btrspg/m6atm:1.0.0"
-  rnano: "docker://btrspg/rnano:1.0.0"
-  psipore: "docker://btrspg/psipore:1.0.0"
-  nanopsu: "docker://btrspg/nanopsu:1.0.0"
   pybaleen: "docker://btrspg/py-baleen-gpu:dev"
-  nanomud: "docker://btrspg/nanomud:1.0.0"
-  penguin: "docker://btrspg/penguin:1.0.0"
   samtools: "docker://btrspg/minimap2:2.28"
   nanopolish: "docker://btrspg/nanopolish:0.14.0"
   nanocount: "docker://btrspg/nanocount:1.0.0"
@@ -124,8 +95,6 @@ tools:
     activate: false
   nanocompore:
     activate: false
-  baleen:
-    activate: false
   differr:
     activate: false
   drummer:
@@ -133,22 +102,6 @@ tools:
   eligos2:
     activate: false
   epinano:
-    activate: false
-  tandemmod:
-    activate: false
-  directrm:
-    activate: false
-  m6atm:
-    activate: false
-  rnano:
-    activate: false
-  psipore:
-    activate: false
-  nanopsu:
-    activate: false
-  nanomud:
-    activate: false
-  penguin:
     activate: false
   pybaleen:
     activate: true

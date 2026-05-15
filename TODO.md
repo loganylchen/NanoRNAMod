@@ -130,3 +130,15 @@
 - [x] 所有规则 `mem_mb` 最低 10GB — 12 个文件共 30 处已修改
 - [x] `epinano_prep.sh` 诊断改进 — 捕获 stdout+stderr、扩大搜索范围、使用 params.extra
 - [x] 死代码规则 `*_epi` 已删除（`minimap2_transcriptome_align_epi`、`samtools_filter_mapped_epi`、注释掉的 `link_fastq_old`），`prep_readsfiltering.smk` 整个删除（depth_table 链也一并清理）
+- [x] 移除 9 个未完整实现的 tool（`baleen`, `tandemmod`, `directrm`, `m6atm`, `rnano`, `psipore`, `nanopsu`, `nanomud`, `penguin`）— 包含规则文件、postprocess 脚本、conda env、`format.py` 分支、`config/config.yaml` 与 `.test/config/config.yaml` 中的 params/threads/containers/tools 条目，以及 `workflow/envs/{m6anet,tombo}.yaml` 等遗留 env。剩余 7 个工具：`pybaleen`, `xpore`, `nanocompore`, `differr`, `drummer`, `eligos2`, `epinano`
+
+---
+
+## Future Work (Removed Tools — Re-implement if Needed)
+
+下列工具曾出现在 workflow 中但实现不完整（缺少 dataprep 流程、容器、或核心脚本），已整体移除。若将来需要重新接入，建议从零按 `CLAUDE.md` 的 "Adding a New Tool" 流程实现：
+
+- **per-sample tools**: `tandemmod`, `directrm`, `m6atm`, `rnano`, `nanopsu`, `nanomud`, `penguin`
+- **per-comparison tools**: `baleen`（已被 `pybaleen` 取代）, `psipore`
+
+每个工具需要：1) `workflow/envs/{tool}.yaml`；2) `workflow/rules/modetect_{tool}.smk` 含 prep+detect 规则；3) `workflow/scripts/{tool}_postprocess.py`；4) `config/config.yaml` 的 params/threads/containers/tools 入口；5) `format.py` 或 dedicated post-rule；6) `common.smk` 的 `PER_*_TOOLS` 列表；7) `workflow/Snakefile` 的 include。

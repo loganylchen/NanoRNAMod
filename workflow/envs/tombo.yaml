@@ -1,7 +1,0 @@
-name: tombo
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - numpy=1.19.0
-  - ont-tombo=1.5.1

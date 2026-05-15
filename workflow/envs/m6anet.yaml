@@ -1,6 +1,0 @@
-name: m6anet
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - m6anet =2.1.0
