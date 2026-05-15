@@ -101,7 +101,7 @@ rule post_xpore:
         "benchmarks/{project}/{native}_{control}.post_xpore_sampled_format.benchmark.txt"
     resources:
         mem_mb=1024 * 50,
-    priority: 20
+    priority: 95
     threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"

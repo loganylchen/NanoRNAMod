@@ -61,6 +61,7 @@ rule f5c_eventalign_simple:
         ),
     container:
         get_container("f5c")
+    priority: 89
     log:
         "logs/{project}/eventalign/{sample}_xpore.log",
     params:

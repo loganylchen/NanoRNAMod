@@ -15,7 +15,7 @@ rule uncompress_eventalign:
         get_container("default")
     resources:
         mem_mb = 1024 * 10
-    priority: 10
+    priority: 90
     threads: get_threads("default", 1)
     shell:
         "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
@@ -35,7 +35,7 @@ rule xpore_dataprep:
     container:
         get_container("xpore")
     threads: get_threads("xpore", 4)
-    priority: 10
+    priority: 91
     resources:
         mem_mb = 1024 * 50
     params:
@@ -59,6 +59,7 @@ rule xpore_config:
     threads: get_threads("default", 1)
     resources:
         mem_mb = 1024 * 10
+    priority: 92
     params:
         "{project}/results/xpore/{native}_{control}",
     log:
@@ -81,7 +82,7 @@ rule xpore_run:
     threads: get_threads("xpore", 4)
     resources:
         mem_mb = 1024 * 50
-    priority: 10
+    priority: 93
     log:
         "logs/{project}/xpore/{native}_{control}.log",
     benchmark:
@@ -107,6 +108,7 @@ rule xpore_postprocessing:
     threads: get_threads("default", 1)
     resources:
         mem_mb = 1024 * 50
+    priority: 94
     params:
         "{project}/results/xpore/{native}_{control}",
     log:

@@ -17,7 +17,7 @@ rule minimap2_transcriptome_align:
     resources:
         mem_mb = 1024 * 30
     threads: get_threads("minimap2", 4)
-    priority: 100
+    priority: 97
     shell:
         "minimap2 -t {threads} {params.extra} {params.reference} {input.fastq} 2>> {log} "
         "| samtools view -Sbh "

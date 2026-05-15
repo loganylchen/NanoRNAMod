@@ -13,7 +13,7 @@ rule link_fastq:
     threads: 1
     resources:
         mem_mb=1024 * 2,
-    priority: 100
+    priority: 96
     shell:
         "exec >{log} 2>&1; "
         'src_md5=$(md5sum "{input.fastq}" | awk \'{{print $1}}\'); '
@@ -39,7 +39,7 @@ rule link_blow5:
     threads: 1
     resources:
         mem_mb=1024 * 2,
-    priority: 100
+    priority: 96
     shell:
         "exec >{log} 2>&1; "
         'src_md5=$(md5sum "{input.blow5}" | awk \'{{print $1}}\'); '
