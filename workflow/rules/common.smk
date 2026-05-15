@@ -111,7 +111,6 @@ def get_final_output():
     logger.info("=" * 60)
 
     final_output = [f"{RESULT_ROOT}/workflow_version.json"]
-    final_output += [f"{RESULT_ROOT}/depth_table.tsv"]
     final_output += expand(
         "{RESULT_ROOT}/quantification/{sample}.tx_counts.tsv",
         sample=list(samples.index),
