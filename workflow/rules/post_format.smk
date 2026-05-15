@@ -337,7 +337,7 @@ rule post_pybaleen:
         "benchmarks/{project}/{native}_{control}.post_pybaleen_format.benchmark.txt"
     resources:
         mem_mb=1024 * 50,
-    priority: 20
+    priority: 100
     threads: get_threads("python3", 1)
     script:
         "../scripts/pybaleen_postprocess.py"
