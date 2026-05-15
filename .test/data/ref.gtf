@@ -1,0 +1,7 @@
+##description: E. coli rRNA reference
+##provider: Genome
+##format: gtf
+chr1	test	rRNA	1	1544	.	+	.	gene_id "ecoli16S"; transcript_id "ecoli16S";
+chr1	test	exon	1	1544	.	+	.	gene_id "ecoli16S"; transcript_id "ecoli16S";
+chr1	test	rRNA	1545	5534	.	+	.	gene_id "ecoli23S"; transcript_id "ecoli23S";
+chr1	test	exon	1545	5534	.	+	.	gene_id "ecoli23S"; transcript_id "ecoli23S";

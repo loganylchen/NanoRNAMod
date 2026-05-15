@@ -1,131 +1,147 @@
-rule post_xpore_sampled:
-    input:
-        "results/xpore/{native}_{control}-{sample_size}-{n}/diffmod.table",
-    output:
-        "results/xpore/{native}_{control}-{sample_size}-{n}/xpore_results.tsv"
-    params:
-        tool="xpore",
-    log:
-        "logs/post_xpore_sampled_format/{native}_{control}_{sample_size}_{n}.log"
-    benchmark:
-        "benchmarks/{native}_{control}_{sample_size}_{n}.post_xpore_sampled_format.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
-    script:
-        "../scripts/format.py"
-
-
 rule post_xpore:
     input:
-        "results/xpore/{native}_{control}/diffmod.table",
+        "{project}/results/xpore/{native}_{control}/diffmod.table",
     output:
-        "results/xpore/{native}_{control}/xpore_results.tsv"
+        "{project}/results/modifications/xpore/{native}_{control}/xpore_results.tsv",
     params:
         tool="xpore",
+    container:
+        get_container("python3")
     log:
-        "logs/post_xpore_sampled_format/{native}_{control}.log"
+        "logs/{project}/post_xpore_sampled_format/{native}_{control}.log",
     benchmark:
-        "benchmarks/{native}_{control}.post_xpore_sampled_format.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
-    script:
-        "../scripts/format.py"
-
-rule post_baleen_sampled:
-    input:
-        'results/baleen/{native}_{control}-{sample_size}-{n}/transcripts.csv'
-    output:
-        "results/baleen/{native}_{control}-{sample_size}-{n}/baleen_results.tsv"
-    params:
-        tool="baleen",
-    log:
-        "logs/post_baleen_sampled_format/{native}_{control}_{sample_size}_{n}.log"
-    benchmark:
-        "benchmarks/{native}_{control}_{sample_size}_{n}.post_baleen_sampled_format.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
+        "benchmarks/{project}/{native}_{control}.post_xpore_sampled_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    priority: 95
+    threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
 
 
-rule post_baleen:
+rule post_nanocompore:
     input:
-        'results/baleen/{native}_{control}/transcripts.csv'
+        "{project}/results/nanocompore/{native}_{control}/nanocompore_results.tsv",
+        "{project}/results/nanocompore/{native}_{control}",
     output:
-        "results/baleen/{native}_{control}/baleen_results.tsv"
+        "{project}/results/modifications/nanocompore/{native}_{control}/nanocompore_results.tsv",
     params:
-        tool="baleen",
+        tool="nanocompore",
+    container:
+        get_container("python3")
+    priority: 86
     log:
-        "logs/post_baleen_sampled_format/{native}_{control}.log"
+        "logs/{project}/post_nanocompore_sampled_format/{native}_{control}.log",
     benchmark:
-        "benchmarks/{native}_{control}.post_baleen_sampled_format.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
-    script:
-        "../scripts/format.py"
-
-rule post_differr_sampled:
-    input:
-        'results/differr/{native}_{control}-{sample_size}-{n}/differr.bed'
-    output:
-        "results/differr/{native}_{control}-{sample_size}-{n}/differr_results.tsv"
-    params:
-        tool="differr",
-    log:
-        "logs/post_differr_sampled_format/{native}_{control}_{sample_size}_{n}.log"
-    benchmark:
-        "benchmarks/{native}_{control}_{sample_size}_{n}.post_differr_sampled_format.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
+        "benchmarks/{project}/{native}_{control}.post_nanocompore_sampled_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
 
 
 rule post_differr:
     input:
-        'results/differr/{native}_{control}/differr.bed'
+        "{project}/results/differr/{native}_{control}/differr.bed",
     output:
-        "results/differr/{native}_{control}/differr_results.tsv"
+        "{project}/results/modifications/differr/{native}_{control}/differr_results.tsv",
     params:
         tool="differr",
+    container:
+        get_container("python3")
+    priority: 75
     log:
-        "logs/post_differr_sampled_format/{native}_{control}.log"
+        "logs/{project}/post_differr_sampled_format/{native}_{control}.log",
     benchmark:
-        "benchmarks/{native}_{control}.post_differr_sampled_format.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
+        "benchmarks/{project}/{native}_{control}.post_differr_sampled_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
 
 
 rule post_epinano:
     input:
-        'results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv'
+        "{project}/results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv",
+        "{project}/results/epinano/{native}_{control}",
     output:
-        "results/epinano/{native}_{control}/epinano_results.tsv"
+        "{project}/results/modifications/epinano/{native}_{control}/epinano_results.tsv",
     params:
         tool="epinano",
+    container:
+        get_container("python3")
+    resources:
+        mem_mb=1024 * 50,
+    priority: 68
+    threads: get_threads("python3", 1)
     log:
-        "logs/post_epinano_sampled_format/{native}_{control}.log"
+        "logs/{project}/post_epinano_sampled_format/{native}_{control}.log",
     benchmark:
-        "benchmarks/{native}_{control}.post_epinano_sampled_format.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
+        "benchmarks/{project}/{native}_{control}.post_epinano_sampled_format.benchmark.txt"
     script:
         "../scripts/format.py"
 
-rule post_epinano_sampled:
+
+rule post_eligos2:
     input:
-        'results/epinano/{native}_{control}-{sample_size}-{n}/epinano.delta-sum_err.prediction.csv'
+        "{project}/results/eligos2/{native}_{control}/{native}_vs_{control}_on_{native}_{control}_baseExt0.txt",
+        "{project}/results/eligos2/{native}_{control}",
     output:
-        "results/epinano/{native}_{control}-{sample_size}-{n}/epinano_results.tsv"
+        "{project}/results/modifications/eligos2/{native}_{control}/eligos2_results.tsv",
     params:
-        tool="epinano",
+        tool="eligos2",
+    container:
+        get_container("python3")
+    resources:
+        mem_mb=1024 * 50,
+    threads: get_threads("python3", 1)
+    priority: 72
     log:
-        "logs/post_epinano_sampled_format/{native}_{control}-{sample_size}-{n}.log"
+        "logs/{project}/post_eligos2_sampled_format/{native}_{control}.log",
     benchmark:
-        "benchmarks/{native}_{control}-{sample_size}-{n}.post_epinano_sampled_format.benchmark.txt"
-    conda:
-        "../envs/pandas.yaml"
+        "benchmarks/{project}/{native}_{control}.post_eligos2_sampled_format.benchmark.txt"
     script:
         "../scripts/format.py"
+
+
+rule post_drummer:
+    input:
+        "{project}/results/drummer/{native}_{control}/",
+    output:
+        "{project}/results/modifications/drummer/{native}_{control}/drummer_results.tsv",
+    params:
+        tool="drummer",
+    container:
+        get_container("python3")
+    resources:
+        mem_mb=1024 * 50,
+    threads: get_threads("python3", 1)
+    priority: 78
+    log:
+        "logs/{project}/post_drummer_sampled_format/{native}_{control}.log",
+    benchmark:
+        "benchmarks/{project}/{native}_{control}.post_drummer_sampled_format.benchmark.txt"
+    script:
+        "../scripts/format.py"
+
+
+# pybaleen post-processing
+rule post_pybaleen:
+    input:
+        result="{project}/results/pybaleen/{native}_{control}/site_results.tsv",
+    output:
+        result="{project}/results/modifications/pybaleen/{native}_{control}/pybaleen_results.tsv",
+    container:
+        get_container("python3")
+    log:
+        "logs/{project}/post_pybaleen_format/{native}_{control}.log",
+    benchmark:
+        "benchmarks/{project}/{native}_{control}.post_pybaleen_format.benchmark.txt"
+    resources:
+        mem_mb=1024 * 50,
+    priority: 100
+    threads: get_threads("python3", 1)
+    script:
+        "../scripts/pybaleen_postprocess.py"

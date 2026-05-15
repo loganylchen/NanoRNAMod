@@ -1,20 +1,49 @@
 rule minimap2_transcriptome_align:
     input:
-        fastq="results/fastq/{sample}.fq.gz",
+        fastq="{project}/results/fastq/{sample}.fq.gz",
     output:
-        bam="results/alignments/{sample}.bam",
-        csi="results/alignments/{sample}.bam.csi",
-        bai="results/alignments/{sample}.bam.bai",
+        bam=temp("{project}/results/alignments/{sample}.bam"),
+        csi=temp("{project}/results/alignments/{sample}.bam.csi"),
+        bai=temp("{project}/results/alignments/{sample}.bam.bai"),
     log:
-        "logs/minimap2_transcriptome_alignment/{sample}.log"
+        "logs/{project}/minimap2_transcriptome_alignment/{sample}.log",
     benchmark:
-        "benchmarks/{sample}.minimap2_transcriptome_alignment.benchmark.txt"
-    conda:
-        "../envs/minimap2.yaml"
+        "benchmarks/{project}/{sample}.minimap2_transcriptome_alignment.benchmark.txt"
+    container:
+        get_container("minimap2")
     params:
         extra=config["params"]["minimap2_transcriptome"],
-        reference=config['reference']['transcriptome_fasta'],
-    threads: config['threads']['minimap2']
+        reference=config["reference"]["transcriptome_fasta"],
+    resources:
+        mem_mb = 1024 * 30
+    threads: get_threads("minimap2", 4)
+    priority: 97
+    shell:
+        "minimap2 -t {threads} {params.extra} {params.reference} {input.fastq} 2>> {log} "
+        "| samtools view -Sbh "
+        "| samtools sort - -o {output.bam} --write-index 2>>{log} && "
+        "samtools index {output.bam}"
+
+
+rule minimap2_genome_align:
+    input:
+        fastq="{project}/results/fastq/{sample}.fq.gz",
+    output:
+        bam=temp("{project}/results/alignments/{sample}.splice.bam"),
+        csi=temp("{project}/results/alignments/{sample}.splice.bam.csi"),
+        bai=temp("{project}/results/alignments/{sample}.splice.bam.bai"),
+    log:
+        "logs/{project}/minimap2_genome_alignment/{sample}.log",
+    benchmark:
+        "benchmarks/{project}/{sample}.minimap2_genome_alignment.benchmark.txt"
+    container:
+        get_container("minimap2")
+    params:
+        extra=config["params"]["minimap2_genome"],
+        reference=config["reference"]["genome_fasta"],
+    resources:
+        mem_mb = 1024 * 30
+    threads: get_threads("minimap2", 4)
     shell:
         "minimap2 -t {threads} {params.extra} {params.reference} {input.fastq} 2>> {log} "
         "| samtools view -Sbh "

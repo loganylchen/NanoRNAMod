@@ -1,8 +1,10 @@
-name: pandas
+name: matplotlib
 channels:
   - conda-forge
   - bioconda
 dependencies:
+  - python>=3.8
   - pandas
   - numpy
-  - scikit-learn
+  - matplotlib
+  - seaborn

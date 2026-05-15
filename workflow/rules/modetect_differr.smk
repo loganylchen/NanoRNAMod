@@ -1,22 +1,25 @@
 rule differr:
     input:
-        control_bam="results/alignments/{control}_filtered.bam",
-        control_bai="results/alignments/{control}_filtered.bam.bai",
-        native_bam="results/alignments/{native}_filtered.bam",
-        native_bai="results/alignments/{native}_filtered.bam.bai",
-        reference=config['reference']['transcriptome_fasta']
+        control_bam="{project}/results/alignments/{control}.bam",
+        control_bai="{project}/results/alignments/{control}.bam.bai",
+        native_bam="{project}/results/alignments/{native}.bam",
+        native_bai="{project}/results/alignments/{native}.bam.bai",
+        reference=config["reference"]["transcriptome_fasta"],
     output:
-        "results/differr/{native}_{control}/differr.bed"
+        temp("{project}/results/differr/{native}_{control}/differr.bed"),
     params:
         prefix="",
-        extra=config['params']['differr']
-    log:
-        stdout="logs/differr/{native}_{control}.log"
-    threads: config['threads']['differr']
-    benchmark:
-        "benchmarks/{native}_{control}.differr.benchmark.txt"
+        extra=config["params"]["differr"],
     container:
-        "docker://btrspg/differr:latest"
+        get_container("differr")
+    log:
+        "logs/{project}/differr/{native}_{control}.log",
+    threads: get_threads("differr", 4)
+    resources:
+        mem_mb = 1024 * 50
+    priority: 74
+    benchmark:
+        "benchmarks/{project}/{native}_{control}.differr.benchmark.txt"
     shell:
         "differr "
         " -a {input.control_bam} "
@@ -24,35 +27,9 @@ rule differr:
         " -r {input.reference} "
         " -o {output} "
         " {params.extra} "
-        " -p {threads} 2>{log}"
-
-
-
-
-rule differr_sampled:
-    input:
-        control_bam="results/alignments/{control}_filtered_{sample_size}_{n}.bam",
-        control_bai="results/alignments/{control}_filtered_{sample_size}_{n}.bam.bai",
-        native_bam="results/alignments/{native}_filtered_{sample_size}_{n}.bam",
-        native_bai="results/alignments/{native}_filtered_{sample_size}_{n}.bam.bai",
-        reference=config['reference']['transcriptome_fasta']
-    output:
-        "results/differr/{native}_{control}-{sample_size}-{n}/differr.bed"
-    params:
-        prefix="",
-        extra=config['params']['differr']
-    log:
-        stdout="logs/differr/{native}_{control}-{sample_size}-{n}.log"
-    threads: config['threads']['differr']
-    benchmark:
-        "benchmarks/{native}_{control}-{sample_size}-{n}.differr.benchmark.txt"
-    container:
-        "docker://btrspg/differr:latest"
-    shell:
-        "differr "
-        " -a {input.control_bam} "
-        " -b {input.native_bam} "
-        " -r {input.reference} "
-        " -o {output} "
-        " {params.extra} "
-        " -p {threads} 2>{log} "
+        " -p {threads} 1>{log} 2>&1; "
+        "status=$?; "
+        "if [ $status -eq 0 ] && [ ! -f {output} ]; then "
+        "  mkdir -p $(dirname {output}) && touch {output}; "
+        "fi; "
+        "exit $status"

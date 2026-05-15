@@ -5,6 +5,8 @@ type: object
 properties:
   samples:
     type: string
+  project:
+    type: string
   reference:
     type: object
     properties:
@@ -66,10 +68,9 @@ properties:
       nanocompore:
         type: integer
 
-
-
 required:
   - samples
+  - project
   - params
   - reference
   - threads

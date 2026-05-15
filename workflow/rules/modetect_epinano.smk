@@ -1,97 +1,54 @@
 rule epinano_prep:
     input:
-        sample_bam="results/alignments/{sample}_filtered.bam",
-        sample_bai="results/alignments/{sample}_filtered.bam.bai",
-        reference=config['reference']['transcriptome_fasta'],
-        reference_dict=config['reference']['transcriptome_fasta'] + '.dict'
+        sample_bam="{project}/results/alignments/{sample}.bam",
+        sample_bai="{project}/results/alignments/{sample}.bam.bai",
+        reference=config["reference"]["transcriptome_fasta"],
+        reference_fai=config["reference"]["transcriptome_fasta"] + ".fai",
+        reference_dict=config["reference"]["transcriptome_fasta"] + ".dict",
     output:
-        per_site = "results/alignments/{sample}_filtered.plus_strand.per.site.csv",
-        sum_err="results/alignments/{sample}_filtered.plus.sumErrOut.csv",
-        # kmer_5_site = "results/alignments/{sample}_filtered.plus_strand.per.site.5mer.csv",
-        # dump_csv = "results/alignments/{sample}_filtered.q3.mis3.del3.MODEL.rrach.q3.mis3.del3.linear.dump.csv"
+        per_site=temp(
+            "{project}/results/alignments/{sample}.plus_strand.per.site.var.csv"
+        ),
+        sum_err=temp(
+            "{project}/results/alignments/{sample}.plus_strand.per.site.var.csv.per.site.var.sum_err.csv"
+        ),
     params:
-        extra=config['params']['epinano_dataprep'],
-        prefix="results/alignments/{sample}_filtered"
-    threads: config['threads']['epinano']
-    log:
-        "logs/epinano_prep/{sample}.log"
-    benchmark:
-        "benchmarks/{sample}.epinano_prep.benchmark.txt"
+        extra=config["params"]["epinano_dataprep"],
     container:
-        "docker://btrspg/epinano:latest"
-    script:
-        "../scripts/epinano_prep.sh"
-
-# rule epinano_
-
-rule epinano_prep_sampled:
-    input:
-        sample_bam="results/alignments/{sample}_filtered_{sample_size}_{n}.bam",
-        sample_bai="results/alignments/{sample}_filtered_{sample_size}_{n}.bam.bai",
-        reference=config['reference']['transcriptome_fasta'],
-        reference_dict=config['reference']['transcriptome_fasta'] + '.dict'
-    output:
-        per_site = "results/alignments/{sample}_filtered_{sample_size}_{n}.plus_strand.per.site.csv",
-        sum_err ="results/alignments/{sample}_filtered_{sample_size}_{n}.plus.sumErrOut.csv",
-        # kmer_5_site = "results/alignments/{sample}_filtered_{sample_size}_{n}.plus_strand.per.site.5mer.csv",
-        # dump_csv = "results/alignments/{sample}_filtered_{sample_size}_{n}.q3.mis3.del3.MODEL.rrach.q3.mis3.del3.linear.dump.csv"
-    params:
-        extra=config['params']['epinano_dataprep'],
-        prefix="results/alignments/{sample}_filtered_{sample_size}_{n}"
-    threads: config['threads']['epinano']
+        get_container("epinano")
+    threads: get_threads("epinano", 4)
+    resources:
+        mem_mb = 1024 * 50
+    priority: 66
     log:
-        "logs/epinano_prep/{sample}_{sample_size}_{n}.log"
+        "logs/{project}/epinano_prep/{sample}.log",
     benchmark:
-        "benchmarks/{sample}_{sample_size}_{n}.epinano_prep.benchmark.txt"
-    container:
-        "docker://btrspg/epinano:latest"
+        "benchmarks/{project}/{sample}.epinano_prep.benchmark.txt"
     script:
         "../scripts/epinano_prep.sh"
 
 
 rule epinano:
     input:
-        control="results/alignments/{control}_filtered.plus_strand.per.site.csv",
-        native="results/alignments/{native}_filtered.plus_strand.per.site.csv",
+        control="{project}/results/alignments/{control}.plus_strand.per.site.var.csv.per.site.var.sum_err.csv",
+        native="{project}/results/alignments/{native}.plus_strand.per.site.var.csv.per.site.var.sum_err.csv",
     output:
-        "results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv"
+        results=temp("{project}/results/epinano/{native}_{control}/epinano.delta-sum_err.prediction.csv"),
+        output_dir=temp(
+            directory("{project}/results/epinano/{native}_{control}")
+        ),
     params:
-        extra=config['params']['epinano'],
-        prefix="results/epinano/{native}_{control}/epinano"
-    threads: config['threads']['epinano']
-    log:
-        "logs/epinano/{native}_{control}.log"
-    benchmark:
-        "benchmarks/{native}_{control}.epinano.benchmark.txt"
+        extra=config["params"]["epinano"],
+        prefix="{project}/results/epinano/{native}_{control}/epinano",
     container:
-        "docker://btrspg/epinano:latest"
-    shell:
-        "Rscript /opt/Epinano/Epinano_DiffErr.R "
-        "-k {input.control} "
-        "-w {input.native} "
-        "-o {params.prefix} "
-        "{params.extra} 2>{log}"
-
-rule epinano_sampled:
-    input:
-        control="results/alignments/{control}_filtered_{sample_size}_{n}.plus_strand.per.site.csv",
-        native="results/alignments/{native}_filtered_{sample_size}_{n}.plus_strand.per.site.csv",
-    output:
-        "results/epinano/{native}_{control}-{sample_size}-{n}/epinano.delta-sum_err.prediction.csv"
-    params:
-        extra=config['params']['epinano'],
-        prefix="results/epinano/{native}_{control}-{sample_size}-{n}/epinano"
-    threads: config['threads']['epinano']
+        get_container("epinano")
+    priority: 67
+    threads: get_threads("epinano", 4)
+    resources:
+        mem_mb = 1024 * 50
     log:
-        "logs/epinano/{native}_{control}_{sample_size}_{n}.log"
+        "logs/{project}/epinano/{native}_{control}.log",
     benchmark:
-        "benchmarks/{native}_{control}_{sample_size}_{n}.epinano.benchmark.txt"
-    container:
-        "docker://btrspg/epinano:latest"
-    shell:
-        "Rscript /opt/Epinano/Epinano_DiffErr.R "
-        "-k {input.control} "
-        "-w {input.native} "
-        "-o {params.prefix} "
-        "{params.extra} 2>{log}"
-
+        "benchmarks/{project}/{native}_{control}.epinano.benchmark.txt"
+    script:
+        "../scripts/epinano_differr.sh"

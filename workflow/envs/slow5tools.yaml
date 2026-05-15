@@ -1,5 +1,6 @@
+name: slow5tools
 channels:
   - conda-forge
   - bioconda
 dependencies:
-  - slow5tools =0.6.0
+  - slow5tools =1.1.0

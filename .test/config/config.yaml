@@ -1,56 +1,61 @@
 # path or URL to sample sheet (TSV format, columns: SampleName, Condition, Directory...)
 samples: config/samples.tsv
-
+project: RNAModProject
+only_final_results: True
+qc: False
+# Temp directory for all shell rules and subprocesses. Set to an absolute
+# path or a path relative to the working directory. Defaults to "tmp" in
+# the working directory to avoid filling up /tmp on shared systems.
+tmpdir: tmp
 params:
-  minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 1 "
+  minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 10 -p 0 "
   minimap2_genome: " -ax splice -u f -k 14 -G 500000 --secondary=no "
-  samtools_filtering: " -F0x2324 -q 10 --min-qlen 80 "
-  tombo_lsc: " --store-p-value --minimum-test-reads 2 "
-  tombo_msc: " --minimum-test-reads 2 --rna "
-  tombo_resquiggle: " --num-most-common-errors 5 --overwrite --rna --skip-index "
-  f5c_eventalign_nanocompore: "--print-read-names --signal-index --scale-events --min-mapq 0 --min-recalib-events 50 --samples --rna "
-  f5c_eventalign_baleen: "--print-read-names --signal-index --scale-events --min-mapq 0 --min-recalib-events 50 --samples --rna "
-  f5c_eventalign_xpore: "--signal-index --scale-events --min-recalib-events 50 --min-mapq 0 --rna "
-  nanocompore: "--logit --min_ref_length 50 --overwrite --min_coverage 5 "
-  baleen: "  --min-mapq 20 --read-number-threshold 20 --padding 3   "
-  baleen_bf: ""
+  samtools_filtering: " -F 2324 -q 10 --min-qlen 80 "
+  f5c_eventalign_full: "--print-read-names --scale-events --min-mapq 0 --min-recalib-events 50 --samples --rna "
+  f5c_eventalign_simple: "--signal-index --scale-events --min-recalib-events 50 --min-mapq 0 --rna "
+  # nanocompore: "--logit --min_ref_length 50 --overwrite --min_coverage 1 "
+  nanocompore: "--logit  --overwrite "
+  xpore_dataprep: ""
   lafite: ""
-  xpore: "genome"
-
+  xpore: ""
+  differr: " -f 2  --median-expr-threshold 0  --min-expr-threshold 0 "
+  # eligos2: "--max_depth 5000000 --min_depth 5 --esb 0 --oddR 0 --pval 1"
+  eligos2: "--max_depth 5000000  --esb 0 --oddR 0 --pval 1"
+  epinano: '-f sum_err'
+  epinano_dataprep: ''
+  drummer: ' -z 0.1 -p 1 '
 
 threads:
-  minimap2: 12
-  multi_to_single: 24
-  tombo: 24
-  slow5tools: 8
-  f5c: 32
-  m6anet: 32
-  nanocompore: 12
-  baleen: 12
-  lafite: 20
-
+  minimap2: 4
+  slow5tools: 4
+  f5c: 4
+  nanocompore: 4
+  xpore: 4
+  sample_reads: 4
+  differr: 4
+  eligos2: 4
+  drummer: 4
+  epinano: 4
 
 reference:
-  genome_fasta: data/ref.fasta
-  transcriptome_fasta: data/ref.fasta
-  transcriptome_gtf: transcriptome.gtf
+  genome_fasta: data/ref.fa
+  transcriptome_fasta: data/ref.fa
+  transcriptome_gtf: data/ref.gtf
+
 
 
 tools:
-  tombo_lsc:
-    activate: True
-  tombo_msc:
-    activate: True
   xpore:
     activate: True
   nanocompore:
     activate: True
-  m6anet:
+  differr:
     activate: True
-  baleen:
+  drummer:
+    activate: True
+  eligos2:
+    activate: True
+  epinano:
     activate: True
 
 target_region: ''
-
-
-

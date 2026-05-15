@@ -1,5 +1,7 @@
+name: nanocompore
 channels:
   - conda-forge
   - bioconda
 dependencies:
   - nanocompore =1.0.4
+  - pyparsing =3.1.1

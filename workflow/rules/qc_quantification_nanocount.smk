@@ -1,17 +1,19 @@
 rule quant_nanocount:
     input:
-        bam="results/alignments/{sample}.bam",
+        bam="{project}/results/alignments/{sample}.bam",
     output:
-        count_tsv="results/quantification/{sample}.tx_counts.tsv"
-    benchmark:
-        "benchmarks/{sample}.quantification_nanocount.benchmark.txt"
-    log:
-        "logs/qc/{sample}_quantification_nanocount.log"
+        count_tsv="{project}/results/quantification/{sample}.tx_counts.tsv",
     container:
-        "docker://btrspg/nanocount:latest"
+        get_container("nanocount")
+    benchmark:
+        "benchmarks/{project}/{sample}.quantification_nanocount.benchmark.txt"
+    log:
+        "logs/{project}/qc/{sample}_quantification_nanocount.log",
+    priority: 20
+    resources:
+        mem_mb=1024 * 10,
+        disk_mb=1024 * 10,
     shell:
         "NanoCount -i {input.bam}  "
         "--extra_tx_info "
-        "-o {output.count_tsv} > {log}"
-
-
+        "-o {output.count_tsv} 1>{log} 2>&1"

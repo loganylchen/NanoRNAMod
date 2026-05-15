@@ -1,30 +1,204 @@
 # libraries
 
 import os
+import shlex
+import subprocess
 from snakemake.utils import min_version
 
 min_version("6.4.1")
 
 
+##### version tracking #####
+
+def find_workflow_directory():
+    """
+    Find the workflow directory using multiple heuristics.
+
+    When Snakemake loads a Snakefile, __file__ may point to unexpected locations.
+    This function tries several methods to find the actual workflow directory.
+
+    Returns:
+        tuple: (workflow_dir, project_root) where project_root is parent of workflow/
+    """
+    cwd = os.getcwd()
+
+    # Method 1: Check current working directory for workflow/Snakefile
+    snakefile_in_cwd = os.path.join(cwd, "workflow", "Snakefile")
+    if os.path.exists(snakefile_in_cwd):
+        return os.path.dirname(snakefile_in_cwd), cwd
+
+    # Method 2: Check if we're already in workflow directory
+    snakefile_here = os.path.join(cwd, "Snakefile")
+    if os.path.exists(snakefile_here):
+        return cwd, os.path.dirname(cwd)
+
+    # Method 3: Walk up from cwd looking for workflow/Snakefile
+    search_dir = cwd
+    for _ in range(10):  # Max 10 levels up
+        candidate = os.path.join(search_dir, "workflow", "Snakefile")
+        if os.path.exists(candidate):
+            return os.path.dirname(candidate), search_dir
+        parent = os.path.dirname(search_dir)
+        if parent == search_dir:  # Reached root
+            break
+        search_dir = parent
+
+    # Method 4: Look for .snakedeploy file which indicates deployment root
+    search_dir = cwd
+    for _ in range(10):
+        snakedeploy_file = os.path.join(search_dir, ".snakedeploy")
+        if os.path.exists(snakedeploy_file):
+            # Found deployment root, check for workflow/Snakefile
+            candidate = os.path.join(search_dir, "workflow", "Snakefile")
+            if os.path.exists(candidate):
+                return os.path.dirname(candidate), search_dir
+        parent = os.path.dirname(search_dir)
+        if parent == search_dir:
+            break
+        search_dir = parent
+
+    # Method 5: Look for .snakemake directory which indicates workflow root
+    search_dir = cwd
+    for _ in range(10):
+        if os.path.exists(os.path.join(search_dir, ".snakemake")):
+            candidate = os.path.join(search_dir, "workflow", "Snakefile")
+            if os.path.exists(candidate):
+                return os.path.dirname(candidate), search_dir
+        parent = os.path.dirname(search_dir)
+        if parent == search_dir:
+            break
+        search_dir = parent
+
+    return None, None
+
+
+def get_workflow_version():
+    """
+    Get workflow version (commit SHA) for tracking.
+
+    Works with:
+    - git clone (direct development)
+    - snakedeploy deployments
+    - archived releases
+    """
+    workflow_dir, project_root = find_workflow_directory()
+
+    if not workflow_dir:
+        return "unknown"
+
+    # Try git rev-parse to get full commit SHA
+    for search_dir in [workflow_dir, project_root]:
+        if not search_dir:
+            continue
+        try:
+            result = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=search_dir,
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                commit_sha = result.stdout.strip()
+                # Check if dirty
+                status_result = subprocess.run(
+                    ["git", "status", "--porcelain"],
+                    cwd=search_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                if status_result.returncode == 0 and status_result.stdout.strip():
+                    return f"{commit_sha}-dirty"
+                return commit_sha
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
+
+    # Check for .snakedeploy metadata (at project root level)
+    if project_root:
+        snakedeploy_file = os.path.join(project_root, ".snakedeploy")
+        if os.path.exists(snakedeploy_file):
+            with open(snakedeploy_file) as f:
+                import json
+                try:
+                    data = json.load(f)
+                    # snakedeploy stores commit SHA in "commit" field
+                    if "commit" in data:
+                        return data["commit"]
+                except json.JSONDecodeError:
+                    pass
+
+    # Check for VERSION file (can be created manually or by CI)
+    for search_dir in [workflow_dir, project_root]:
+        if not search_dir:
+            continue
+        version_file = os.path.join(search_dir, "VERSION")
+        if os.path.exists(version_file):
+            with open(version_file) as f:
+                return f.read().strip()
+
+    return "unknown"
+
+
+# Print version at workflow startup
+WORKFLOW_VERSION = get_workflow_version()
+print(f"\n{'='*60}")
+print(f"NanoRNAMod Workflow Version: {WORKFLOW_VERSION}")
+print(f"Started at: {__import__('datetime').datetime.now().isoformat()}")
+print(f"{'='*60}\n")
+
+
 wildcard_constraints:
-    sample="[\da-zA-Z]+_?[\d]*",
-    control="[\da-zA-Z]+_?[\d]*",
-    native="[\da-zA-Z]+_?[\d]*",
-    sample_size="[\d]+",
-    n="[\d]+"
-
-
+    sample="[\da-zA-Z]+_?[0-9]*",
+    control="[\da-zA-Z]+_?[0-9]*",
+    native="[\da-zA-Z]+_?[0-9]*",
+    sample_size="[0-9]+",
+    n="[0-9]+",
+    project="[\da-zA-Z]+_?[0-9]*",
+    tool="[a-z0-9]+",
 
 
 ##### setup report #####
 configfile: "config/config.yaml"
 
+
 ##### setup singularity #####
 
 
-# this container defines the underlying OS for each job when using the workflow
-# with --use-conda --use-singularity
-container: "docker://condaforge/mambaforge:22.11.1-4"
+##### configurable tmp directory #####
+# /tmp is often small and shared on HPC systems. Allow users to override the
+# tmp directory via config (defaults to ./tmp in the working directory).
+#
+# This follows Snakemake's idiomatic tmpdir handling:
+#   1. os.environ["TMPDIR"] is set so all subprocesses inherit it. Snakemake
+#      itself uses $TMPDIR as the default for the special `tmpdir` resource.
+#   2. We register it as a default resource so rules can refer to it via
+#      `resources.tmpdir` and so it is tracked in benchmarks/reports. Users
+#      can still override via `--default-resources tmpdir=/path` on the CLI.
+_tmpdir = os.path.abspath(os.path.expanduser(config.get("tmpdir") or "tmp"))
+os.makedirs(_tmpdir, exist_ok=True)
+os.environ["TMPDIR"] = _tmpdir
+
+# Only set the default if the user hasn't already provided one via the CLI
+# (e.g. `--default-resources "tmpdir='/scratch/...'"`). Setting unconditionally
+# would silently override the user's intent.
+try:
+    _existing = getattr(workflow.default_resources, "parsed", None) or {}
+    if "tmpdir" not in _existing:
+        workflow.default_resources.set_resource("tmpdir", _tmpdir)
+except Exception:
+    # Older Snakemake versions: env-var inheritance alone is enough.
+    pass
+
+
+##### raise file-descriptor limit for every shell rule #####
+# The mkdir keeps the tmpdir present even if some other process cleans it
+# mid-run. TMPDIR itself is inherited via os.environ above.
+shell.prefix(
+    "ulimit -n 65536 2>/dev/null || true; "
+    f"mkdir -p {shlex.quote(_tmpdir)}; "
+)
+
 
 report: "report/workflow.rst"
 
@@ -32,30 +206,30 @@ report: "report/workflow.rst"
 include: "rules/common.smk"
 include: "rules/prep_data_prep.smk"
 include: "rules/prep_align_minimap2.smk"
-include: "rules/prep_readsfiltering.smk"
 include: "rules/prep_index_f5c.smk"
 include: "rules/prep_eventalign_f5c.smk"
 include: "rules/prep_reference.smk"
 include: "rules/modetect_xpore.smk"
 include: "rules/modetect_nanocompore.smk"
-include: "rules/modetect_baleen.smk"
 include: "rules/modetect_differr.smk"
 include: "rules/modetect_drummer.smk"
 include: "rules/modetect_eligos2.smk"
 include: "rules/modetect_epinano.smk"
+include: "rules/modetect_pybaleen.smk"
 include: "rules/post_format.smk"
 include: "rules/qc_quantification_nanocount.smk"
+include: "rules/qc_coverage_qualimap.smk"
+include: "rules/qc_fastq_nanoplot.smk"
+include: "rules/qc_bam_samtools.smk"
+include: "rules/polya_estimate_nanopolish.smk"
+include: "rules/qc_variants_bcftools.smk"
 
 
 ##### target rules #####
 
 
-
-
-
 rule all:
     input:
         get_final_output(),
-        
         # "results/qc/multiqc_report.html",
         # "results/pca.svg",

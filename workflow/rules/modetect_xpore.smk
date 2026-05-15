@@ -1,184 +1,119 @@
 rule uncompress_eventalign:
     input:
-        completion="results/eventalign/{sample}_simple.tsv.completed",
-        eventalign="results/eventalign/{sample}_simple.tsv.bz2",
+        completion="{project}/results/eventalign/{sample}_simple.tsv.completed",
+        eventalign="{project}/results/eventalign/{sample}_simple.tsv.bz2",
     output:
-        uc_eventalign = temp("results/eventalign/{sample}_simple.tsv.bz2.tmp"),
-        uc_completion = temp("results/eventalign/{sample}_simple.tsv.completed.tmp")
+        uc_eventalign=temp("{project}/results/eventalign/{sample}_simple.tsv.bz2.tmp"),
+        uc_completion=temp(
+            "{project}/results/eventalign/{sample}_simple.tsv.completed.tmp"
+        ),
     log:
-        "logs/uncompress_eventalign/{sample}.log"
+        "logs/{project}/uncompress_eventalign/{sample}.log",
     benchmark:
-        "benchmarks/{sample}.uncompress_eventalign.benchmark.txt"
-    threads: 1
+        "benchmarks/{project}/{sample}.uncompress_eventalign.benchmark.txt"
+    container:
+        get_container("default")
+    resources:
+        mem_mb = 1024 * 10
+    priority: 90
+    threads: get_threads("default", 1)
     shell:
         "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
 
-
-rule uncompress_eventalign_sampled:
-    input:
-        completion="results/eventalign/{sample}_simple_{sample_size}_{n}.tsv.completed",
-        eventalign="results/eventalign/{sample}_simple_{sample_size}_{n}.tsv.bz2",
-    output:
-        uc_eventalign = temp("results/eventalign/{sample}_simple_{sample_size}_{n}.tsv.bz2.tmp"),
-        uc_completion = temp("results/eventalign/{sample}_simple_{sample_size}_{n}.tsv.completed.tmp")
-    log:
-        "logs/uncompress_eventalign_{sample_size}_{n}/{sample}.log"
-    benchmark:
-        "benchmarks/{sample}.uncompress_eventalign_{sample_size}_{n}.benchmark.txt"
-    threads: 1
-    shell:
-        "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
 
 rule xpore_dataprep:
     input:
-        completion="results/eventalign/{sample}_simple.tsv.completed.tmp",
-        eventalign="results/eventalign/{sample}_simple.tsv.bz2.tmp",
-        reference=config['reference']['transcriptome_fasta'],
+        completion="{project}/results/eventalign/{sample}_simple.tsv.completed.tmp",
+        eventalign="{project}/results/eventalign/{sample}_simple.tsv.bz2.tmp",
+        reference=config["reference"]["transcriptome_fasta"],
     output:
-        directory("results/dataprep/{sample}_xpore_dataprep")
+        temp(directory("{project}/results/dataprep/{sample}_xpore_dataprep")),
     log:
-        "logs/xpore_dataprep/{sample}.log"
+        "logs/{project}/xpore_dataprep/{sample}.log",
     benchmark:
-        "benchmarks/{sample}.xpore_dataprep.benchmark.txt"
-    threads: config['threads']['xpore']
+        "benchmarks/{project}/{sample}.xpore_dataprep.benchmark.txt"
+    container:
+        get_container("xpore")
+    threads: get_threads("xpore", 4)
+    priority: 91
+    resources:
+        mem_mb = 1024 * 50
     params:
-        extra=''
-    conda:
-        "../envs/xpore.yaml"
+        extra="",
     shell:
         "xpore dataprep "
         "--eventalign {input.eventalign} "
         "--transcript_fasta {input.reference} --n_processes {threads} "
         "{params.extra} "
         "--out_dir {output} 2>{log} "
-
-
-rule xpore_dataprep_sampled:
-    input:
-        completion="results/eventalign/{sample}_simple_{sample_size}_{n}.tsv.completed.tmp",
-        eventalign="results/eventalign/{sample}_simple_{sample_size}_{n}.tsv.bz2.tmp",
-        reference=config['reference']['transcriptome_fasta'],
-    output:
-        directory("results/dataprep/{sample}_xpore_dataprep_{sample_size}_{n}")
-    log:
-        "logs/xpore_dataprep_{sample_size}_{n}/{sample}.log"
-    benchmark:
-        "benchmarks/{sample}.xpore_dataprep_{sample_size}_{n}.benchmark.txt"
-    threads: config['threads']['xpore']
-    params:
-        extra=''
-    conda:
-        "../envs/xpore.yaml"
-    shell:
-        "xpore dataprep "
-        "--eventalign {input.eventalign} "
-        "--transcript_fasta {input.reference} --n_processes {threads} "
-        "{params.extra} "
-        "--out_dir {output} 2>{log} "
-
-
-
 
 
 rule xpore_config:
     input:
-        control_dir="results/dataprep/{control}_xpore_dataprep",
-        native_dir="results/dataprep/{native}_xpore_dataprep"
+        control_dir="{project}/results/dataprep/{control}_xpore_dataprep",
+        native_dir="{project}/results/dataprep/{native}_xpore_dataprep",
     output:
-        conf="results/xpore/{native}_{control}.xpore_config.yaml"
-    threads: 1
+        conf=temp("{project}/results/xpore/{native}_{control}.xpore_config.yaml"),
+    container:
+        get_container("xpore")
+    threads: get_threads("default", 1)
+    resources:
+        mem_mb = 1024 * 10
+    priority: 92
     params:
-        "results/xpore/{native}_{control}"
+        "{project}/results/xpore/{native}_{control}",
     log:
-        "logs/xpore_config/{native}_{control}.log"
+        "logs/{project}/xpore_config/{native}_{control}.log",
     script:
         "../scripts/xpore_config.py"
-
-
-rule xpore_config_sampled:
-    input:
-        control_dir="results/dataprep/{control}_xpore_dataprep_{sample_size}_{n}",
-        native_dir="results/dataprep/{native}_xpore_dataprep_{sample_size}_{n}"
-    output:
-        conf="results/xpore/{native}_{control}-{sample_size}-{n}.xpore_config.yaml"
-    threads: 1
-    params:
-        "results/xpore/{native}_{control}-{sample_size}-{n}"
-    log:
-        "logs/xpore_config/{native}_{control}_{sample_size}_{n}.log"
-    script:
-        "../scripts/xpore_config.py"
-
-
-
 
 
 rule xpore_run:
     input:
-        "results/xpore/{native}_{control}.xpore_config.yaml"
+        "{project}/results/xpore/{native}_{control}.xpore_config.yaml",
+        "{project}/results/dataprep/{control}_xpore_dataprep",
+        "{project}/results/dataprep/{native}_xpore_dataprep",
     output:
-        difftable="results/xpore/{native}_{control}/diffmod.table"
-    threads: config['threads']['xpore']
+        difftable=temp(
+            "{project}/results/xpore/{native}_{control}/diffmod.table"
+        ),
+    container:
+        get_container("xpore")
+    threads: get_threads("xpore", 4)
+    resources:
+        mem_mb = 1024 * 50
+    priority: 93
     log:
-        "logs/xpore/{native}_{control}.log"
+        "logs/{project}/xpore/{native}_{control}.log",
     benchmark:
-        "benchmarks/{native}_{control}.xpore.benchmark.txt"
-    conda:
-        "../envs/xpore.yaml"
+        "benchmarks/{project}/{native}_{control}.xpore.benchmark.txt"
     shell:
-        "xpore diffmod --config {input} --n_processes {threads} 2>{log}"
-
-rule xpore_run_sampled:
-    input:
-        "results/xpore/{native}_{control}-{sample_size}-{n}.xpore_config.yaml"
-    output:
-        difftable="results/xpore/{native}_{control}-{sample_size}-{n}/diffmod.table"
-    threads: config['threads']['xpore']
-    log:
-        "logs/xpore/{native}_{control}_{sample_size}_{n}.log"
-    benchmark:
-        "benchmarks/{native}_{control}_{sample_size}_{n}.xpore.benchmark.txt"
-    conda:
-        "../envs/xpore.yaml"
-    shell:
-        "xpore diffmod --config {input} --n_processes {threads} 2>{log}"
-
+        "xpore diffmod --config {input[0]} --n_processes {threads} 1>{log} 2>&1; "
+        "status=$?; "
+        "if [ $status -eq 0 ] && [ ! -f {output.difftable} ]; then "
+        "  mkdir -p $(dirname {output.difftable}) && touch {output.difftable}; "
+        "fi; "
+        "exit $status"
 
 
 rule xpore_postprocessing:
     input:
-        "results/xpore/{native}_{control}/diffmod.table"
+        "{project}/results/xpore/{native}_{control}/diffmod.table",
     output:
-        "results/xpore/{native}_{control}/majority_direction_kmer_diffmod.table"
-    threads: config['threads']['xpore']
+        temp(
+            "{project}/results/xpore/{native}_{control}/majority_direction_kmer_diffmod.table"
+        ),
+    container:
+        get_container("xpore")
+    threads: get_threads("default", 1)
+    resources:
+        mem_mb = 1024 * 50
+    priority: 94
     params:
-        "results/xpore/{native}_{control}"
-    threads: 1
+        "{project}/results/xpore/{native}_{control}",
     log:
-        "logs/xpore_postprocessing/{native}_{control}.log"
+        "logs/{project}/xpore_postprocessing/{native}_{control}.log",
     benchmark:
-        "benchmarks/{native}_{control}.xpore_postprocessing.benchmark.txt"
-    conda:
-        "../envs/xpore.yaml"
+        "benchmarks/{project}/{native}_{control}.xpore_postprocessing.benchmark.txt"
     shell:
         "xpore postprocessing --diffmod_dir {params}  2>{log}"
-
-rule xpore_postprocessing_sampled:
-    input:
-        "results/xpore/{native}_{control}-{sample_size}-{n}/diffmod.table"
-    output:
-        "results/xpore/{native}_{control}-{sample_size}-{n}/majority_direction_kmer_diffmod.table"
-    threads: config['threads']['xpore']
-    params:
-        "results/xpore/{native}_{control}-{sample_size}-{n}"
-    threads: 1
-    log:
-        "logs/xpore_postprocessing/{native}_{control}_{sample_size}_{n}.log"
-    benchmark:
-        "benchmarks/{native}_{control}_{sample_size}_{n}.xpore_postprocessing.benchmark.txt"
-    conda:
-        "../envs/xpore.yaml"
-    shell:
-        "xpore postprocessing --diffmod_dir {params}  2>{log}"
-
-

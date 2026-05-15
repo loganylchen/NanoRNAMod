@@ -1,3 +1,4 @@
+name: f5c
 channels:
   - conda-forge
   - bioconda

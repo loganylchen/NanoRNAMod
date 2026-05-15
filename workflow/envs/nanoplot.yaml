@@ -1,5 +1,6 @@
+name: nanoplot
 channels:
   - conda-forge
   - bioconda
 dependencies:
-  - m6anet =2.1.0
+  - nanoplot

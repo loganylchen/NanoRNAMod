@@ -1,3 +1,4 @@
+name: bedtools
 channels:
   - conda-forge
   - bioconda

@@ -13,5 +13,13 @@ rule create_dict:
     # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
     resources:
         mem_mb=10240,
-    wrapper:
-        "v3.10.2/bio/picard/createsequencedictionary"
+        disk_mb = 1024 * 10
+    container:
+        get_container("picard")
+    shell:
+        """
+        picard CreateSequenceDictionary \
+            R={input} \
+            O={output} \
+            {params.extra}
+        """

@@ -1,17 +1,28 @@
 rule f5c_index:
     input:
-        blow5="results/blow5/{sample}.blow5",
-        fastq="results/fastq/{sample}.fq.gz",
+        blow5="{project}/results/blow5/{sample}.blow5",
+        fastq="{project}/results/fastq/{sample}.fq.gz",
     output:
-        blow5_index="results/blow5/{sample}.blow5.idx",
-        fastq_index=multiext("results/fastq/{sample}.fq.gz",'.index','.index.fai','.index.gzi','.index.readdb')
-    log:
-        "logs/f5c_index/{sample}.log"
-    benchmark:
-        "benchmarks/{sample}.f5c_index.benchmark.txt"
+        blow5_index=temp("{project}/results/blow5/{sample}.blow5.idx"),
+        fastq_index=temp(
+            multiext(
+                "{project}/results/fastq/{sample}.fq.gz",
+                ".index",
+                ".index.fai",
+                ".index.gzi",
+                ".index.readdb",
+            )
+        ),
     container:
-        "docker://btrspg/f5c:dev"
-    threads: config['threads']['f5c']
+        get_container("f5c")
+    log:
+        "logs/{project}/f5c_index/{sample}.log",
+    benchmark:
+        "benchmarks/{project}/{sample}.f5c_index.benchmark.txt"
+    threads: get_threads("f5c", 4)
+    resources:
+        mem_mb = 1024 * 50,
+    priority: 98
     shell:
         "f5c index "
         "--slow5 {input.blow5} "
