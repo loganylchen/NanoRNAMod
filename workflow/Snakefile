@@ -72,22 +72,73 @@ def find_workflow_directory():
     return None, None
 
 
+def _read_version_file(candidate_dirs):
+    """Return the trimmed contents of the first VERSION file found, else None."""
+    for d in candidate_dirs:
+        if not d:
+            continue
+        version_file = os.path.join(d, "VERSION")
+        if os.path.exists(version_file):
+            try:
+                with open(version_file) as f:
+                    text = f.read().strip()
+                if text:
+                    return text
+            except OSError:
+                pass
+    return None
+
+
 def get_workflow_version():
     """
-    Get workflow version (commit SHA) for tracking.
+    Get workflow version for tracking.
 
-    Works with:
-    - git clone (direct development)
-    - snakedeploy deployments
-    - archived releases
+    Resolution order (first hit wins):
+    1. VERSION file next to this Snakefile or at the repo root
+       (works for `module + github(tag=...)` deploys, snakedeploy
+        with `tag:`, and archived tarballs).
+    2. .snakedeploy metadata in cwd / project root — supports both
+       legacy `commit` field and `tag` field.
+    3. `git rev-parse HEAD` in the workflow / project / cwd tree
+       (developer mode, with `-dirty` suffix when uncommitted).
+    4. "unknown" fallback.
     """
+    # Locate the workflow directory both via __file__ (works inside the
+    # snakemake-cache copy of the Snakefile loaded by `module github(...)`)
+    # and via the legacy cwd-based heuristics.
+    try:
+        snakefile_dir = os.path.dirname(os.path.abspath(__file__))
+    except NameError:
+        snakefile_dir = None
+    repo_root_from_file = os.path.dirname(snakefile_dir) if snakefile_dir else None
+
     workflow_dir, project_root = find_workflow_directory()
 
-    if not workflow_dir:
-        return "unknown"
+    # 1. VERSION file (release-time stamp; CI/Makefile keeps it in sync with tag)
+    version = _read_version_file(
+        [snakefile_dir, repo_root_from_file, workflow_dir, project_root]
+    )
+    if version:
+        return version
 
-    # Try git rev-parse to get full commit SHA
-    for search_dir in [workflow_dir, project_root]:
+    # 2. .snakedeploy metadata (legacy `commit`, modern `tag`)
+    import json
+    for d in [project_root, os.getcwd()]:
+        if not d:
+            continue
+        snakedeploy_file = os.path.join(d, ".snakedeploy")
+        if os.path.exists(snakedeploy_file):
+            try:
+                with open(snakedeploy_file) as f:
+                    data = json.load(f)
+                for key in ("tag", "commit", "branch"):
+                    if data.get(key):
+                        return str(data[key])
+            except (OSError, json.JSONDecodeError):
+                pass
+
+    # 3. git rev-parse (developer / git-clone mode)
+    for search_dir in [snakefile_dir, repo_root_from_file, workflow_dir, project_root]:
         if not search_dir:
             continue
         try:
@@ -96,46 +147,22 @@ def get_workflow_version():
                 cwd=search_dir,
                 capture_output=True,
                 text=True,
-                timeout=5
+                timeout=5,
             )
             if result.returncode == 0:
                 commit_sha = result.stdout.strip()
-                # Check if dirty
                 status_result = subprocess.run(
                     ["git", "status", "--porcelain"],
                     cwd=search_dir,
                     capture_output=True,
                     text=True,
-                    timeout=5
+                    timeout=5,
                 )
                 if status_result.returncode == 0 and status_result.stdout.strip():
                     return f"{commit_sha}-dirty"
                 return commit_sha
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pass
-
-    # Check for .snakedeploy metadata (at project root level)
-    if project_root:
-        snakedeploy_file = os.path.join(project_root, ".snakedeploy")
-        if os.path.exists(snakedeploy_file):
-            with open(snakedeploy_file) as f:
-                import json
-                try:
-                    data = json.load(f)
-                    # snakedeploy stores commit SHA in "commit" field
-                    if "commit" in data:
-                        return data["commit"]
-                except json.JSONDecodeError:
-                    pass
-
-    # Check for VERSION file (can be created manually or by CI)
-    for search_dir in [workflow_dir, project_root]:
-        if not search_dir:
-            continue
-        version_file = os.path.join(search_dir, "VERSION")
-        if os.path.exists(version_file):
-            with open(version_file) as f:
-                return f.read().strip()
 
     return "unknown"
 
