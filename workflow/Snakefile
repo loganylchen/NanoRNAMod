@@ -89,23 +89,40 @@ def _read_version_file(candidate_dirs):
     return None
 
 
+# Embedded workflow version. This is the SOURCE OF TRUTH for the version
+# string and MUST be bumped in lockstep with the git tag at release time.
+#
+# Rationale: when the workflow is loaded via `module github(tag=...)`,
+# Snakemake's source-cache only materialises the Snakefile + its explicit
+# includes — sibling files like VERSION or .git are NOT available, so we
+# cannot read them at runtime. The only file guaranteed to exist on the
+# remote-loader's filesystem is this Snakefile itself, so the version has
+# to live inline.
+__WORKFLOW_VERSION__ = "v0.1.2"
+
+
 def get_workflow_version():
     """
     Get workflow version for tracking.
 
     Resolution order (first hit wins):
-    1. VERSION file next to this Snakefile or at the repo root
-       (works for `module + github(tag=...)` deploys, snakedeploy
-        with `tag:`, and archived tarballs).
-    2. .snakedeploy metadata in cwd / project root — supports both
-       legacy `commit` field and `tag` field.
-    3. `git rev-parse HEAD` in the workflow / project / cwd tree
-       (developer mode, with `-dirty` suffix when uncommitted).
-    4. "unknown" fallback.
+    1. ``__WORKFLOW_VERSION__`` constant embedded above. Always set, always
+       available regardless of how the Snakefile was loaded.
+    2. VERSION file next to this Snakefile or at the repo root (only useful
+       for local clones / archive tarballs; remote module loads can't see it).
+    3. .snakedeploy metadata in cwd / project root — supports both legacy
+       ``commit`` field and ``tag`` field.
+    4. ``git rev-parse HEAD`` in the workflow / project / cwd tree
+       (developer mode, with ``-dirty`` suffix when uncommitted).
+    5. "unknown" fallback.
     """
-    # Locate the workflow directory both via __file__ (works inside the
-    # snakemake-cache copy of the Snakefile loaded by `module github(...)`)
-    # and via the legacy cwd-based heuristics.
+    # 1. Embedded constant — set at release time, ships inside the Snakefile.
+    if __WORKFLOW_VERSION__ and __WORKFLOW_VERSION__ != "unknown":
+        return __WORKFLOW_VERSION__
+
+    # Locate the workflow directory both via __file__ (works for local
+    # clones) and via the legacy cwd-based heuristics. Remote module loads
+    # via snakemake source-cache do NOT have sibling files available here.
     try:
         snakefile_dir = os.path.dirname(os.path.abspath(__file__))
     except NameError:
@@ -114,7 +131,7 @@ def get_workflow_version():
 
     workflow_dir, project_root = find_workflow_directory()
 
-    # 1. VERSION file (release-time stamp; CI/Makefile keeps it in sync with tag)
+    # 2. VERSION file (release-time stamp on local clones / tarballs)
     version = _read_version_file(
         [snakefile_dir, repo_root_from_file, workflow_dir, project_root]
     )
