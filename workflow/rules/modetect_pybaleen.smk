@@ -41,7 +41,7 @@ rule pybaleen_run:
         "benchmarks/{project}/{native}_{control}.pybaleen.txt"
     threads: get_threads("pybaleen", 4)
     resources:
-        mem_mb=1024 * 650,
+        mem_mb=1024 * 50,
         gpu=1,
     priority: 99
     log:

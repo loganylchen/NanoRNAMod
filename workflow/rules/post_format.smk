@@ -12,7 +12,7 @@ rule post_xpore:
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_xpore_sampled_format.benchmark.txt"
     resources:
-        mem_mb=1024 * 50,
+        mem_mb=1024 * 10,
     priority: 95
     threads: get_threads("python3", 1)
     script:
@@ -35,7 +35,7 @@ rule post_nanocompore:
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_nanocompore_sampled_format.benchmark.txt"
     resources:
-        mem_mb=1024 * 50,
+        mem_mb=1024 * 10,
     threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
@@ -56,7 +56,7 @@ rule post_differr:
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_differr_sampled_format.benchmark.txt"
     resources:
-        mem_mb=1024 * 50,
+        mem_mb=1024 * 10,
     threads: get_threads("python3", 1)
     script:
         "../scripts/format.py"
@@ -73,7 +73,7 @@ rule post_epinano:
     container:
         get_container("python3")
     resources:
-        mem_mb=1024 * 50,
+        mem_mb=1024 * 10,
     priority: 68
     threads: get_threads("python3", 1)
     log:
@@ -95,7 +95,7 @@ rule post_eligos2:
     container:
         get_container("python3")
     resources:
-        mem_mb=1024 * 50,
+        mem_mb=1024 * 10,
     threads: get_threads("python3", 1)
     priority: 72
     log:
@@ -116,7 +116,7 @@ rule post_drummer:
     container:
         get_container("python3")
     resources:
-        mem_mb=1024 * 50,
+        mem_mb=1024 * 10,
     threads: get_threads("python3", 1)
     priority: 78
     log:
@@ -140,7 +140,7 @@ rule post_pybaleen:
     benchmark:
         "benchmarks/{project}/{native}_{control}.post_pybaleen_format.benchmark.txt"
     resources:
-        mem_mb=1024 * 50,
+        mem_mb=1024 * 10,
     priority: 100
     threads: get_threads("python3", 1)
     script:
