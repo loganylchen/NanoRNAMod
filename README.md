@@ -1,13 +1,14 @@
 # NanoRNAMod
 
-[![Snakemake](https://img.shields.io/badge/snakemake-≥6.3.0-brightgreen.svg)](https://snakemake.github.io)
+[![Snakemake](https://img.shields.io/badge/snakemake-≥6.4.1-brightgreen.svg)](https://snakemake.github.io)
 [![GitHub actions status](https://github.com/loganylchen/NanoRNAMod/workflows/Tests/badge.svg?branch=main)](https://github.com/loganylchen/NanoRNAMod/actions?query=branch%3Amain+workflow%3ATests)
 
-A comprehensive Snakemake workflow for **RNA modification detection from Oxford Nanopore sequencing data**. This workflow orchestrates comparison-based detection tools that require both a "Native" sample (modified RNA from biological samples) and a "Control" sample (IVT/synthetic RNA without modifications), then harmonizes their output into a unified format.
+A Snakemake workflow for **RNA modification detection from Oxford Nanopore direct-RNA sequencing**. NanoRNAMod orchestrates comparison-based detection tools that require a paired **Native** sample (modified RNA from a biological source) and a **Control** sample (IVT/synthetic RNA without modifications), then harmonizes their outputs into a unified TSV format.
 
 ## Table of Contents
 
 - [Features](#features)
+- [Supported Tools](#supported-tools)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
@@ -16,25 +17,43 @@ A comprehensive Snakemake workflow for **RNA modification detection from Oxford 
   - [Tool Activation](#tool-activation)
   - [Thread Configuration](#thread-configuration)
   - [Container Configuration](#container-configuration)
+  - [Tool Parameters](#tool-parameters)
 - [Workflow Architecture](#workflow-architecture)
   - [Data Flow](#data-flow)
+  - [Sample Model](#sample-model)
   - [Rule Organization](#rule-organization)
-- [Supported Tools](#supported-tools)
-  - [Comparison-Based Tools](#comparison-based-tools)
-  - [Per-Sample Tools](#per-sample-tools)
+  - [Scheduling Priority](#scheduling-priority)
 - [Output Files](#output-files)
-  - [Modification Results](#modification-results)
 - [Advanced Usage](#advanced-usage)
+- [Adding a New Tool](#adding-a-new-tool)
 - [Citation](#citation)
 
 ---
 
 ## Features
 
-- **16+ Modification Detection Tools**: Integrates xpore, nanocompore, baleen, pybaleen, differr, drummer, eligos2, epinano, tandemmod, directrm, m6atm, rnano, psipore, nanopsu, nanomud, and penguin
-- **Unified Output Format**: All tool outputs are harmonized into a standardized TSV format
-- **Containerized Execution**: Full Docker/Singularity support for reproducibility
-- **Flexible Configuration**: Per-tool thread counts, containers, and parameters
+- **7 modification detection tools**: pybaleen (default tier-1), xpore, nanocompore, drummer, differr, eligos2, epinano
+- **Unified output format**: per-tool results harmonized into `{tool}_results.tsv`
+- **Containerized execution**: every rule pins a Docker/Singularity image for reproducibility
+- **Depth-first scheduling**: priority ladder so finished comparisons release temp files before new ones start
+- **Configurable tmp dir**: respect HPC scratch via `tmpdir:` config or `--default-resources tmpdir=...`
+- **QC, quantification, poly-A, variant calling**: optional add-on lanes alongside modification detection
+
+---
+
+## Supported Tools
+
+All currently shipped tools are **comparison-based** (require Native + Control). Per-sample tools were removed in favor of a single complete set — see `TODO.md` for the list of removed stubs and how to re-introduce them.
+
+| Tool        | Method                                              | Container                                  |
+|-------------|-----------------------------------------------------|--------------------------------------------|
+| **pybaleen**| GPU-accelerated DTW + HMM (default-on)              | `btrspg/py-baleen-gpu:dev`                 |
+| **xpore**   | Bayesian signal-intensity comparison                | `btrspg/xpore:2.1`                         |
+| **nanocompore** | k-mer signal logit/GMM testing                  | `btrspg/nanocompore1:1.0.4`                |
+| **drummer** | Base-call comparison with read-depth control        | `btrspg/drummer:92bb35a4…`                 |
+| **differr** | Differential error-rate analysis                    | `btrspg/differr:0.2`                       |
+| **eligos2** | Direct-RNA modification detection on aligned BAMs   | `btrspg/eligos2:2.1.0`                     |
+| **epinano** | Mismatch + base-quality `sum_err` summary           | `btrspg/epinano:1.2.0`                     |
 
 ---
 
@@ -42,9 +61,9 @@ A comprehensive Snakemake workflow for **RNA modification detection from Oxford 
 
 ### Prerequisites
 
-- [Snakemake](https://snakemake.readthedocs.io/) >= 6.3.0
-- [Conda](https://docs.conda.io/en/latest/miniconda.html) or [Mamba](https://mamba.readthedocs.io/)
-- [Singularity](https://sylabs.io/singularity/) (optional, for containerized execution)
+- [Snakemake](https://snakemake.readthedocs.io/) ≥ 6.4.1 (8.x recommended)
+- [Conda](https://docs.conda.io/) or [Mamba](https://mamba.readthedocs.io/) for environment management
+- [Singularity / Apptainer](https://apptainer.org/) for `--use-singularity` (recommended)
 
 ### Clone the Repository
 
@@ -53,48 +72,60 @@ git clone https://github.com/loganylchen/NanoRNAMod.git
 cd NanoRNAMod
 ```
 
-### Install Dependencies
+### Install Snakemake
+
+NanoRNAMod does not ship a single environment file; each rule pulls its own container or conda env. Install Snakemake itself with conda/mamba:
 
 ```bash
-# Using conda
-conda env create -f workflow/envs/main.yaml
-conda activate nanornamod
-
-# Or using mamba (faster)
-mamba env create -f workflow/envs/main.yaml
+mamba create -n nanornamod -c conda-forge -c bioconda \
+    "snakemake>=6.4.1" snakedeploy snakefmt
 mamba activate nanornamod
 ```
+
+If you prefer Singularity-only execution, you only need Snakemake; all tool dependencies come from the pinned Docker images listed under `containers:` in `config/config.yaml`.
 
 ---
 
 ## Quick Start
 
-1. **Prepare your sample sheet** (`config/samples.tsv`):
+1. **Prepare your sample sheet** `config/samples.tsv` (TSV, at least `SampleName`, `Condition`):
+
    ```tsv
-   SampleName	Condition	Directory
-   SampleA	Native	path/to/sampleA
-   SampleB	Native	path/to/sampleB
-   SampleC	Control	path/to/sampleC
+   SampleName	Condition
+   A	Native
+   B	Native
+   F	Control
    ```
 
-2. **Configure reference files** in `config/config.yaml`:
-   ```yaml
-   reference:
-     genome_fasta: data/genome.fa
-     transcriptome_fasta: data/transcriptome.fa
-     transcriptome_gtf: data/annotations.gtf
+2. **Place input data** under `data/`:
+
+   ```
+   data/
+   ├── A/
+   │   ├── fastq/pass.fq.gz
+   │   └── blow5/nanopore.blow5
+   ├── B/
+   │   ├── fastq/pass.fq.gz
+   │   └── blow5/nanopore.blow5
+   ├── F/
+   │   ├── fastq/pass.fq.gz
+   │   └── blow5/nanopore.blow5
+   └── ref.fa
    ```
 
-3. **Run the workflow**:
+3. **Edit `config/config.yaml`** — set the project name, reference paths, and which tools to activate.
+
+4. **Run the workflow**:
+
    ```bash
-   # Dry run to check configuration
-   snakemake --use-conda --dry-run --cores 1
+   # Validate the DAG without executing
+   snakemake --use-singularity --dry-run --cores 1
 
-   # Run with conda environments
-   snakemake --use-conda --cores 4
+   # Execute with Singularity containers (recommended)
+   snakemake --use-singularity --cores 8 -p
 
-   # Run with singularity containers (recommended for reproducibility)
-   snakemake --use-singularity --cores 4
+   # Execute with conda envs (where containers are not pinned)
+   snakemake --use-conda --cores 8 -p
    ```
 
 ---
@@ -103,99 +134,97 @@ mamba activate nanornamod
 
 ### Sample Sheet
 
-The sample sheet (`config/samples.tsv`) defines your input samples. It must contain at least three columns:
+`config/samples.tsv` requires the following columns:
 
-| Column | Description |
-|--------|-------------|
-| `SampleName` | Unique identifier for each sample |
-| `Condition` | Either `Native` (modified RNA) or `Control` (IVT/unmodified) |
-| `Directory` | Path to the sample directory containing FASTQ/BLOW5 files |
+| Column        | Required | Description                                                        |
+|---------------|----------|--------------------------------------------------------------------|
+| `SampleName`  | yes      | Unique identifier; sample directory at `data/{SampleName}/`         |
+| `Condition`   | yes      | `Native` (modified RNA) or `Control` (IVT/unmodified)               |
 
-**Example:**
-```tsv
-SampleName	Condition	Directory
-HeLa_Rep1	Native	data/HeLa_Rep1
-HeLa_Rep2	Native	data/HeLa_Rep2
-IVT_Rep1	Control	data/IVT_Rep1
-IVT_Rep2	Control	data/IVT_Rep2
-```
-
-**Input Data Layout:**
-```
-data/
-├── {sample}/
-│   ├── fastq/pass.fq.gz      (or pass.fastq.gz)
-│   └── blow5/nanopore.blow5  (or nanopore.drs.blow5)
-└── ref.fa / ref.gtf          (reference files)
-```
+You must have at least one `Native` sample and at least one `Control` sample. Every `native × control` cross-product becomes a comparison wildcard (e.g. `A_F`, `B_F`).
 
 ### Reference Files
 
-Configure your reference files in `config/config.yaml`:
-
 ```yaml
 reference:
-  genome_fasta: data/ref.fa           # Genome reference
-  transcriptome_fasta: data/ref.fa    # Transcriptome reference (can be same as genome)
-  transcriptome_gtf: data/ref.gtf     # Gene annotations in GTF format
+  genome_fasta: ecoli_ref/ref.fa
+  transcriptome_fasta: ecoli_ref/ref.fa   # may equal genome_fasta for prokaryotes
+  transcriptome_gtf: ''                    # optional; leave '' to skip GTF annotation
 ```
 
 ### Tool Activation
 
-Enable or disable tools in `config/config.yaml`:
+Enable/disable in `config/config.yaml`:
 
 ```yaml
 tools:
-  xpore:
-    activate: True
-  nanocompore:
-    activate: True
-  baleen:
-    activate: True
-  # ... other tools
+  xpore:       { activate: false }
+  nanocompore: { activate: false }
+  differr:     { activate: false }
+  drummer:     { activate: false }
+  eligos2:     { activate: false }
+  epinano:     { activate: false }
+  pybaleen:    { activate: true }   # default-on
 ```
 
-**Note:** Four tools (tandemmod, directrm, m6atm, rnano) may also need to be uncommented in the Snakefile `include` list to activate them.
+Only the seven tools above are recognized; setting `activate: true` on any other name is silently ignored.
 
 ### Thread Configuration
 
-Configure thread counts for each tool to optimize parallelization:
-
 ```yaml
 threads:
-  default: 1           # Default threads when not specified
-  minimap2: 8          # Alignment benefits from more threads
-  nanocompore: 4       # Moderate parallelization
+  default: 1
+  minimap2: 4
+  f5c: 4
+  slow5tools: 4
   xpore: 4
-  baleen: 4
-  # ... other tools
+  nanocompore: 4
+  differr: 4
+  drummer: 4
+  eligos2: 4
+  epinano: 4
+  pybaleen: 4
 ```
 
-**How it works:**
-- Each rule calls `get_threads("tool_name", default_value)` to get thread count
-- If not specified in config, uses the provided default value
-- Adjust based on your system's CPU cores
+`get_threads(tool, default)` in `common.smk` resolves each rule's thread count from this map, falling back to `threads.default` then to the rule's hard-coded default.
 
 ### Container Configuration
-
-Configure container images for reproducibility:
 
 ```yaml
 containers:
   default: "docker://condaforge/mambaforge:22.11.1-4"
   minimap2: "docker://btrspg/minimap2:2.28"
+  f5c: "docker://btrspg/f5c:1.5"
   nanocompore: "docker://btrspg/nanocompore1:1.0.4"
-  # ... other tools
+  xpore: "docker://btrspg/xpore:2.1"
+  differr: "docker://btrspg/differr:0.2"
+  eligos2: "docker://btrspg/eligos2:2.1.0"
+  drummer: "docker://btrspg/drummer:92bb35a4a2b22ff304f5e4bcbc9fa6985f18a12e"
+  epinano: "docker://btrspg/epinano:1.2.0"
+  pybaleen: "docker://btrspg/py-baleen-gpu:dev"
+  # ... see config/config.yaml for the full list
 ```
 
-**How it works:**
-- Each rule calls `get_container("tool_name")` to get its container image
-- If a tool's container is empty `""` or not specified, it uses the `default` container
-- Supports Docker (`docker://`) and Singularity Hub (`shub://`) formats
+`get_container(tool)` returns the matching image; falls back to `containers.default` when an entry is empty or missing.
 
-**Running with containers:**
-```bash
-snakemake --use-conda --use-singularity --cores 4
+### Tool Parameters
+
+Per-tool CLI flags live under `params:` in `config/config.yaml`:
+
+```yaml
+params:
+  minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 10 -p 0 "
+  minimap2_genome:        " -ax splice -u f -k 14 -G 500000 --secondary=no "
+  samtools_filtering:     " -F 2324 -q 10 --min-qlen 80 "
+  f5c_eventalign_full:    "--print-read-names --scale-events --samples --rna "
+  f5c_eventalign_simple:  "--signal-index --scale-events --rna "
+  nanocompore: "--logit --overwrite "
+  xpore: ""
+  differr: " -f 2  --median-expr-threshold 0  --min-expr-threshold 0 "
+  eligos2: "--max_depth 5000000 --esb 0 --oddR 0 --pval 1"
+  epinano: '-f sum_err'
+  drummer: ' -z 0.1 -p 2 '
+  pybaleen: ""
 ```
 
 ---
@@ -206,173 +235,114 @@ snakemake --use-conda --use-singularity --cores 4
 
 ```
 data/{sample}/fastq/pass.fq.gz        (raw ONT reads)
-data/{sample}/blow5/nanopore.blow5    (raw signal)
+data/{sample}/blow5/nanopore.blow5    (raw signal, slow5 format)
         │
         ▼
-{project}/results/fastq/{sample}.fq.gz    ← symlinked by link_fastq
-{project}/results/blow5/{sample}.blow5    ← symlinked by link_blow5
+{project}/results/fastq/{sample}.fq.gz       ← link_fastq
+{project}/results/blow5/{sample}.blow5       ← link_blow5
         │
-        ├─► minimap2 → BAM (genome + transcriptome alignment)
-        │         └─► f5c eventalign → collapse TSV (for signal-based tools)
+        ├─► minimap2 → BAM (genome + transcriptome)
+        │         └─► f5c eventalign → collapse TSV (xpore, nanocompore, pybaleen)
         │
-        ├─► Modification detection tools (per comparison: {native}_{control})
+        ├─► Modification detection per comparison {native}_{control}
         │         └─► {project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv
         │
-        └─► QC, quantification, poly-A estimation, variant calling
+        └─► Optional: QC, NanoCount quantification, nanopolish polya, bcftools variants
 ```
 
 ### Sample Model
 
-`samples.tsv` requires two conditions:
-- **Native**: Modified RNA from biological samples
-- **Control**: IVT (in vitro transcribed) or synthetic RNA without modifications
-
-Every pairwise combination of `native_sample × control_sample` forms a **comparison** wildcard (e.g., `A_F`, `B_F`). Most modification detection tools run per-comparison.
+The `Condition` column drives the comparison wildcard. With Native = {A, B} and Control = {F}, the workflow produces results for the comparisons `A_F` and `B_F`. Each comparison runs every activated tool independently.
 
 ### Rule Organization
 
-Rules are split by phase and prefixed accordingly:
+| Prefix       | Purpose                                            |
+|--------------|----------------------------------------------------|
+| `prep_*`     | Linking, alignment (minimap2), filtering, indexing, f5c eventalign |
+| `modetect_*` | One file per tool: pybaleen, xpore, nanocompore, differr, drummer, eligos2, epinano |
+| `post_*`     | Normalize each tool's output into the unified TSV  |
+| `qc_*`       | NanoPlot, Qualimap, samtools stats, NanoCount, bcftools |
+| `polya_*`    | nanopolish polya estimation                        |
 
-| Prefix | Purpose | Examples |
-|--------|---------|----------|
-| `prep_*` | Data preparation | linking, alignment, filtering, indexing, signal alignment |
-| `modetect_*` | Modification detection | xpore, nanocompore, baleen, etc. (one file per tool) |
-| `post_*` | Output formatting | GTF annotation, result aggregation |
-| `qc_*` | Quality control | nanoplot, qualimap, samtools, nanocount, bcftools |
-| `polya_*` | Poly-A tail estimation | nanopolish |
+### Scheduling Priority
 
----
+Rules use `priority` to enforce **depth-first** scheduling — finishing a comparison end-to-end frees its `temp()` intermediates before another comparison starts. Higher number = scheduled first.
 
-## Supported Tools
+| Tier | Range  | Tools / Stage                                                          |
+|------|--------|------------------------------------------------------------------------|
+| 1    | 96–100 | pybaleen and its dependencies (link_fastq=96, minimap2=97, f5c_index=98, eventalign=89/82, pybaleen_run=99, post_pybaleen=100) |
+| 2    | 89–95  | xpore                                                                  |
+| 3    | 82–86  | nanocompore                                                            |
+| 4    | 76–78  | drummer                                                                |
+| 5    | 74–75  | differr                                                                |
+| 6    | 70–72  | eligos2                                                                |
+| 7    | 66–68  | epinano                                                                |
 
-### Comparison-Based Tools
-
-These tools require paired Native + Control samples:
-
-| Tool | Description | Method |
-|------|-------------|--------|
-| **xpore** | Differential RNA modification detection | Signal intensity comparison |
-| **nanocompore** | Nanopore RNA modification calling | k-mer level signal analysis |
-| **baleen** | Modification detection using neural networks | Signal alignment + ML |
-| **pybaleen** | Python reimplementation of baleen | GPU-accelerated |
-| **differr** | Differential error rate analysis | Base-calling error patterns |
-| **drummer** | Detection of modified bases | Signal comparison |
-| **eligos2** | Epitranscriptional modification detection | RNA-specific features |
-| **epinano** | Epitranscriptome analysis | Mismatch + signal features |
-| **psipore** | Pseudouridine detection | Signal-based |
-
-### Per-Sample Tools
-
-These tools run on individual samples without requiring a control:
-
-| Tool | Description | Target |
-|------|-------------|--------|
-| **tandemmod** | Tandem modification detection | Multiple modifications |
-| **directrm** | Direct RNA modification detection | Multiple modifications |
-| **m6atm** | m6A detection tool | m6A |
-| **rnano** | RNA modification detection | Multiple modifications |
-| **nanopsu** | Pseudouridine detection | Psi |
-| **nanomud** | Modification detection | Psi, m1Psi |
-| **penguin** | Modification detection | Multiple |
-
-### Tool Parameters
-
-Configure tool-specific parameters in `config/config.yaml`:
-
-```yaml
-params:
-  minimap2_transcriptome: " -ax map-ont -L --secondary=no -N 10 -p 0 "
-  minimap2_genome: " -ax splice -u f -k 14 -G 500000 --secondary=no "
-  nanocompore: "--logit --overwrite"
-  xpore: ""
-  baleen_modcall: ""
-  differr: " -f 2 --median-expr-threshold 0 --min-expr-threshold 0 "
-  eligos2: "--max_depth 5000000 --esb 0 --oddR 0 --pval 1"
-  epinano: " -t 1 -c 5 -f sum_err -d 0.01 "
-  drummer: " -z 0.1 -p 1 "
-  tandemmod: "--model multi --threshold 0.5"
-  directrm: "--mods all --min-prob 0.7"
-  m6atm: "--stoichiometry --threshold 0.6"
-  pybaleen: "--padding 0 --min-depth 15"
-  # ... other tools
-```
+This keeps the disk footprint bounded even when many comparisons run concurrently.
 
 ---
 
 ## Output Files
 
-### Modification Results
-
-All modification detection results are stored in:
 ```
-{project}/results/modifications/{tool}/{comparison}/{tool}_results.tsv
+{project}/results/
+├── workflow_version.json
+├── alignments/{sample}.bam{,.bai}
+├── alignments/{sample}_filtered.bam{,.bai}
+├── quantification/{sample}.tx_counts.tsv
+├── modifications/{tool}/{native}_{control}/{tool}_results.tsv   # unified output
+└── qc/, polya/, variants/                                       # opt-in lanes
 ```
 
-**Unified Output Format:**
-| Column | Description |
-|--------|-------------|
-| `transcript` | Transcript ID |
-| `position` | Genomic position (1-based) |
-| `ref_kmer` | Reference k-mer sequence |
-| `coverage` | Read coverage at this position |
-| `score` | Tool-specific significance score |
-| `mod_type` | Predicted modification type |
-| `comparison` | Native vs Control comparison ID |
+Each `{tool}_results.tsv` is a TSV produced by `workflow/scripts/format.py` (or per-tool `*_postprocess.py` for pybaleen). Empty-but-successful runs produce zero-byte sentinel files rather than failing the DAG.
 
 ---
 
 ## Advanced Usage
 
-### Run Specific Rules
-
 ```bash
-# Run a specific rule
-snakemake --use-conda -R <rule_name>
-
-# Generate a specific output file
-snakemake --use-conda --cores 2 "results/modifications/xpore/A_F/xpore_results.tsv"
-```
-
-### Lint and Format
-
-```bash
-# Lint the workflow
+# Lint
 snakemake --lint --snakefile workflow/Snakefile
-
-# Format workflow files
 snakefmt workflow/Snakefile workflow/rules/*.smk
-```
 
-### Generate HTML Report
+# Force re-run a single rule
+snakemake --use-singularity -R post_pybaleen --cores 4
 
-```bash
-# Create a comprehensive HTML report
+# Build only one specific output
+snakemake --use-singularity --cores 4 \
+    "ecoliRNA/results/modifications/pybaleen/A_F/pybaleen_results.tsv"
+
+# Generate the HTML report
 snakemake --report report.zip
+
+# Run the smoke test
+cd .test && snakemake --use-conda --use-singularity \
+    --show-failed-logs --cores 4 -k -p
 ```
 
-### Dry Run
+### Tmp Directory
+
+Many HPC nodes have small `/tmp`. NanoRNAMod sets `TMPDIR` for all subprocesses and registers a Snakemake default resource. Override per run via:
 
 ```bash
-# Validate DAG without executing
-snakemake --use-conda --dry-run --cores 1
+snakemake --default-resources "tmpdir='/scratch/$USER/tmp'" ...
 ```
 
-### Run Tests
+or persistently via `tmpdir:` in `config/config.yaml`.
 
-```bash
-# Run the test suite
-cd .test && snakemake --use-conda --use-singularity --show-failed-logs --cores 4 -k -p
-```
+---
 
-### Adding a New Tool
+## Adding a New Tool
 
-1. Create `workflow/envs/{tool}.yaml` (conda environment)
-2. Create `workflow/rules/modetect_{tool}.smk` with prep + detect rules
-3. Create `workflow/scripts/{tool}_postprocess.py` to normalize output to TSV
-4. Add `tools.{tool}.activate` to `config/config.yaml` and the schema
-5. Add a `get_container("{tool}")` call in the rule and a thread entry in config
-6. Add the tool's final output path to `get_final_output()` in `common.smk`
-7. Uncomment or add the `include:` line in `workflow/Snakefile`
+1. `workflow/envs/{tool}.yaml` — conda env for the tool (if not pulling a container)
+2. `workflow/rules/modetect_{tool}.smk` — prep + detect rules, set `priority:` according to the tier scheme above
+3. `workflow/scripts/{tool}_postprocess.py` — normalize the tool's output into the unified TSV
+4. `config/config.yaml` — add entries under `params:`, `threads:`, `containers:`, `tools:`
+5. `workflow/rules/common.smk` — append the tool name to `PER_COMPARISON_TOOLS` or `PER_SAMPLE_TOOLS`
+6. `workflow/rules/post_format.smk` — add a `post_{tool}` rule (or a branch in `format.py`)
+7. `workflow/Snakefile` — add an `include: "rules/modetect_{tool}.smk"` line
+
+See `TODO.md` for the list of tools previously removed and the same recipe applied in reverse.
 
 ---
 
@@ -380,20 +350,18 @@ cd .test && snakemake --use-conda --use-singularity --show-failed-logs --cores 4
 
 If you use this workflow in a paper, please cite:
 
-- The URL of this repository: https://github.com/loganylchen/NanoRNAMod
-- The DOI of the repository
+- This repository: https://github.com/loganylchen/NanoRNAMod
 - Snakemake: Mölder et al., 2021, [doi:10.12688/f1000research.29032.2](https://doi.org/10.12688/f1000research.29032.2)
-
-Also cite the specific modification detection tools you use in your analysis.
+- The specific modification-detection tools you activate (xpore, nanocompore, etc.)
 
 ---
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT — see `LICENSE`.
 
 ---
 
 ## Acknowledgments
 
-This workflow integrates and harmonizes the output of multiple RNA modification detection tools. We thank all the developers of the individual tools for their contributions to the field.
+This workflow integrates and harmonizes the output of multiple independent RNA modification detection tools. Thanks to the developers of each underlying tool for making their work available.
