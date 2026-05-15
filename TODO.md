@@ -7,11 +7,6 @@
 - **Problem**: `samtools: "docker://btrspg/minimap2:2.28"` — samtools 规则实际运行的是 minimap2 容器。虽然该容器恰好包含 samtools，但这容易造成混淆且不可靠。
 - **Fix**: 替换为专用 samtools 容器（如 `docker://biocontainers/samtools:1.20` 或构建专用镜像）
 
-### 2. 死代码规则：`*_epi` 规则无下游消费者
-- **Files**: `prep_align_minimap2.smk` lines 55-78, `prep_readsfiltering.smk` lines 55-71
-- **Problem**: `minimap2_transcriptome_align_epi` 产生 `{sample}_3.2.4.bam`，`samtools_filter_mapped_epi` 产生 `{sample}_of.bam`。这两个文件不被任何下游规则使用，是旧版 EpiNano 工作流的残留。
-- **Fix**: 删除这两个规则，同时删除 `prep_data_prep.smk` 中注释掉的 `link_fastq_old` 规则（lines 20-31）
-
 ### 3. pybaleen 使用未过滤的 BAM
 - **File**: `modetect_pybaleen.smk` lines 6-7
 - **Problem**: 输入是 `{native}.bam` 和 `{control}.bam`（未过滤），其他所有 modetect 工具都使用 `{sample}_filtered.bam`。
@@ -134,3 +129,4 @@
 
 - [x] 所有规则 `mem_mb` 最低 10GB — 12 个文件共 30 处已修改
 - [x] `epinano_prep.sh` 诊断改进 — 捕获 stdout+stderr、扩大搜索范围、使用 params.extra
+- [x] 死代码规则 `*_epi` 已删除（`minimap2_transcriptome_align_epi`、`samtools_filter_mapped_epi`、注释掉的 `link_fastq_old`），`prep_readsfiltering.smk` 整个删除（depth_table 链也一并清理）
