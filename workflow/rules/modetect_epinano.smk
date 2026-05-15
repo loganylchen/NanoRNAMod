@@ -19,7 +19,7 @@ rule epinano_prep:
     threads: get_threads("epinano", 4)
     resources:
         mem_mb = 1024 * 50
-    priority: 10
+    priority: 66
     log:
         "logs/{project}/epinano_prep/{sample}.log",
     benchmark:
@@ -42,7 +42,7 @@ rule epinano:
         prefix="{project}/results/epinano/{native}_{control}/epinano",
     container:
         get_container("epinano")
-    priority: 10
+    priority: 67
     threads: get_threads("epinano", 4)
     resources:
         mem_mb = 1024 * 50

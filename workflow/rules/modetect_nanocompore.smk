@@ -16,7 +16,7 @@ rule uncompress_eventalign_full:
     threads: get_threads("default", 1)
     resources:
         mem_mb = 1024 * 10
-    priority: 10
+    priority: 83
     shell:
         "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
 
@@ -40,7 +40,7 @@ rule nanocompore_collapse:
         get_container("nanocompore")
     resources:
         mem_mb = 1024 * 50
-    priority: 10
+    priority: 84
     threads: get_threads("nanocompore", 4)
     shell:
         "nanocompore eventalign_collapse "
@@ -66,7 +66,7 @@ rule nanocompore:
         extra=config["params"]["nanocompore"],
     container:
         get_container("nanocompore")
-    priority: 10
+    priority: 85
     resources:
         mem_mb = 1024 * 50
     threads: get_threads("nanocompore", 4)

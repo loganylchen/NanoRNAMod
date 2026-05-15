@@ -19,7 +19,7 @@ rule f5c_eventalign_with_readname:
         ),
     container:
         get_container("f5c")
-    priority: 20
+    priority: 82
     log:
         "logs/{project}/eventalign/{sample}_full.log",
     params:

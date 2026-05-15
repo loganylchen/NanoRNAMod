@@ -11,7 +11,7 @@ rule prep_drummer_region:
     threads: get_threads("drummer", 1)
     resources:
         mem_mb = 1024 * 10
-    priority: 10
+    priority: 76
     shell:
         "bedtools bamtobed -bed12 -i {input.control_bam} | cut -f1 | sort > {output.region}.tmp && "
         "bedtools bamtobed -bed12 -i {input.native_bam} | cut -f1 | sort >> {output.region}.tmp && "
@@ -31,7 +31,7 @@ rule drummer:
         extra=config["params"]["drummer"],
     container:
         get_container("drummer")
-    priority: 10
+    priority: 77
     log:
         "logs/{project}/drummer/{native}_{control}.log",
     resources:

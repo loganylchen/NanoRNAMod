@@ -117,7 +117,7 @@ rule post_nanocompore:
         tool="nanocompore",
     container:
         get_container("python3")
-    priority: 20
+    priority: 86
     log:
         "logs/{project}/post_nanocompore_sampled_format/{native}_{control}.log",
     benchmark:
@@ -159,7 +159,7 @@ rule post_differr:
         tool="differr",
     container:
         get_container("python3")
-    priority: 20
+    priority: 75
     log:
         "logs/{project}/post_differr_sampled_format/{native}_{control}.log",
     benchmark:
@@ -183,7 +183,7 @@ rule post_epinano:
         get_container("python3")
     resources:
         mem_mb=1024 * 50,
-    priority: 20
+    priority: 68
     threads: get_threads("python3", 1)
     log:
         "logs/{project}/post_epinano_sampled_format/{native}_{control}.log",
@@ -206,7 +206,7 @@ rule post_eligos2:
     resources:
         mem_mb=1024 * 50,
     threads: get_threads("python3", 1)
-    priority: 20
+    priority: 72
     log:
         "logs/{project}/post_eligos2_sampled_format/{native}_{control}.log",
     benchmark:
@@ -227,7 +227,7 @@ rule post_drummer:
     resources:
         mem_mb=1024 * 50,
     threads: get_threads("python3", 1)
-    priority: 20
+    priority: 78
     log:
         "logs/{project}/post_drummer_sampled_format/{native}_{control}.log",
     benchmark:

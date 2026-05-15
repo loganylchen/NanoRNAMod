@@ -17,7 +17,7 @@ rule differr:
     threads: get_threads("differr", 4)
     resources:
         mem_mb = 1024 * 50
-    priority: 10
+    priority: 74
     benchmark:
         "benchmarks/{project}/{native}_{control}.differr.benchmark.txt"
     shell:

@@ -21,7 +21,7 @@ rule eligos2:
         get_container("eligos2")
     resources:
         mem_mb = 1024 * 50
-    priority: 10
+    priority: 71
     shell:
         "eligos2 pair_diff_mod "
         "-tbam {input.native_bam} "
@@ -51,7 +51,7 @@ rule eligos2_prep:
     threads: get_threads("bedtools", 1)
     resources:
         mem_mb = 1024 * 50
-    priority: 10
+    priority: 70
     shell:
         "bedtools bamtobed -bed12 -i {input.control_bam}  > {output.region}.tmp && "
         "bedtools bamtobed -bed12 -i {input.native_bam} >> {output.region}.tmp && "
