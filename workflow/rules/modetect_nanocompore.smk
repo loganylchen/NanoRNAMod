@@ -1,9 +1,9 @@
 rule nanocompore_collapse:
     """
-    Decompress the bz2 eventalign output and feed it straight into
-    nanocompore's collapse step via process substitution — the
-    uncompressed TSV never touches disk. Replaces the previous
-    uncompress_eventalign_full → nanocompore_collapse two-rule chain.
+    Decompress the bz2 eventalign output to a tmpdir-local tempfile,
+    run nanocompore's collapse, then auto-cleanup via trap. Replaces
+    the previous uncompress_eventalign_full → nanocompore_collapse
+    two-rule chain.
     """
     input:
         eventalign="{project}/results/eventalign/{sample}_full.tsv.bz2",
@@ -26,8 +26,11 @@ rule nanocompore_collapse:
     priority: 84
     threads: get_threads("nanocompore", 4)
     shell:
+        "TMP=$(mktemp -p {resources.tmpdir} nc_ev.XXXXXX.tsv); "
+        "trap 'rm -f $TMP' EXIT; "
+        "bzip2 -dc {input.eventalign} > $TMP && "
         "nanocompore eventalign_collapse "
-        "-i <(bzip2 -dc {input.eventalign}) "
+        "-i $TMP "
         "--outpath {params.dir} "
         "--outprefix {params.prefix} "
         "--overwrite "

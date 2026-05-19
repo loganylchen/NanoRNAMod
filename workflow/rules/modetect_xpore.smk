@@ -1,30 +1,13 @@
-rule uncompress_eventalign:
+rule xpore_dataprep:
+    """
+    Decompress the bz2 eventalign output to a tmpdir-local tempfile,
+    run xpore dataprep, then auto-cleanup via trap. Replaces the
+    previous uncompress_eventalign → xpore_dataprep two-rule chain.
+    xpore dataprep uses file.seek() so process substitution is unsafe.
+    """
     input:
         completion="{project}/results/eventalign/{sample}_simple.tsv.completed",
         eventalign="{project}/results/eventalign/{sample}_simple.tsv.bz2",
-    output:
-        uc_eventalign=temp("{project}/results/eventalign/{sample}_simple.tsv.bz2.tmp"),
-        uc_completion=temp(
-            "{project}/results/eventalign/{sample}_simple.tsv.completed.tmp"
-        ),
-    log:
-        "logs/{project}/uncompress_eventalign/{sample}.log",
-    benchmark:
-        "benchmarks/{project}/{sample}.uncompress_eventalign.benchmark.txt"
-    container:
-        get_container("default")
-    resources:
-        mem_mb = 1024 * 10
-    priority: 90
-    threads: get_threads("default", 1)
-    shell:
-        "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
-
-
-rule xpore_dataprep:
-    input:
-        completion="{project}/results/eventalign/{sample}_simple.tsv.completed.tmp",
-        eventalign="{project}/results/eventalign/{sample}_simple.tsv.bz2.tmp",
         reference=config["reference"]["transcriptome_fasta"],
     output:
         temp(directory("{project}/results/dataprep/{sample}_xpore_dataprep")),
@@ -41,11 +24,14 @@ rule xpore_dataprep:
     params:
         extra="",
     shell:
+        "TMP=$(mktemp -p {resources.tmpdir} xp_ev.XXXXXX.tsv); "
+        "trap 'rm -f $TMP' EXIT; "
+        "bzip2 -dc {input.eventalign} > $TMP && "
         "xpore dataprep "
-        "--eventalign {input.eventalign} "
+        "--eventalign $TMP "
         "--transcript_fasta {input.reference} --n_processes {threads} "
         "{params.extra} "
-        "--out_dir {output} 2>{log} "
+        "--out_dir {output} 2>{log}"
 
 
 rule xpore_config:

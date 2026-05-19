@@ -98,7 +98,7 @@ def _read_version_file(candidate_dirs):
 # cannot read them at runtime. The only file guaranteed to exist on the
 # remote-loader's filesystem is this Snakefile itself, so the version has
 # to live inline.
-__WORKFLOW_VERSION__ = "v0.1.4"
+__WORKFLOW_VERSION__ = "v0.1.5"
 
 
 def get_workflow_version():
