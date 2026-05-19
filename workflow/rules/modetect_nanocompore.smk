@@ -1,30 +1,13 @@
-rule uncompress_eventalign_full:
-    input:
-        completion="{project}/results/eventalign/{sample}_full.tsv.completed",
-        eventalign="{project}/results/eventalign/{sample}_full.tsv.bz2",
-    output:
-        uc_eventalign=temp("{project}/results/eventalign/{sample}_full.tsv.bz2.tmp"),
-        uc_completion=temp(
-            "{project}/results/eventalign/{sample}_full.tsv.completed.tmp"
-        ),
-    log:
-        "logs/{project}/uncompress_eventalign_full/{sample}.log",
-    benchmark:
-        "benchmarks/{project}/{sample}.full_uncompress_eventalign.benchmark.txt"
-    container:
-        get_container("default")
-    threads: get_threads("default", 1)
-    resources:
-        mem_mb = 1024 * 10
-    priority: 83
-    shell:
-        "bzip2 -dc {input.eventalign} > {output.uc_eventalign} && touch {output.uc_completion} 2>{log}"
-
-
 rule nanocompore_collapse:
+    """
+    Decompress the bz2 eventalign output and feed it straight into
+    nanocompore's collapse step via process substitution — the
+    uncompressed TSV never touches disk. Replaces the previous
+    uncompress_eventalign_full → nanocompore_collapse two-rule chain.
+    """
     input:
-        eventalign="{project}/results/eventalign/{sample}_full.tsv.bz2.tmp",
-        completion="{project}/results/eventalign/{sample}_full.tsv.completed.tmp",
+        eventalign="{project}/results/eventalign/{sample}_full.tsv.bz2",
+        completion="{project}/results/eventalign/{sample}_full.tsv.completed",
     output:
         output=temp(
             "{project}/results/nanocompore_eventalign_collapse/{sample}/{sample}_eventalign_collapse.tsv"
@@ -44,7 +27,7 @@ rule nanocompore_collapse:
     threads: get_threads("nanocompore", 4)
     shell:
         "nanocompore eventalign_collapse "
-        "-i {input.eventalign} "
+        "-i <(bzip2 -dc {input.eventalign}) "
         "--outpath {params.dir} "
         "--outprefix {params.prefix} "
         "--overwrite "
