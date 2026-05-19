@@ -24,7 +24,8 @@ rule xpore_dataprep:
     params:
         extra="",
     shell:
-        "TMP=$(mktemp -p {resources.tmpdir} xp_ev.XXXXXX.tsv); "
+        "mkdir -p {output}; "
+        "TMP={output}.eventalign.uncompressed.tsv; "
         "trap 'rm -f $TMP' EXIT; "
         "bzip2 -dc {input.eventalign} > $TMP && "
         "xpore dataprep "

@@ -26,7 +26,8 @@ rule nanocompore_collapse:
     priority: 84
     threads: get_threads("nanocompore", 4)
     shell:
-        "TMP=$(mktemp -p {resources.tmpdir} nc_ev.XXXXXX.tsv); "
+        "mkdir -p {params.dir}; "
+        "TMP={params.dir}/{params.prefix}.eventalign.uncompressed.tsv; "
         "trap 'rm -f $TMP' EXIT; "
         "bzip2 -dc {input.eventalign} > $TMP && "
         "nanocompore eventalign_collapse "
