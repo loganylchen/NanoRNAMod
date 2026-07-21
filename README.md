@@ -180,7 +180,7 @@ threads:
   xpore: 4
   nanocompore: 4
   differr: 4
-  drummer: 4
+  drummer: 24
   eligos2: 4
   epinano: 4
   pybaleen: 4

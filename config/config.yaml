@@ -40,7 +40,7 @@ threads:
   sample_reads: 4
   differr: 4
   eligos2: 4
-  drummer: 4
+  drummer: 24
   epinano: 4
   pybaleen: 4
 

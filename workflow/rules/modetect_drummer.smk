@@ -8,7 +8,7 @@ rule prep_drummer_region:
         region=temp("{project}/results/drummer/{native}_{control}_regions.bed"),
     container:
         get_container("bedtools")
-    threads: get_threads("drummer", 1)
+    threads: 1
     resources:
         mem_mb = 1024 * 10
     priority: 76
@@ -31,6 +31,7 @@ rule drummer:
         extra=config["params"]["drummer"],
     container:
         get_container("drummer")
+    threads: get_threads("drummer", 24)
     priority: 77
     log:
         "logs/{project}/drummer/{native}_{control}.log",
