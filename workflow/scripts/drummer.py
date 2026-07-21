@@ -2,6 +2,7 @@ import os
 import sys
 import glob
 import shutil
+import tempfile
 from snakemake.shell import shell
 # os.makedirs(os.path.dirname(snakemake.log[0]),exist_ok=True)
 # log = snakemake.log_fmt_shell(stdout=True, stderr=True)
@@ -31,13 +32,15 @@ output = os.path.abspath(output)
 # Scratch defaults to the Snakemake `tmpdir` resource, then $TMPDIR, then /tmp.
 scratch_root = getattr(snakemake.resources, "tmpdir", None) \
     or os.environ.get("TMPDIR") or "/tmp"
-local_out = os.path.join(scratch_root, "drummer_" + os.path.basename(output.rstrip("/")))
-shutil.rmtree(local_out, ignore_errors=True)
-os.makedirs(local_out, exist_ok=True)
-
-os.chdir('/opt/DRUMMER')
+os.makedirs(scratch_root, exist_ok=True)
+# mkdtemp() guarantees a unique, private scratch dir so concurrent jobs (across
+# projects/comparisons that share the same scratch root) never collide or delete
+# each other's in-flight data.
+local_out = tempfile.mkdtemp(prefix="drummer_", dir=scratch_root)
 
 try:
+    os.chdir('/opt/DRUMMER')
+
     shell("python3 DRUMMER.py -r {reference} "
           "-l {region} "
           " -c {control_bam} "
@@ -58,8 +61,8 @@ finally:
     shutil.rmtree(local_out, ignore_errors=True)
 
 # Empty-output safety net: DRUMMER may succeed (exit 0) but produce no
-# summary.txt when depth/quality filters reject all sites. Guarantee the
-# output directory exists so Snakemake won't fail on the missing
+# summary.txt when depth/quality filters reject all sites. `output` is already
+# created inside the try block before the copy loop (so it exists even in the
+# zero-summary case), guaranteeing Snakemake won't fail on the missing
 # directory() output; format.py detects the absence of summary files and
 # emits an empty sentinel downstream.
-os.makedirs(output, exist_ok=True)
